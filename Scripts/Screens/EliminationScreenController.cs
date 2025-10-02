@@ -297,11 +297,14 @@ namespace RobotsGame.Screens
                 UpdateEliminateButton();
             }
 
-            // Show results after delay
-            DOVirtual.DelayedCall(1f, () =>
+            // Show results after delay only when running offline
+            if (!GameManager.Instance.IsMultiplayer)
             {
-                ShowResults();
-            });
+                DOVirtual.DelayedCall(1f, () =>
+                {
+                    ShowResults();
+                });
+            }
         }
 
         private void AutoSubmitVote()
@@ -355,6 +358,18 @@ namespace RobotsGame.Screens
 
         private void ShowResults()
         {
+            if (votingResults == null)
+            {
+                Debug.LogWarning("Elimination results not available yet.");
+                return;
+            }
+
+            if (!votingResults.TieOccurred && string.IsNullOrEmpty(votingResults.EliminatedAnswer))
+            {
+                Debug.LogWarning("Elimination results missing eliminated answer.");
+                return;
+            }
+
             float highlightDuration = isDesktop ? eliminatedHighlightDuration : eliminatedHighlightDurationMobile;
 
             if (votingResults.TieOccurred)
@@ -497,20 +512,50 @@ namespace RobotsGame.Screens
         /// </summary>
         private void HandleEliminationComplete(string jsonData)
         {
-            var data = JsonUtility.FromJson<EliminationCompleteData>(jsonData);
+            if (string.IsNullOrEmpty(jsonData))
+            {
+                Debug.LogWarning("Received empty elimination complete payload.");
+                return;
+            }
 
-            // Create vote results from server data
+            var data = JsonUtility.FromJson<EliminationCompleteData>(jsonData);
+            if (data == null)
+            {
+                Debug.LogWarning("Failed to parse elimination complete payload.");
+                return;
+            }
+
             votingResults = new VoteResults();
 
-            if (data.tieOccurred)
+            if (data.voteCounts != null)
             {
-                ShowTieResult();
+                foreach (var entry in data.voteCounts)
+                {
+                    if (entry == null || string.IsNullOrEmpty(entry.answer) || entry.count <= 0)
+                        continue;
+
+                    for (int i = 0; i < entry.count; i++)
+                    {
+                        votingResults.AddVote(entry.answer);
+                    }
+                }
             }
             else if (!string.IsNullOrEmpty(data.eliminatedAnswer))
             {
-                float highlightDuration = isDesktop ? eliminatedHighlightDuration : eliminatedHighlightDurationMobile;
-                ShowEliminationResult(data.eliminatedAnswer, highlightDuration);
+                // Fallback: ensure eliminated answer is represented
+                votingResults.AddVote(data.eliminatedAnswer);
             }
+
+            votingResults.CalculateElimination();
+            TrackEliminatedAnswer();
+
+            // Ensure server provided tie flag is respected if counts were missing
+            if (data.tieOccurred && !votingResults.TieOccurred)
+            {
+                Debug.LogWarning("Server reported tie but vote counts did not reflect it.");
+            }
+
+            ShowResults();
         }
 
         // ===========================
@@ -529,6 +574,14 @@ namespace RobotsGame.Screens
         {
             public string eliminatedAnswer;
             public bool tieOccurred;
+            public VoteCountData[] voteCounts;
+        }
+
+        [System.Serializable]
+        private class VoteCountData
+        {
+            public string answer;
+            public int count;
         }
 
         // ===========================
