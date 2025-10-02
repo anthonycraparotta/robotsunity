@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.SceneManagement;
 using TMPro;
 using DG.Tweening;
 using System.Collections.Generic;
@@ -305,13 +304,13 @@ namespace RobotsGame.Screens
             {
                 GameManager.Instance.ResetGame();
                 Debug.Log("Transitioning to LandingPage (new game)");
-                // SceneManager.LoadScene("LandingPage");
-
-                // Temporary: fade back in
-                DOVirtual.DelayedCall(0.5f, () =>
+                if (!SceneLoader.TryLoadScene("LandingPage"))
                 {
-                    FadeTransition.Instance.FadeIn(1f);
-                });
+                    DOVirtual.DelayedCall(0.5f, () =>
+                    {
+                        FadeTransition.Instance.FadeIn(1f);
+                    });
+                }
             });
         }
 

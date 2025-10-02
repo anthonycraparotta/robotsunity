@@ -1,10 +1,8 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using UnityEngine.SceneManagement;
 using System.Collections.Generic;
 using DG.Tweening;
-using TMPro;
 using RobotsGame.Core;
 using RobotsGame.Data;
 using RobotsGame.Managers;
@@ -522,7 +520,10 @@ namespace RobotsGame.Screens
             FadeTransition.Instance.FadeOut(1f, () =>
             {
                 Debug.Log($"Transitioning to {nextSceneName}");
-                SceneManager.LoadScene(nextSceneName);
+                if (!SceneLoader.TryLoadScene(nextSceneName))
+                {
+                    FadeTransition.Instance.FadeIn(0.5f);
+                }
             });
         }
 

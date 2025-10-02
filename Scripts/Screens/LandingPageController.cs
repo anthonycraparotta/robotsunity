@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Video;
-using UnityEngine.SceneManagement;
 using DG.Tweening;
 using RobotsGame.Core;
 using RobotsGame.Managers;
@@ -208,24 +207,26 @@ namespace RobotsGame.Screens
 
         private void GoToNextScene()
         {
-            // This would be the join room / lobby scene
-            // For now, just log the transition
             Debug.Log($"Transitioning to {nextSceneName}");
 
-            // Uncomment when scene exists:
-            // SceneManager.LoadScene(nextSceneName);
+            bool loaded = SceneLoader.TryLoadScene(nextSceneName);
 
-            // Temporary: fade back in to show we completed the cycle
-            if (isDesktop)
+            if (!loaded)
             {
-                DOVirtual.DelayedCall(0.5f, () =>
+                if (isDesktop)
                 {
-                    FadeTransition.Instance.FadeIn(1f, () =>
+                    DOVirtual.DelayedCall(0.5f, () =>
                     {
-                        isTransitioning = false;
-                        Debug.Log("Landing page cycle complete. Add next scene to continue.");
+                        FadeTransition.Instance.FadeIn(1f, () =>
+                        {
+                            isTransitioning = false;
+                        });
                     });
-                });
+                }
+                else
+                {
+                    isTransitioning = false;
+                }
             }
         }
 
