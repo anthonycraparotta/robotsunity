@@ -1,0 +1,20 @@
+{
+  "name": "unity-rwm-server",
+  "version": "1.0.0",
+  "description": "WebSocket server for Unity Robots Who Maim multiplayer game",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "keywords": ["websocket", "unity", "multiplayer", "game-server"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "ws": "^8.14.2",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

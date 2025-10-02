@@ -43,7 +43,6 @@ namespace RobotsGame.Managers
         [SerializeField] private List<RoundScore> currentRoundScores = new List<RoundScore>();
 
         [Header("Multiplayer State")]
-        [SerializeField] private bool isMultiplayer = true;
         [SerializeField] private string roomCode;
         [SerializeField] private Dictionary<string, string> playerEliminationVotes = new Dictionary<string, string>();
         [SerializeField] private Dictionary<string, string> playerFinalVotes = new Dictionary<string, string>();
@@ -55,7 +54,7 @@ namespace RobotsGame.Managers
         // ===========================
         public GameConstants.GameMode GameMode => gameMode;
         public bool IsDesktopMode => isDesktopMode;
-        public bool IsMultiplayer => isMultiplayer;
+        public bool IsMultiplayer => true; // Game is always multiplayer (2-8 players)
         public bool IsHost => NetworkManager.Instance?.IsHost ?? false;
         public int CurrentRound => currentRound;
         public Question CurrentQuestion => currentQuestion;
@@ -111,11 +110,6 @@ namespace RobotsGame.Managers
 
         private void OnDisable()
         {
-            if (!isMultiplayer)
-            {
-                return;
-            }
-
             if (networkSubscriptionCoroutine != null)
             {
                 StopCoroutine(networkSubscriptionCoroutine);
@@ -140,7 +134,7 @@ namespace RobotsGame.Managers
 
         private void InitializeNetworkSubscriptions()
         {
-            if (!isMultiplayer || networkEventsSubscribed)
+            if (networkEventsSubscribed)
             {
                 return;
             }
@@ -668,6 +662,9 @@ namespace RobotsGame.Managers
             {
                 CalculateRoundScores(this.eliminationResults, this.votingResults);
                 Debug.Log($"Round {currentRound} scores calculated (Host)");
+
+                // Broadcast updated player scores to all clients
+                NetworkManager.Instance?.BroadcastPlayerScores(players, currentRound);
             }
 
             Debug.Log($"All votes submitted: {playerFinalVotes.Count} votes");

@@ -342,6 +342,55 @@ namespace RobotsGame.Network
 
             SendMessage(JsonUtility.ToJson(data));
         }
+        /// <summary>
+        /// Broadcasts updated player scores to server (host only).
+        /// Called after round scores are calculated.
+        /// </summary>
+        public void BroadcastPlayerScores(List<Player> players, int roundNumber)
+        {
+            if (!isHost)
+            {
+                Debug.LogWarning("Only host can broadcast player scores");
+                return;
+            }
+
+            if (players == null || players.Count == 0)
+            {
+                Debug.LogError("Cannot broadcast scores: No players provided");
+                return;
+            }
+
+            // Build player score data array
+            var playerScores = new PlayerScoreData[players.Count];
+            for (int i = 0; i < players.Count; i++)
+            {
+                playerScores[i] = new PlayerScoreData
+                {
+                    name = players[i].PlayerName,
+                    score = players[i].Score
+                };
+            }
+
+            var data = new
+            {
+                action = "broadcast-round-scores",
+                roomCode = roomCode,
+                roundNumber = roundNumber,
+                playerScores = playerScores
+            };
+
+            SendMessage(JsonUtility.ToJson(data));
+            Debug.Log($"Broadcasting Round {roundNumber} scores for {players.Count} players");
+        }
+
+        [System.Serializable]
+        private class PlayerScoreData
+        {
+            public string name;
+            public int score;
+        }
+
+
 
         /// <summary>
         /// Requests transition to elimination screen (host only).
