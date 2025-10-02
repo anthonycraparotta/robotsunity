@@ -11,6 +11,7 @@ namespace RobotsGame.UI
     /// Manages the robot character foreground image with slide-in animation and blinking.
     /// Based on unityspec.md QuestionScreen - Foreground Overlay specifications.
     /// </summary>
+    [RequireComponent(typeof(RectTransform))]
     public class RobotCharacter : MonoBehaviour
     {
         [Header("UI References")]
@@ -40,6 +41,12 @@ namespace RobotsGame.UI
         private void Awake()
         {
             rectTransform = GetComponent<RectTransform>();
+
+            if (rectTransform == null)
+            {
+                Debug.LogError($"{nameof(RobotCharacter)} requires a RectTransform component.", this);
+                return;
+            }
 
             if (blinkImage != null)
             {
