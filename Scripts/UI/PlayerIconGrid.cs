@@ -169,8 +169,29 @@ namespace RobotsGame.UI
 
         private void SetupPlayerIcon(GameObject iconObj, Player player)
         {
-            // Find icon image component
-            Image iconImage = iconObj.GetComponentInChildren<Image>();
+            // Find icon image component (prefer dedicated child named "Icon")
+            Image iconImage = null;
+
+            Transform iconTransform = iconObj.transform.Find("Icon");
+            if (iconTransform != null)
+            {
+                iconImage = iconTransform.GetComponent<Image>();
+            }
+
+            if (iconImage == null)
+            {
+                // Fallback: find first child image that isn't the background on the root object
+                Image[] images = iconObj.GetComponentsInChildren<Image>(includeInactive: true);
+                foreach (var image in images)
+                {
+                    if (image.gameObject != iconObj)
+                    {
+                        iconImage = image;
+                        break;
+                    }
+                }
+            }
+
             if (iconImage != null)
             {
                 // Load player icon sprite
