@@ -236,6 +236,7 @@ namespace RobotsGame.Managers
             currentAnswers.Clear();
             currentRoundScores.Clear();
             currentQuestion = null;
+            ClearVoteTracking();
         }
 
         public void StartNextRound(Question question)
@@ -244,6 +245,7 @@ namespace RobotsGame.Managers
             currentQuestion = question;
             currentAnswers.Clear();
             currentRoundScores.Clear();
+            ClearVoteTracking();
 
             // Initialize round scores for all players
             foreach (var player in players)
