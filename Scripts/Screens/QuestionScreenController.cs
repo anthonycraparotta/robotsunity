@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 using UnityEngine.SceneManagement;
 using System.Collections.Generic;
 using DG.Tweening;
@@ -33,7 +34,7 @@ namespace RobotsGame.Screens
 
         [Header("Mobile Components")]
         [SerializeField] private Image mobileBackground;
-        [SerializeField] private TextMeshPro questionTextMobile;
+        [SerializeField] private TextMeshProUGUI questionTextMobile;
         [SerializeField] private MobileAnswerInput mobileInput;
         [SerializeField] private TimerDisplay timerDisplayMobile;
 
