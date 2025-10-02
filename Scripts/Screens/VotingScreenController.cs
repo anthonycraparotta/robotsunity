@@ -378,13 +378,7 @@ namespace RobotsGame.Screens
             FadeTransition.Instance.FadeOut(0.5f, () =>
             {
                 Debug.Log($"Transitioning to {nextSceneName}");
-                // SceneManager.LoadScene(nextSceneName);
-
-                // Temporary: fade back in
-                DOVirtual.DelayedCall(0.5f, () =>
-                {
-                    FadeTransition.Instance.FadeIn(1f);
-                });
+                SceneManager.LoadScene(nextSceneName);
             });
         }
 
