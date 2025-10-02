@@ -75,7 +75,10 @@ namespace RobotsGame.UI
                 isVisible = true;
 
                 // Play swoosh sound
-                AudioManager.Instance.PlayResponsesSwoosh();
+                if (AudioManager.TryGetInstance(out var audioManager))
+                {
+                    audioManager.PlayResponsesSwoosh();
+                }
 
                 // Fade in overlay background
                 canvasGroup.DOFade(1f, 0.3f);

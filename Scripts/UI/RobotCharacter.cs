@@ -88,7 +88,10 @@ namespace RobotsGame.UI
             DOVirtual.DelayedCall(slideInDelay, () =>
             {
                 // Play sound effect
-                AudioManager.Instance.PlayRobotSlideOut();
+                if (AudioManager.TryGetInstance(out var audioManager))
+                {
+                    audioManager.PlayRobotSlideOut();
+                }
 
                 // Slide to original position (0, y)
                 Vector2 targetPos = Vector2.zero;

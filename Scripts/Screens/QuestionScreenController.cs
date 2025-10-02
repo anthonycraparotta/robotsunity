@@ -155,7 +155,10 @@ namespace RobotsGame.Screens
             {
                 var data = JsonUtility.FromJson<PlayerAnsweredData>(jsonData);
                 playerIconGrid.ShowPlayerIcon(data.playerName);
-                AudioManager.Instance.PlaySFX(GameConstants.Audio.SFX_PlayerIconPop);
+                if (AudioManager.TryGetInstance(out var audioManager))
+                {
+                    audioManager.PlaySFX(GameConstants.Audio.SFX_PlayerIconPop);
+                }
             }
         }
 
@@ -204,7 +207,10 @@ namespace RobotsGame.Screens
             {
                 if (activeTimer != null && activeTimer.TimeRemaining <= 30f)
                 {
-                    AudioManager.Instance.PlayVoiceOver(GameConstants.Audio.VO_QuestionNudge);
+                    if (AudioManager.TryGetInstance(out var audioManager))
+                    {
+                        audioManager.PlayVoiceOver(GameConstants.Audio.VO_QuestionNudge);
+                    }
                     hasPlayedNudgeVO = true;
                 }
             }
@@ -292,7 +298,10 @@ namespace RobotsGame.Screens
             {
                 DOVirtual.DelayedCall(GameConstants.Delays.QuestionIntroDelay, () =>
                 {
-                    AudioManager.Instance.PlayVoiceOver(GameConstants.Audio.VO_QuestionIntro);
+                    if (AudioManager.TryGetInstance(out var audioManager))
+                    {
+                        audioManager.PlayVoiceOver(GameConstants.Audio.VO_QuestionIntro);
+                    }
                     hasPlayedQuestionIntroVO = true;
                 });
             }
@@ -463,7 +472,10 @@ namespace RobotsGame.Screens
                 if (mobileInput != null)
                 {
                     mobileInput.MarkAsSubmitted();
-                    AudioManager.Instance.PlayInputAccept();
+                    if (AudioManager.TryGetInstance(out var audioManager))
+                    {
+                        audioManager.PlayInputAccept();
+                    }
                 }
             }
 

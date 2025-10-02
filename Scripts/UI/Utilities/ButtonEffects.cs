@@ -99,9 +99,9 @@ namespace RobotsGame.UI.Utilities
                 .SetEase(Ease.OutQuad);
 
             // Play sound on press
-            if (playSound)
+            if (playSound && AudioManager.TryGetInstance(out var audioManager))
             {
-                AudioManager.Instance.PlayButtonPress();
+                audioManager.PlayButtonPress();
             }
         }
 
@@ -136,9 +136,9 @@ namespace RobotsGame.UI.Utilities
             pressSequence.Append(transform.DOScale(originalScale * pressScale, transitionDuration * 0.5f).SetEase(Ease.OutQuad));
             pressSequence.Append(transform.DOScale(originalScale * normalScale, transitionDuration * 0.5f).SetEase(Ease.OutQuad));
 
-            if (playSound)
+            if (playSound && AudioManager.TryGetInstance(out var audioManager))
             {
-                AudioManager.Instance.PlayButtonPress();
+                audioManager.PlayButtonPress();
             }
 
             // Trigger button click

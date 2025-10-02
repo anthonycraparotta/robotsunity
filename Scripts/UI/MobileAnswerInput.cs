@@ -161,7 +161,10 @@ namespace RobotsGame.UI
                 restoreText: true
             ));
 
-            AudioManager.Instance.PlayFailure();
+            if (AudioManager.TryGetInstance(out var audioManager))
+            {
+                audioManager.PlayFailure();
+            }
         }
 
         /// <summary>
@@ -178,7 +181,10 @@ namespace RobotsGame.UI
                 restoreText: false
             ));
 
-            AudioManager.Instance.PlayFailure();
+            if (AudioManager.TryGetInstance(out var audioManager))
+            {
+                audioManager.PlayFailure();
+            }
         }
 
         /// <summary>
@@ -195,7 +201,10 @@ namespace RobotsGame.UI
                 restoreText: false
             ));
 
-            AudioManager.Instance.PlayFailure();
+            if (AudioManager.TryGetInstance(out var audioManager))
+            {
+                audioManager.PlayFailure();
+            }
         }
 
         private IEnumerator FlashWarningRoutine(string warningMessage, string textToRestore, bool restoreText)

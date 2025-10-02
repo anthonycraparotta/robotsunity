@@ -11,6 +11,14 @@ namespace RobotsGame.Managers
     public class AudioManager : MonoBehaviour
     {
         private static AudioManager _instance;
+        private static readonly string[] PrefabResourcePaths =
+        {
+            "Audio/AudioManager",
+            "Prefabs/AudioManager",
+            "Managers/AudioManager"
+        };
+        private const string ConfigurationResourcePath = "Audio/AudioManagerConfiguration";
+
         public static AudioManager Instance
         {
             get
@@ -21,14 +29,30 @@ namespace RobotsGame.Managers
 
                     if (_instance == null)
                     {
-                        GameObject go = new GameObject("AudioManager");
-                        _instance = go.AddComponent<AudioManager>();
-                        DontDestroyOnLoad(go);
+                        _instance = InstantiateFromConfiguration();
+                    }
+
+                    if (_instance == null)
+                    {
+                        _instance = InstantiateFromResources();
+                    }
+
+                    if (_instance == null)
+                    {
+                        Debug.LogError("AudioManager.Instance was accessed but no configured AudioManager could be found. " +
+                                       "Ensure a pre-configured AudioManager exists in the scene or provide a prefab at one of the configured Resources paths: " +
+                                       string.Join(", ", PrefabResourcePaths) + ".");
                     }
                 }
 
                 return _instance;
             }
+        }
+
+        public static bool TryGetInstance(out AudioManager audioManager)
+        {
+            audioManager = Instance;
+            return audioManager != null;
         }
 
         [Header("Audio Sources")]
@@ -111,6 +135,61 @@ namespace RobotsGame.Managers
         {
             var scene = manager.gameObject.scene;
             return scene.IsValid() && scene.name != "DontDestroyOnLoad";
+        }
+
+        private static AudioManager InstantiateFromConfiguration()
+        {
+            var configuration = Resources.Load<AudioManagerConfiguration>(ConfigurationResourcePath);
+            if (configuration == null)
+            {
+                return null;
+            }
+
+            var prefab = configuration.AudioManagerPrefab;
+            if (prefab == null)
+            {
+                Debug.LogError($"AudioManagerConfiguration at Resources/{ConfigurationResourcePath} does not reference a prefab.");
+                return null;
+            }
+
+            return InstantiatePrefab(prefab);
+        }
+
+        private static AudioManager InstantiateFromResources()
+        {
+            foreach (var path in PrefabResourcePaths)
+            {
+                var prefab = Resources.Load<GameObject>(path);
+                if (prefab == null)
+                {
+                    continue;
+                }
+
+                var instance = InstantiatePrefab(prefab);
+                if (instance != null)
+                {
+                    return instance;
+                }
+            }
+
+            return null;
+        }
+
+        private static AudioManager InstantiatePrefab(GameObject prefab)
+        {
+            var instanceGo = UnityEngine.Object.Instantiate(prefab);
+            instanceGo.name = prefab.name;
+
+            var audioManager = instanceGo.GetComponent<AudioManager>();
+            if (audioManager == null)
+            {
+                Debug.LogError($"AudioManager prefab '{prefab.name}' does not contain an AudioManager component.");
+                UnityEngine.Object.Destroy(instanceGo);
+                return null;
+            }
+
+            DontDestroyOnLoad(instanceGo);
+            return audioManager;
         }
 
         private void InitializeAudioSources()

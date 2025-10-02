@@ -403,7 +403,10 @@ namespace RobotsGame.Screens
                 else
                 {
                     // Mobile: simpler result display or skip to transition
-                    AudioManager.Instance.PlayVoiceOver(GameConstants.Audio.VO_RobotAnswerGone);
+                    if (AudioManager.TryGetInstance(out var audioManager))
+                    {
+                        audioManager.PlayVoiceOver(GameConstants.Audio.VO_RobotAnswerGone);
+                    }
 
                     DOVirtual.DelayedCall(3f, () =>
                     {
@@ -426,7 +429,10 @@ namespace RobotsGame.Screens
             else
             {
                 // Mobile: simpler tie display
-                AudioManager.Instance.PlayVoiceOver(GameConstants.Audio.VO_NoRobotAnswerGone);
+                if (AudioManager.TryGetInstance(out var audioManager))
+                {
+                    audioManager.PlayVoiceOver(GameConstants.Audio.VO_NoRobotAnswerGone);
+                }
 
                 if (headerText != null)
                 {
