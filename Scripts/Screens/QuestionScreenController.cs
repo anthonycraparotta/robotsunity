@@ -112,10 +112,10 @@ namespace RobotsGame.Screens
 
             // Unsubscribe from timer events
             if (timerDisplay != null)
-                timerDisplay.OnTimerExpired -= HandleTimerExpired;
+                timerDisplay.TimerExpired -= HandleTimerExpired;
 
             if (timerDisplayMobile != null)
-                timerDisplayMobile.OnTimerExpired -= HandleTimerExpired;
+                timerDisplayMobile.TimerExpired -= HandleTimerExpired;
 
             // Kill DOTween animations
             DOTween.Kill(this);
@@ -279,12 +279,12 @@ namespace RobotsGame.Screens
             if (isDesktop && timerDisplay != null)
             {
                 timerDisplay.StartTimer();
-                timerDisplay.OnTimerExpired += HandleTimerExpired;
+                timerDisplay.TimerExpired += HandleTimerExpired;
             }
             else if (!isDesktop && timerDisplayMobile != null)
             {
                 timerDisplayMobile.StartTimer(0f); // Immediate start on mobile
-                timerDisplayMobile.OnTimerExpired += HandleTimerExpired;
+                timerDisplayMobile.TimerExpired += HandleTimerExpired;
             }
 
             // Play question intro VO (desktop only)
