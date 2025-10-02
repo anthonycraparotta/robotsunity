@@ -10,6 +10,7 @@ namespace RobotsGame.UI
     /// Shows placeholder text, then flips to reveal the actual question.
     /// Based on unityspec.md QuestionScreen - Question Panel specifications.
     /// </summary>
+    [RequireComponent(typeof(RectTransform))]
     public class QuestionCard : MonoBehaviour
     {
         [Header("UI References")]
@@ -40,6 +41,12 @@ namespace RobotsGame.UI
         private void Awake()
         {
             rectTransform = GetComponent<RectTransform>();
+
+            if (rectTransform == null)
+            {
+                Debug.LogError($"{nameof(QuestionCard)} requires a RectTransform component.", this);
+                return;
+            }
 
             // Ensure canvas groups exist
             if (frontCanvasGroup == null && cardFrontFace != null)

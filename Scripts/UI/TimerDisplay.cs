@@ -11,6 +11,7 @@ namespace RobotsGame.UI
     /// Manages the countdown timer display with visual states and audio cues.
     /// Based on unityspec.md QuestionScreen timer specifications.
     /// </summary>
+    [RequireComponent(typeof(RectTransform))]
     public class TimerDisplay : MonoBehaviour
     {
         [Header("UI References")]
@@ -44,6 +45,12 @@ namespace RobotsGame.UI
         private void Awake()
         {
             rectTransform = GetComponent<RectTransform>();
+
+            if (rectTransform == null)
+            {
+                Debug.LogError($"{nameof(TimerDisplay)} requires a RectTransform component.", this);
+                return;
+            }
 
             if (canvasGroup == null)
                 canvasGroup = GetComponent<CanvasGroup>() ?? gameObject.AddComponent<CanvasGroup>();

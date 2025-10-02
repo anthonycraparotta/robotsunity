@@ -11,6 +11,7 @@ namespace RobotsGame.UI
     /// Spotlight card showing winner or last place.
     /// Based on unityspec.md FinalResults Spotlight Card specifications.
     /// </summary>
+    [RequireComponent(typeof(RectTransform))]
     public class PlayerSpotlightCard : MonoBehaviour
     {
         public enum SpotlightType
@@ -45,6 +46,12 @@ namespace RobotsGame.UI
         private void Awake()
         {
             rectTransform = GetComponent<RectTransform>();
+
+            if (rectTransform == null)
+            {
+                Debug.LogError($"{nameof(PlayerSpotlightCard)} requires a RectTransform component.", this);
+                return;
+            }
 
             if (canvasGroup == null)
                 canvasGroup = GetComponent<CanvasGroup>() ?? gameObject.AddComponent<CanvasGroup>();
