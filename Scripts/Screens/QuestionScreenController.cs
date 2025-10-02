@@ -365,10 +365,8 @@ namespace RobotsGame.Screens
             if (!ValidateAnswerForSubmission(answer))
                 return;
 
-            // Get local player (simplified - in real game would get from session)
-            Player localPlayer = GameManager.Instance.Players.Count > 0
-                ? GameManager.Instance.Players[0]
-                : new Player("Player 1", "icon1");
+            // Get local player identity from GameManager
+            Player localPlayer = GameManager.Instance.GetLocalPlayer();
 
             // Create answer object
             Answer playerAnswer = new Answer(answer, GameConstants.AnswerType.Player, localPlayer.PlayerName);

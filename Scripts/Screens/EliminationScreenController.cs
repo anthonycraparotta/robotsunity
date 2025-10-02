@@ -74,10 +74,8 @@ namespace RobotsGame.Screens
             // Get answers from GameManager
             allAnswers = GameManager.Instance.CurrentAnswers;
 
-            // Get local player (simplified - in real game would get from session)
-            localPlayer = GameManager.Instance.Players.Count > 0
-                ? GameManager.Instance.Players[0]
-                : new Player("Player 1", "icon1");
+            // Get local player identity from GameManager
+            localPlayer = GameManager.Instance.GetLocalPlayer();
 
             // Find player's answer
             string playerAnswer = "";

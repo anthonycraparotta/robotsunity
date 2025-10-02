@@ -77,10 +77,8 @@ namespace RobotsGame.Screens
             // For now, use all current answers (real game would filter eliminated)
             remainingAnswers = new List<Answer>(GameManager.Instance.CurrentAnswers);
 
-            // Get local player
-            localPlayer = GameManager.Instance.Players.Count > 0
-                ? GameManager.Instance.Players[0]
-                : new Player("Player 1", "icon1");
+            // Get local player identity from GameManager
+            localPlayer = GameManager.Instance.GetLocalPlayer();
 
             // Find player's answer
             string playerAnswer = "";

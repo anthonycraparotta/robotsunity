@@ -48,6 +48,9 @@ namespace RobotsGame.Managers
         [SerializeField] private Dictionary<string, string> playerFinalVotes = new Dictionary<string, string>();
         [SerializeField] private VoteResults eliminationResults;
         [SerializeField] private VoteResults votingResults;
+        [SerializeField] private string localPlayerName;
+        [SerializeField] private string localPlayerIcon;
+        private Player localFallbackPlayer;
 
         // ===========================
         // PROPERTIES
@@ -62,6 +65,9 @@ namespace RobotsGame.Managers
         public List<Answer> CurrentAnswers => currentAnswers;
         public int TotalRounds => (int)gameMode;
         public string RoomCode => roomCode;
+        public string LocalPlayerName => localPlayerName;
+        public string LocalPlayerIcon => localPlayerIcon;
+        public Player LocalPlayer => GetLocalPlayer();
 
         // ===========================
         // LIFECYCLE
@@ -162,6 +168,52 @@ namespace RobotsGame.Managers
         public Player GetPlayer(string playerName)
         {
             return players.Find(p => p.PlayerName == playerName);
+        }
+
+        public void SetLocalPlayerIdentity(string playerName, string playerIcon)
+        {
+            localPlayerName = playerName;
+            localPlayerIcon = playerIcon;
+
+            if (!string.IsNullOrEmpty(localPlayerName))
+            {
+                localFallbackPlayer = new Player(localPlayerName, string.IsNullOrEmpty(localPlayerIcon) ? "icon1" : localPlayerIcon);
+            }
+            else
+            {
+                localFallbackPlayer = null;
+            }
+        }
+
+        public Player GetLocalPlayer()
+        {
+            if (!string.IsNullOrEmpty(localPlayerName))
+            {
+                var existingPlayer = players.Find(p => p.PlayerName == localPlayerName);
+                if (existingPlayer != null)
+                {
+                    return existingPlayer;
+                }
+
+                if (localFallbackPlayer == null || localFallbackPlayer.PlayerName != localPlayerName)
+                {
+                    localFallbackPlayer = new Player(localPlayerName, string.IsNullOrEmpty(localPlayerIcon) ? "icon1" : localPlayerIcon);
+                }
+
+                return localFallbackPlayer;
+            }
+
+            if (players.Count > 0)
+            {
+                return players[0];
+            }
+
+            if (localFallbackPlayer == null)
+            {
+                localFallbackPlayer = new Player("Player 1", "icon1");
+            }
+
+            return localFallbackPlayer;
         }
 
         // ===========================
@@ -403,6 +455,16 @@ namespace RobotsGame.Managers
             foreach (var playerData in data.players)
             {
                 players.Add(new Player(playerData.name, playerData.icon));
+            }
+
+            if (!string.IsNullOrEmpty(localPlayerName))
+            {
+                var local = players.Find(p => p.PlayerName == localPlayerName);
+                if (local != null)
+                {
+                    localPlayerIcon = local.Icon;
+                    localFallbackPlayer = local;
+                }
             }
 
             Debug.Log($"Players updated: {players.Count} players");

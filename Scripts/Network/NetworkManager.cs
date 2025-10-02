@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using RobotsGame.Data;
+using RobotsGame.Managers;
 
 namespace RobotsGame.Network
 {
@@ -148,6 +149,7 @@ namespace RobotsGame.Network
             isHost = true;
             this.playerName = playerName;
             this.playerIcon = playerIcon;
+            GameManager.Instance?.SetLocalPlayerIdentity(playerName, playerIcon);
 
             var data = new
             {
@@ -175,6 +177,7 @@ namespace RobotsGame.Network
             this.roomCode = roomCode;
             this.playerName = playerName;
             this.playerIcon = playerIcon;
+            GameManager.Instance?.SetLocalPlayerIdentity(playerName, playerIcon);
 
             var data = new
             {

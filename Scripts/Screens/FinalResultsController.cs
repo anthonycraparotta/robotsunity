@@ -73,10 +73,8 @@ namespace RobotsGame.Screens
             // Get ranked players
             rankedPlayers = GameManager.Instance.GetRankedPlayers();
 
-            // Get local player
-            localPlayer = GameManager.Instance.Players.Count > 0
-                ? GameManager.Instance.Players[0]
-                : new Player("Player 1", "icon1");
+            // Get local player identity from GameManager
+            localPlayer = GameManager.Instance.GetLocalPlayer();
 
             if (isDesktop)
             {
