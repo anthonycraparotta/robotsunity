@@ -124,10 +124,7 @@ namespace RobotsGame.Screens
                 return;
             }
 
-            VoteResults eliminationResults = new VoteResults();
-            VoteResults votingResults = new VoteResults();
-
-            gameManager.CalculateRoundScores(eliminationResults, votingResults);
+            gameManager.CalculateRoundScores();
         }
 
         private IEnumerator WaitForQuestionData()
@@ -383,13 +380,72 @@ namespace RobotsGame.Screens
 
             robotDecoyPanel.gameObject.SetActive(true);
 
-            // Get players who were not fooled vs fooled
-            List<Player> notFooled = new List<Player>();
-            List<Player> fooled = new List<Player>();
+            var eliminationResults = gameManager.EliminationResults;
+            var votingResults = gameManager.VotingResults;
 
-            // Simplified: In real game, would check elimination votes
-            // For now, assume all players not fooled
-            notFooled.AddRange(allPlayers);
+            HashSet<string> notFooledNames = new HashSet<string>();
+            if (eliminationResults != null)
+            {
+                foreach (var kvp in eliminationResults.GetPlayerVotes())
+                {
+                    if (kvp.Value == currentQuestion.RobotAnswer)
+                    {
+                        notFooledNames.Add(kvp.Key);
+                    }
+                }
+            }
+
+            HashSet<string> fooledNames = new HashSet<string>();
+            if (votingResults != null)
+            {
+                foreach (var kvp in votingResults.GetPlayerVotes())
+                {
+                    if (kvp.Value == currentQuestion.RobotAnswer)
+                    {
+                        fooledNames.Add(kvp.Key);
+                    }
+                }
+            }
+
+            foreach (var name in fooledNames)
+            {
+                notFooledNames.Remove(name);
+            }
+
+            List<Player> notFooled = new List<Player>();
+            foreach (var name in notFooledNames)
+            {
+                var player = gameManager.GetPlayer(name);
+                if (player != null)
+                {
+                    notFooled.Add(player);
+                }
+            }
+
+            List<Player> fooled = new List<Player>();
+            foreach (var name in fooledNames)
+            {
+                var player = gameManager.GetPlayer(name);
+                if (player != null)
+                {
+                    fooled.Add(player);
+                }
+            }
+
+            if (notFooled.Count == 0 && fooled.Count == 0)
+            {
+                notFooled.AddRange(allPlayers);
+            }
+            else
+            {
+                foreach (var player in allPlayers)
+                {
+                    if (!notFooledNames.Contains(player.PlayerName) && !fooledNames.Contains(player.PlayerName))
+                    {
+                        notFooled.Add(player);
+                    }
+                }
+            }
 
             var scoring = GameConstants.Scoring.GetScoring(gameManager.GameMode);
 
@@ -426,13 +482,21 @@ namespace RobotsGame.Screens
 
             playerAnswersPanel.gameObject.SetActive(true);
 
-            // Get vote counts (simplified - would come from voting phase)
             Dictionary<string, int> voteCounts = new Dictionary<string, int>();
+            var votingResults = gameManager.VotingResults;
+            if (votingResults != null)
+            {
+                foreach (var kvp in votingResults.GetVoteCounts())
+                {
+                    voteCounts[kvp.Key] = kvp.Value;
+                }
+            }
+
             foreach (var answer in allAnswers)
             {
-                if (answer.Type == GameConstants.AnswerType.Player)
+                if (answer.Type == GameConstants.AnswerType.Player && !voteCounts.ContainsKey(answer.Text))
                 {
-                    voteCounts[answer.Text] = Random.Range(0, 3); // Mock votes
+                    voteCounts[answer.Text] = 0;
                 }
             }
 
