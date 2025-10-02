@@ -50,6 +50,7 @@ namespace RobotsGame.Screens
         private HashSet<string> submittedPlayerNames = new HashSet<string>();
         private bool hasLocalPlayerSubmitted = false;
         private string localPlayerAnswer = "";
+        private bool hasInitializedQuestion = false;
 
         // State tracking
         private bool allAnswersReceived = false;
@@ -72,17 +73,7 @@ namespace RobotsGame.Screens
 
         private void Start()
         {
-            // Get current question from GameManager
-            currentQuestion = GameManager.Instance.CurrentQuestion;
-
-            if (currentQuestion != null)
-            {
-                SetupQuestion(currentQuestion);
-            }
-            else
-            {
-                Debug.LogError("No question loaded in GameManager!");
-            }
+            DisableAnswerUI();
 
             // Setup answer validation callbacks
             if (mobileInput != null)
@@ -97,30 +88,12 @@ namespace RobotsGame.Screens
                 SubscribeToNetworkEvents();
             }
 
-            // Start timer
-            if (isDesktop && timerDisplay != null)
+            // Get current question from GameManager
+            if (!TryInitializeQuestion())
             {
-                timerDisplay.StartTimer();
-                timerDisplay.OnTimerExpired += HandleTimerExpired;
+                Debug.LogWarning("Waiting for question data from GameManager before initializing QuestionScreen.");
+                return;
             }
-            else if (!isDesktop && timerDisplayMobile != null)
-            {
-                timerDisplayMobile.StartTimer(0f); // Immediate start on mobile
-                timerDisplayMobile.OnTimerExpired += HandleTimerExpired;
-            }
-
-            // Play question intro VO (desktop only)
-            if (isDesktop && !hasPlayedQuestionIntroVO)
-            {
-                DOVirtual.DelayedCall(GameConstants.Delays.QuestionIntroDelay, () =>
-                {
-                    AudioManager.Instance.PlayVoiceOver(GameConstants.Audio.VO_QuestionIntro);
-                    hasPlayedQuestionIntroVO = true;
-                });
-            }
-
-            // Fade in from black
-            FadeTransition.Instance.FadeIn(1f);
         }
 
         private void OnDestroy()
@@ -212,6 +185,14 @@ namespace RobotsGame.Screens
 
         private void Update()
         {
+            if (!hasInitializedQuestion)
+            {
+                if (!TryInitializeQuestion())
+                {
+                    return;
+                }
+            }
+
             // Check timer expiration
             TimerDisplay activeTimer = isDesktop ? timerDisplay : timerDisplayMobile;
             if (activeTimer != null && activeTimer.IsExpired && !hasLocalPlayerSubmitted)
@@ -268,6 +249,82 @@ namespace RobotsGame.Screens
             allAnswers.Add(new Answer(question.RobotAnswer, GameConstants.AnswerType.Robot, "Robot"));
         }
 
+        private bool TryInitializeQuestion()
+        {
+            if (hasInitializedQuestion)
+                return true;
+
+            if (GameManager.Instance == null)
+                return false;
+
+            Question managerQuestion = GameManager.Instance.CurrentQuestion;
+            if (managerQuestion == null)
+                return false;
+
+            currentQuestion = managerQuestion;
+
+            EnableAnswerUI();
+            SetupQuestion(currentQuestion);
+            InitializeQuestionFlow();
+
+            hasInitializedQuestion = true;
+            return true;
+        }
+
+        private void InitializeQuestionFlow()
+        {
+            if (currentQuestion == null)
+                return;
+
+            // Start timer
+            if (isDesktop && timerDisplay != null)
+            {
+                timerDisplay.StartTimer();
+                timerDisplay.OnTimerExpired += HandleTimerExpired;
+            }
+            else if (!isDesktop && timerDisplayMobile != null)
+            {
+                timerDisplayMobile.StartTimer(0f); // Immediate start on mobile
+                timerDisplayMobile.OnTimerExpired += HandleTimerExpired;
+            }
+
+            // Play question intro VO (desktop only)
+            if (isDesktop && !hasPlayedQuestionIntroVO)
+            {
+                DOVirtual.DelayedCall(GameConstants.Delays.QuestionIntroDelay, () =>
+                {
+                    AudioManager.Instance.PlayVoiceOver(GameConstants.Audio.VO_QuestionIntro);
+                    hasPlayedQuestionIntroVO = true;
+                });
+            }
+
+            // Fade in from black
+            FadeTransition.Instance.FadeIn(1f);
+        }
+
+        private void DisableAnswerUI()
+        {
+            if (desktopContent != null)
+                desktopContent.SetActive(false);
+
+            if (mobileInput != null)
+            {
+                mobileInput.gameObject.SetActive(false);
+                mobileInput.SetEnabled(false);
+            }
+        }
+
+        private void EnableAnswerUI()
+        {
+            SetupPlatformContent();
+
+            if (!isDesktop && mobileInput != null)
+            {
+                mobileInput.gameObject.SetActive(true);
+                mobileInput.SetEnabled(true);
+            }
+        }
+
         private void SetupDesktop(Question question, int round)
         {
             // Set background
@@ -318,6 +375,9 @@ namespace RobotsGame.Screens
 
         private void ValidateAnswerRealTime(string answer)
         {
+            if (currentQuestion == null)
+                return;
+
             if (string.IsNullOrEmpty(answer))
                 return;
 
@@ -414,6 +474,9 @@ namespace RobotsGame.Screens
 
         private bool ValidateAnswerForSubmission(string answer)
         {
+            if (currentQuestion == null)
+                return false;
+
             // Check correct answer
             if (AnswerValidator.IsCorrectAnswer(answer, currentQuestion.CorrectAnswer))
             {
@@ -446,6 +509,9 @@ namespace RobotsGame.Screens
 
         private void AutoSubmitAnswer()
         {
+            if (currentQuestion == null)
+                return;
+
             string answer = isDesktop ? "" : (mobileInput != null ? mobileInput.CurrentAnswer : "");
 
             if (string.IsNullOrEmpty(answer))
