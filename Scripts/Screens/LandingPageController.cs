@@ -208,25 +208,17 @@ namespace RobotsGame.Screens
 
         private void GoToNextScene()
         {
-            // This would be the join room / lobby scene
-            // For now, just log the transition
-            Debug.Log($"Transitioning to {nextSceneName}");
-
-            // Uncomment when scene exists:
-            // SceneManager.LoadScene(nextSceneName);
-
-            // Temporary: fade back in to show we completed the cycle
-            if (isDesktop)
+            if (!isTransitioning)
             {
-                DOVirtual.DelayedCall(0.5f, () =>
-                {
-                    FadeTransition.Instance.FadeIn(1f, () =>
-                    {
-                        isTransitioning = false;
-                        Debug.Log("Landing page cycle complete. Add next scene to continue.");
-                    });
-                });
+                Debug.LogWarning("GoToNextScene called without an active transition. Ignoring.");
+                return;
             }
+
+            // Prevent any further attempts while we load the next scene.
+            isTransitioning = false;
+
+            Debug.Log($"Transitioning to {nextSceneName}");
+            SceneManager.LoadScene(nextSceneName);
         }
 
         // ===========================

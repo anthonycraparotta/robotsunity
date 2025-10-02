@@ -305,13 +305,7 @@ namespace RobotsGame.Screens
             {
                 GameManager.Instance.ResetGame();
                 Debug.Log("Transitioning to LandingPage (new game)");
-                // SceneManager.LoadScene("LandingPage");
-
-                // Temporary: fade back in
-                DOVirtual.DelayedCall(0.5f, () =>
-                {
-                    FadeTransition.Instance.FadeIn(1f);
-                });
+                SceneManager.LoadScene("LandingPage");
             });
         }
 
