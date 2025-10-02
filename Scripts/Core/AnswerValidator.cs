@@ -1,6 +1,8 @@
 using UnityEngine;
 using System;
 using System.IO;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Collections.Generic;
 
 namespace RobotsGame.Core
@@ -76,11 +78,11 @@ namespace RobotsGame.Core
 
             LoadBannedWords();
 
-            string normalized = NormalizeText(text);
+            string normalized = NormalizeProfanityText(text);
 
             foreach (string bannedWord in bannedWords)
             {
-                if (normalized.Contains(bannedWord))
+                if (!string.IsNullOrEmpty(bannedWord) && normalized.Contains(bannedWord))
                     return true;
             }
 
@@ -169,35 +171,86 @@ namespace RobotsGame.Core
 
             bannedWords = new HashSet<string>();
 
-            // Try to load from data folder
-            string filePath = Path.Combine(Application.dataPath, "..", "data", "banned_words.txt");
+            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            string dataDirectory = Path.Combine(projectRoot, "data");
 
-            if (File.Exists(filePath))
+            string[] candidateFiles = new string[]
             {
-                try
+                Path.Combine(dataDirectory, "banned_words.txt"),
+                Path.Combine(dataDirectory, "bannedwords.txt"),
+                Path.Combine(dataDirectory, "bannedwords.json"),
+                Path.Combine(dataDirectory, "bannedwords.js"),
+            };
+
+            bool loaded = false;
+
+            foreach (string candidate in candidateFiles)
+            {
+                if (TryLoadBannedWordsFromFile(candidate))
                 {
-                    string[] lines = File.ReadAllLines(filePath);
-                    foreach (string line in lines)
-                    {
-                        string word = line.Trim().ToLower();
-                        if (!string.IsNullOrEmpty(word) && !word.StartsWith("#"))
-                        {
-                            bannedWords.Add(word);
-                        }
-                    }
-                    Debug.Log($"Loaded {bannedWords.Count} banned words from {filePath}");
-                }
-                catch (Exception e)
-                {
-                    Debug.LogError($"Failed to load banned words: {e.Message}");
+                    loaded = true;
+                    break;
                 }
             }
-            else
+
+            if (!loaded)
             {
-                Debug.LogWarning($"Banned words file not found at {filePath}. Profanity filter disabled.");
+                Debug.LogWarning("Banned words file not found. Profanity filter disabled.");
             }
 
             bannedWordsLoaded = true;
+        }
+
+        private static bool TryLoadBannedWordsFromFile(string filePath)
+        {
+            if (!File.Exists(filePath))
+                return false;
+
+            try
+            {
+                string extension = Path.GetExtension(filePath).ToLowerInvariant();
+                IEnumerable<string> words;
+
+                if (extension == ".js" || extension == ".json")
+                {
+                    string content = File.ReadAllText(filePath);
+                    words = ExtractWordsFromStructuredContent(content);
+                }
+                else
+                {
+                    words = File.ReadAllLines(filePath);
+                }
+
+                int added = 0;
+                foreach (string word in words)
+                {
+                    if (string.IsNullOrWhiteSpace(word))
+                        continue;
+
+                    if (extension != ".js" && extension != ".json")
+                    {
+                        string trimmed = word.Trim();
+                        if (trimmed.StartsWith("#"))
+                            continue;
+                    }
+
+                    string normalized = NormalizeProfanityText(word);
+                    if (!string.IsNullOrEmpty(normalized))
+                    {
+                        bannedWords.Add(normalized);
+                        added++;
+                    }
+                }
+
+                Debug.Log($"Loaded {bannedWords.Count} banned words from {filePath}");
+                return added > 0;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Failed to load banned words from {filePath}: {e.Message}");
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -207,6 +260,45 @@ namespace RobotsGame.Core
         {
             bannedWordsLoaded = false;
             LoadBannedWords();
+        }
+
+        private static IEnumerable<string> ExtractWordsFromStructuredContent(string content)
+        {
+            if (string.IsNullOrEmpty(content))
+                yield break;
+
+            MatchCollection matches = Regex.Matches(content, "'([^']*)'|\"([^\"]*)\"");
+
+            foreach (Match match in matches)
+            {
+                if (match.Groups.Count > 1)
+                {
+                    string value = match.Groups[1].Success ? match.Groups[1].Value : match.Groups[2].Value;
+                    if (!string.IsNullOrEmpty(value))
+                    {
+                        yield return value;
+                    }
+                }
+            }
+        }
+
+        private static string NormalizeProfanityText(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return string.Empty;
+
+            string normalized = text.ToLowerInvariant().Normalize(NormalizationForm.FormKD);
+            StringBuilder builder = new StringBuilder(normalized.Length);
+
+            foreach (char c in normalized)
+            {
+                if (char.IsLetterOrDigit(c))
+                {
+                    builder.Append(c);
+                }
+            }
+
+            return builder.ToString();
         }
     }
 }
