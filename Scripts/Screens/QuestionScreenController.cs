@@ -110,12 +110,7 @@ namespace RobotsGame.Screens
                 mobileInput.OnAnswerSubmitted -= SubmitAnswer;
             }
 
-            // Unsubscribe from timer events
-            if (timerDisplay != null)
-                timerDisplay.TimerExpired -= HandleTimerExpired;
-
-            if (timerDisplayMobile != null)
-                timerDisplayMobile.TimerExpired -= HandleTimerExpired;
+            UnsubscribeFromTimerEvents();
 
             // Kill DOTween animations
             DOTween.Kill(this);
@@ -276,15 +271,15 @@ namespace RobotsGame.Screens
                 return;
 
             // Start timer
+            SubscribeToTimerEvents();
+
             if (isDesktop && timerDisplay != null)
             {
                 timerDisplay.StartTimer();
-                timerDisplay.TimerExpired += HandleTimerExpired;
             }
             else if (!isDesktop && timerDisplayMobile != null)
             {
                 timerDisplayMobile.StartTimer(0f); // Immediate start on mobile
-                timerDisplayMobile.TimerExpired += HandleTimerExpired;
             }
 
             // Play question intro VO (desktop only)
@@ -299,6 +294,33 @@ namespace RobotsGame.Screens
 
             // Fade in from black
             FadeTransition.Instance.FadeIn(1f);
+        }
+
+        private void SubscribeToTimerEvents()
+        {
+            UnsubscribeFromTimerEvents();
+
+            if (isDesktop && timerDisplay != null)
+            {
+                timerDisplay.TimerExpired += HandleTimerExpired;
+            }
+            else if (!isDesktop && timerDisplayMobile != null)
+            {
+                timerDisplayMobile.TimerExpired += HandleTimerExpired;
+            }
+        }
+
+        private void UnsubscribeFromTimerEvents()
+        {
+            if (timerDisplay != null)
+            {
+                timerDisplay.TimerExpired -= HandleTimerExpired;
+            }
+
+            if (timerDisplayMobile != null)
+            {
+                timerDisplayMobile.TimerExpired -= HandleTimerExpired;
+            }
         }
 
         private void DisableAnswerUI()
