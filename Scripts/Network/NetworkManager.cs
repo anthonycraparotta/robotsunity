@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Events;
 using RobotsGame.Data;
+using NativeWebSocket;
 
 namespace RobotsGame.Network
 {
@@ -58,8 +61,8 @@ namespace RobotsGame.Network
         public NetworkEventWithData OnBonusPlayerVoted;
         public NetworkEventWithData OnBonusVotesComplete;
 
-        // WebSocket connection (to be implemented with WebSocket library)
-        private WebSocketConnection webSocket;
+        // WebSocket connection (NativeWebSocket)
+        private WebSocket webSocket;
         private bool isConnected = false;
         private List<Player> connectedPlayers = new List<Player>();
 
@@ -85,6 +88,10 @@ namespace RobotsGame.Network
 
         private void Update()
         {
+#if !UNITY_WEBGL || UNITY_EDITOR
+            webSocket?.DispatchMessageQueue();
+#endif
+
             // Process pending events on main thread
             while (pendingEvents.Count > 0)
             {
@@ -95,9 +102,11 @@ namespace RobotsGame.Network
         /// <summary>
         /// Connects to game server.
         /// </summary>
-        public void Connect(string url = null)
+        public async void Connect(string url = null)
         {
-            if (isConnected)
+            if (isConnected ||
+                (webSocket != null &&
+                (webSocket.State == WebSocketState.Connecting || webSocket.State == WebSocketState.Open)))
             {
                 Debug.LogWarning("Already connected to server");
                 return;
@@ -106,32 +115,56 @@ namespace RobotsGame.Network
             string connectionUrl = string.IsNullOrEmpty(url) ? serverUrl : url;
             Debug.Log($"Connecting to server: {connectionUrl}");
 
-            // TODO: Implement actual WebSocket connection
-            // webSocket = new WebSocketConnection(connectionUrl);
-            // webSocket.OnOpen += HandleWebSocketOpen;
-            // webSocket.OnMessage += HandleWebSocketMessage;
-            // webSocket.OnError += HandleWebSocketError;
-            // webSocket.OnClose += HandleWebSocketClose;
-            // webSocket.Connect();
+            CleanupWebSocket();
 
-            // Temporary mock connection
-            SimulateConnection();
+            webSocket = new WebSocket(connectionUrl);
+            webSocket.OnOpen += HandleWebSocketOpen;
+            webSocket.OnMessage += HandleWebSocketMessage;
+            webSocket.OnError += HandleWebSocketError;
+            webSocket.OnClose += HandleWebSocketClose;
+
+            try
+            {
+                await webSocket.Connect();
+            }
+            catch (Exception e)
+            {
+                HandleWebSocketError($"Failed to connect: {e.Message}");
+                CleanupWebSocket();
+            }
         }
 
         /// <summary>
         /// Disconnects from game server.
         /// </summary>
-        public void Disconnect()
+        public async void Disconnect()
         {
-            if (!isConnected) return;
+            if (webSocket == null && !isConnected)
+            {
+                return;
+            }
 
             Debug.Log("Disconnecting from server");
 
-            // TODO: Implement actual WebSocket disconnection
-            // webSocket?.Close();
-
-            isConnected = false;
-            OnDisconnected?.Invoke();
+            if (webSocket != null)
+            {
+                try
+                {
+                    await webSocket.Close();
+                }
+                catch (Exception e)
+                {
+                    HandleWebSocketError($"Error during disconnect: {e.Message}");
+                }
+            }
+            else if (isConnected)
+            {
+                pendingEvents.Enqueue(() =>
+                {
+                    isConnected = false;
+                    OnDisconnected?.Invoke();
+                });
+            }
         }
 
         /// <summary>
@@ -345,7 +378,7 @@ namespace RobotsGame.Network
         /// <summary>
         /// Sends raw message to server.
         /// </summary>
-        private void SendMessage(string message)
+        private async void SendMessage(string message)
         {
             if (!isConnected)
             {
@@ -353,10 +386,20 @@ namespace RobotsGame.Network
                 return;
             }
 
-            // TODO: Implement actual WebSocket send
-            // webSocket?.Send(message);
+            if (webSocket == null || webSocket.State != WebSocketState.Open)
+            {
+                Debug.LogError("Cannot send message: WebSocket not open");
+                return;
+            }
 
-            Debug.Log($">> Sending: {message}");
+            try
+            {
+                await webSocket.SendText(message);
+            }
+            catch (Exception e)
+            {
+                HandleWebSocketError($"Send failed: {e.Message}");
+            }
         }
 
         /// <summary>
@@ -465,14 +508,6 @@ namespace RobotsGame.Network
             }
         }
 
-        // Temporary mock connection for testing
-        private void SimulateConnection()
-        {
-            isConnected = true;
-            OnConnected?.Invoke();
-            Debug.Log("Mock connection established");
-        }
-
         /// <summary>
         /// Network message structure.
         /// </summary>
@@ -488,39 +523,58 @@ namespace RobotsGame.Network
         {
             Disconnect();
         }
-    }
 
-    /// <summary>
-    /// Placeholder for WebSocket connection (to be replaced with actual WebSocket library).
-    /// </summary>
-    public class WebSocketConnection
-    {
-        public event Action OnOpen;
-        public event Action<string> OnMessage;
-        public event Action<string> OnError;
-        public event Action OnClose;
-
-        private string url;
-
-        public WebSocketConnection(string url)
+        private void HandleWebSocketOpen()
         {
-            this.url = url;
+            pendingEvents.Enqueue(() =>
+            {
+                isConnected = true;
+                OnConnected?.Invoke();
+            });
         }
 
-        public void Connect()
+        private void HandleWebSocketMessage(byte[] data)
         {
-            // TODO: Implement actual WebSocket connection
-            // Consider using: NativeWebSocket, WebSocketSharp, or Unity's built-in WebSocket
+            var message = Encoding.UTF8.GetString(data);
+            HandleMessage(message);
         }
 
-        public void Send(string message)
+        private void HandleWebSocketError(string error)
         {
-            // TODO: Implement actual send
+            pendingEvents.Enqueue(() =>
+            {
+                Debug.LogError($"WebSocket error: {error}");
+                OnError?.Invoke(error);
+            });
         }
 
-        public void Close()
+        private void HandleWebSocketClose(WebSocketCloseCode closeCode)
         {
-            // TODO: Implement actual close
+            pendingEvents.Enqueue(() =>
+            {
+                bool wasConnected = isConnected;
+                isConnected = false;
+                CleanupWebSocket();
+
+                if (wasConnected)
+                {
+                    OnDisconnected?.Invoke();
+                }
+            });
+        }
+
+        private void CleanupWebSocket()
+        {
+            if (webSocket == null)
+            {
+                return;
+            }
+
+            webSocket.OnOpen -= HandleWebSocketOpen;
+            webSocket.OnMessage -= HandleWebSocketMessage;
+            webSocket.OnError -= HandleWebSocketError;
+            webSocket.OnClose -= HandleWebSocketClose;
+            webSocket = null;
         }
     }
 }
