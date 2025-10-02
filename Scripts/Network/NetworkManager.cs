@@ -61,6 +61,14 @@ namespace RobotsGame.Network
         public NetworkEventWithData OnBonusPlayerVoted;
         public NetworkEventWithData OnBonusVotesComplete;
 
+        [Header("Game Flow Events")]
+        public NetworkEventWithData OnHalftimeReached;
+        public NetworkEventWithData OnGameCompleted;
+
+        [Header("Spectate Events")]
+        public NetworkEventWithData OnSpectateRoomJoined;
+        public NetworkEventWithData OnSpectateUpdate;
+
         // WebSocket connection (NativeWebSocket)
         private WebSocket webSocket;
         private bool isConnected = false;
@@ -425,6 +433,147 @@ namespace RobotsGame.Network
         }
 
         /// <summary>
+        /// Broadcasts halftime reached event (host only).
+        /// </summary>
+        public void BroadcastHalftimeReached(int round)
+        {
+            if (!isHost) return;
+
+            var data = new
+            {
+                action = "halftime-reached",
+                roomCode = roomCode,
+                round = round
+            };
+
+            SendMessage(JsonUtility.ToJson(data));
+            Debug.Log($"Broadcasting halftime at round {round}");
+        }
+
+        /// <summary>
+        /// Notifies server that bonus transition delay is complete (host only).
+        /// </summary>
+        public void NotifyBonusTransitionReady(float followDelayMs)
+        {
+            if (!isHost) return;
+
+            var data = new
+            {
+                action = "bonus-transition-ready",
+                roomCode = roomCode,
+                followDelayMs = followDelayMs
+            };
+
+            SendMessage(JsonUtility.ToJson(data));
+        }
+
+        /// <summary>
+        /// Submits bonus round vote for most human-like answer.
+        /// </summary>
+        public void SubmitBonusVote(string votedPlayer, int questionNumber)
+        {
+            var data = new
+            {
+                action = "submit-bonus-vote",
+                roomCode = roomCode,
+                playerName = playerName,
+                votedPlayer = votedPlayer,
+                questionNumber = questionNumber
+            };
+
+            SendMessage(JsonUtility.ToJson(data));
+            Debug.Log($"Bonus vote Q{questionNumber}: {votedPlayer}");
+        }
+
+        /// <summary>
+        /// Notifies server that bonus voting time expired (host only).
+        /// </summary>
+        public void NotifyBonusVotingTimeExpired(int questionNumber)
+        {
+            if (!isHost) return;
+
+            var data = new
+            {
+                action = "bonus-voting-time-expired",
+                roomCode = roomCode,
+                questionNumber = questionNumber
+            };
+
+            SendMessage(JsonUtility.ToJson(data));
+        }
+
+        /// <summary>
+        /// Broadcasts game completion with final scores (host only).
+        /// </summary>
+        public void BroadcastGameCompleted(List<Player> finalScores)
+        {
+            if (!isHost) return;
+
+            if (finalScores == null || finalScores.Count == 0)
+            {
+                Debug.LogError("Cannot broadcast game completion: No players provided");
+                return;
+            }
+
+            // Build final scores data array
+            var playerScores = new PlayerScoreData[finalScores.Count];
+            for (int i = 0; i < finalScores.Count; i++)
+            {
+                playerScores[i] = new PlayerScoreData
+                {
+                    name = finalScores[i].PlayerName,
+                    score = finalScores[i].Score
+                };
+            }
+
+            var data = new
+            {
+                action = "game-completed",
+                roomCode = roomCode,
+                finalScores = playerScores
+            };
+
+            SendMessage(JsonUtility.ToJson(data));
+            Debug.Log($"Broadcasting game completion with {finalScores.Count} final scores");
+        }
+
+        /// <summary>
+        /// Spectates an existing room without joining (mobile preview).
+        /// </summary>
+        public void SpectateRoom(string roomCode)
+        {
+            if (!isConnected)
+            {
+                Debug.LogError("Cannot spectate room: Not connected to server");
+                return;
+            }
+
+            var data = new
+            {
+                action = "spectate-room",
+                roomCode = roomCode
+            };
+
+            SendMessage(JsonUtility.ToJson(data));
+            Debug.Log($"Spectating room: {roomCode}");
+        }
+
+        /// <summary>
+        /// Leaves spectate mode.
+        /// </summary>
+        public void LeaveSpectate(string roomCode)
+        {
+            var data = new
+            {
+                action = "leave-spectate",
+                roomCode = roomCode
+            };
+
+            SendMessage(JsonUtility.ToJson(data));
+            Debug.Log($"Leaving spectate mode for room: {roomCode}");
+        }
+
+        /// <summary>
         /// Sends raw message to server.
         /// </summary>
         private async void SendMessage(string message)
@@ -545,6 +694,22 @@ namespace RobotsGame.Network
 
                 case "bonus-votes-complete":
                     OnBonusVotesComplete?.Invoke(message.data);
+                    break;
+
+                case "halftime-reached":
+                    OnHalftimeReached?.Invoke(message.data);
+                    break;
+
+                case "game-completed":
+                    OnGameCompleted?.Invoke(message.data);
+                    break;
+
+                case "spectate-room-joined":
+                    OnSpectateRoomJoined?.Invoke(message.data);
+                    break;
+
+                case "spectate-update":
+                    OnSpectateUpdate?.Invoke(message.data);
                     break;
 
                 case "error":
