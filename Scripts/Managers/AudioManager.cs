@@ -17,10 +17,16 @@ namespace RobotsGame.Managers
             {
                 if (_instance == null)
                 {
-                    GameObject go = new GameObject("AudioManager");
-                    _instance = go.AddComponent<AudioManager>();
-                    DontDestroyOnLoad(go);
+                    _instance = FindObjectOfType<AudioManager>(true);
+
+                    if (_instance == null)
+                    {
+                        GameObject go = new GameObject("AudioManager");
+                        _instance = go.AddComponent<AudioManager>();
+                        DontDestroyOnLoad(go);
+                    }
                 }
+
                 return _instance;
             }
         }
@@ -61,19 +67,50 @@ namespace RobotsGame.Managers
         // ===========================
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            if (_instance == null)
             {
-                Destroy(gameObject);
-                return;
+                _instance = this;
+                DontDestroyOnLoad(gameObject);
+            }
+            else if (_instance != this)
+            {
+                if (IsSceneInstance(this))
+                {
+                    var previousInstance = _instance;
+                    _instance = this;
+                    DontDestroyOnLoad(gameObject);
+
+                    if (previousInstance != null && previousInstance != this)
+                    {
+                        Destroy(previousInstance.gameObject);
+                    }
+                }
+                else
+                {
+                    Destroy(gameObject);
+                    return;
+                }
+            }
+            else
+            {
+                DontDestroyOnLoad(gameObject);
             }
 
-            _instance = this;
-            DontDestroyOnLoad(gameObject);
+            if (_instance != this)
+            {
+                return;
+            }
 
             InitializeAudioSources();
             BuildAudioClipDictionary();
 
             isDesktopMode = Screen.width > GameConstants.UI.MobileMaxWidth;
+        }
+
+        private static bool IsSceneInstance(AudioManager manager)
+        {
+            var scene = manager.gameObject.scene;
+            return scene.IsValid() && scene.name != "DontDestroyOnLoad";
         }
 
         private void InitializeAudioSources()
