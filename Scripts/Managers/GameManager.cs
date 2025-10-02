@@ -228,19 +228,53 @@ namespace RobotsGame.Managers
         {
             if (currentQuestion == null) return;
 
-            // Add correct answer
-            currentAnswers.Add(new Answer(
-                currentQuestion.CorrectAnswer,
-                GameConstants.AnswerType.Correct,
-                "System"
-            ));
+            bool hasCorrectAnswer = false;
+            bool hasRobotAnswer = false;
 
-            // Add robot answer
-            currentAnswers.Add(new Answer(
-                currentQuestion.RobotAnswer,
-                GameConstants.AnswerType.Robot,
-                "Robot"
-            ));
+            foreach (var answer in currentAnswers)
+            {
+                if (answer.Type == GameConstants.AnswerType.Correct)
+                {
+                    hasCorrectAnswer = true;
+                }
+                else if (answer.Type == GameConstants.AnswerType.Robot)
+                {
+                    hasRobotAnswer = true;
+                }
+
+                if (hasCorrectAnswer && hasRobotAnswer)
+                {
+                    break;
+                }
+            }
+
+            if (!hasCorrectAnswer)
+            {
+                currentAnswers.Add(new Answer(
+                    currentQuestion.CorrectAnswer,
+                    GameConstants.AnswerType.Correct,
+                    "System"
+                ));
+            }
+
+            if (!hasRobotAnswer)
+            {
+                currentAnswers.Add(new Answer(
+                    currentQuestion.RobotAnswer,
+                    GameConstants.AnswerType.Robot,
+                    "Robot"
+                ));
+            }
+
+            int expectedAnswerCount = players.Count + 2; // Players + correct + robot
+            if (currentAnswers.Count != expectedAnswerCount)
+            {
+                Debug.LogWarning($"CurrentAnswers count mismatch. Expected {expectedAnswerCount}, actual {currentAnswers.Count}.");
+            }
+            else
+            {
+                Debug.Log($"CurrentAnswers contains {currentAnswers.Count} entries ({players.Count} players + 2 special answers).");
+            }
         }
 
         public List<Answer> GetShuffledAnswers()

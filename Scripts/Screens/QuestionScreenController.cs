@@ -53,6 +53,7 @@ namespace RobotsGame.Screens
         private bool allAnswersReceived = false;
         private bool hasPlayedQuestionIntroVO = false;
         private bool hasPlayedNudgeVO = false;
+        private bool hasInjectedSpecialAnswers = false;
 
         // ===========================
         // LIFECYCLE
@@ -514,8 +515,15 @@ namespace RobotsGame.Screens
 
         private void TransitionToNextScreen()
         {
-            // Add robot and correct answers to GameManager
-            GameManager.Instance.AddRobotAndCorrectAnswers();
+            if (!hasInjectedSpecialAnswers)
+            {
+                GameManager.Instance.AddRobotAndCorrectAnswers();
+                hasInjectedSpecialAnswers = true;
+            }
+            else
+            {
+                Debug.LogWarning("Special answers already injected for this round. Skipping duplicate insertion.");
+            }
 
             FadeTransition.Instance.FadeOut(1f, () =>
             {

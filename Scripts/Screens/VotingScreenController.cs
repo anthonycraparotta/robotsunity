@@ -76,6 +76,7 @@ namespace RobotsGame.Screens
             // Get remaining answers (after elimination)
             // For now, use all current answers (real game would filter eliminated)
             remainingAnswers = new List<Answer>(GameManager.Instance.CurrentAnswers);
+            ValidateAnswerDisplaySet("VotingScreen", remainingAnswers);
 
             // Get local player
             localPlayer = GameManager.Instance.Players.Count > 0
@@ -114,6 +115,47 @@ namespace RobotsGame.Screens
 
             // Fade in
             FadeTransition.Instance.FadeIn(0.5f);
+        }
+
+        private void ValidateAnswerDisplaySet(string context, List<Answer> answers)
+        {
+            if (answers == null) return;
+
+            HashSet<string> uniqueKeys = new HashSet<string>();
+            bool hasDuplicate = false;
+            bool hasCorrectAnswer = false;
+            bool hasRobotAnswer = false;
+
+            foreach (var answer in answers)
+            {
+                if (answer == null) continue;
+
+                string key = $"{answer.Type}|{answer.PlayerName}|{answer.Text}";
+                if (!uniqueKeys.Add(key))
+                {
+                    hasDuplicate = true;
+                    Debug.LogWarning($"{context}: Duplicate answer entry detected for {key}.");
+                }
+
+                if (answer.Type == GameConstants.AnswerType.Correct)
+                {
+                    if (hasCorrectAnswer)
+                    {
+                        Debug.LogWarning($"{context}: Multiple correct answers detected.");
+                    }
+                    hasCorrectAnswer = true;
+                }
+                else if (answer.Type == GameConstants.AnswerType.Robot)
+                {
+                    if (hasRobotAnswer)
+                    {
+                        Debug.LogWarning($"{context}: Multiple robot answers detected.");
+                    }
+                    hasRobotAnswer = true;
+                }
+            }
+
+            Debug.Log($"{context}: Prepared {answers.Count} answers for display. Correct present: {hasCorrectAnswer}, Robot present: {hasRobotAnswer}, Duplicates found: {hasDuplicate}.");
         }
 
         private void Update()
