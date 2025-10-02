@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using RobotsGame.Core;
@@ -66,6 +67,9 @@ namespace RobotsGame.Managers
         // ===========================
         // LIFECYCLE
         // ===========================
+        private bool networkEventsSubscribed = false;
+        private Coroutine networkSubscriptionCoroutine;
+
         private void Awake()
         {
             if (_instance != null && _instance != this)
@@ -79,20 +83,71 @@ namespace RobotsGame.Managers
 
             // Determine desktop vs mobile mode based on screen width
             isDesktopMode = Screen.width > GameConstants.UI.MobileMaxWidth;
+        }
 
-            // Subscribe to network events if multiplayer
-            if (isMultiplayer && NetworkManager.Instance != null)
+        private void Start()
+        {
+            InitializeNetworkSubscriptions();
+        }
+
+        private void OnEnable()
+        {
+            // If Start has not been called yet, OnEnable might be invoked first.
+            InitializeNetworkSubscriptions();
+        }
+
+        private void OnDisable()
+        {
+            if (!isMultiplayer)
             {
-                SubscribeToNetworkEvents();
+                return;
+            }
+
+            if (networkSubscriptionCoroutine != null)
+            {
+                StopCoroutine(networkSubscriptionCoroutine);
+                networkSubscriptionCoroutine = null;
+            }
+
+            if (networkEventsSubscribed)
+            {
+                UnsubscribeFromNetworkEvents();
+                networkEventsSubscribed = false;
             }
         }
 
         private void OnDestroy()
         {
-            if (isMultiplayer && NetworkManager.Instance != null)
+            if (networkEventsSubscribed)
             {
                 UnsubscribeFromNetworkEvents();
+                networkEventsSubscribed = false;
             }
+        }
+
+        private void InitializeNetworkSubscriptions()
+        {
+            if (!isMultiplayer || networkEventsSubscribed)
+            {
+                return;
+            }
+
+            if (networkSubscriptionCoroutine == null)
+            {
+                networkSubscriptionCoroutine = StartCoroutine(WaitForNetworkManagerAndSubscribe());
+            }
+        }
+
+        private System.Collections.IEnumerator WaitForNetworkManagerAndSubscribe()
+        {
+            while (NetworkManager.Instance == null)
+            {
+                yield return null;
+            }
+
+            SubscribeToNetworkEvents();
+            networkEventsSubscribed = true;
+            networkSubscriptionCoroutine = null;
         }
 
         /// <summary>
@@ -101,6 +156,10 @@ namespace RobotsGame.Managers
         private void SubscribeToNetworkEvents()
         {
             var net = NetworkManager.Instance;
+            if (net == null)
+            {
+                return;
+            }
 
             net.OnRoomJoined.AddListener(HandleRoomJoined);
             net.OnPlayersUpdate.AddListener(HandlePlayersUpdate);
