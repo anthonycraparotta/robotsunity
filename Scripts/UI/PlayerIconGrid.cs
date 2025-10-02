@@ -180,12 +180,46 @@ namespace RobotsGame.UI
 
             if (iconImage == null)
             {
-                // Fallback: find first child image that isn't the background on the root object
                 Image[] images = iconObj.GetComponentsInChildren<Image>(includeInactive: true);
+
+                // Prefer an Image component whose transform name suggests it's the icon.
                 foreach (var image in images)
                 {
-                    if (image.gameObject != iconObj)
+                    if (image == null || image.transform == iconObj.transform)
+                        continue;
+
+                    string imageName = image.transform.name;
+                    if (!string.IsNullOrEmpty(imageName) && imageName.ToLower().Contains("icon"))
                     {
+                        iconImage = image;
+                        break;
+                    }
+                }
+
+                // Next prefer direct children of the icon object so we don't grab background overlays or labels.
+                if (iconImage == null)
+                {
+                    foreach (var image in images)
+                    {
+                        if (image == null || image.transform == iconObj.transform)
+                            continue;
+
+                        if (image.transform.parent == iconObj.transform)
+                        {
+                            iconImage = image;
+                            break;
+                        }
+                    }
+                }
+
+                // Final fallback: just take the first non-root image.
+                if (iconImage == null)
+                {
+                    foreach (var image in images)
+                    {
+                        if (image == null || image.transform == iconObj.transform)
+                            continue;
+
                         iconImage = image;
                         break;
                     }
