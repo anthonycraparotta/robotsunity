@@ -45,9 +45,7 @@ namespace RobotsGame.UI
         // ===========================
         private void Awake()
         {
-            rectTransform = GetComponent<RectTransform>();
-
-            if (rectTransform == null)
+            if (!TryGetComponent(out rectTransform))
             {
                 Debug.LogError($"{nameof(PlayerSpotlightCard)} requires a RectTransform component.", this);
                 return;
