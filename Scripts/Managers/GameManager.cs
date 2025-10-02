@@ -63,6 +63,9 @@ namespace RobotsGame.Managers
         public List<Answer> CurrentAnswers => currentAnswers;
         public int TotalRounds => (int)gameMode;
         public string RoomCode => roomCode;
+        public IReadOnlyList<RoundScore> CurrentRoundScores => currentRoundScores;
+        public VoteResults EliminationResults => eliminationResults;
+        public VoteResults VotingResults => votingResults;
 
         // ===========================
         // LIFECYCLE
@@ -83,6 +86,16 @@ namespace RobotsGame.Managers
 
             // Determine desktop vs mobile mode based on screen width
             isDesktopMode = Screen.width > GameConstants.UI.MobileMaxWidth;
+
+            if (eliminationResults == null)
+            {
+                eliminationResults = new VoteResults();
+            }
+
+            if (votingResults == null)
+            {
+                votingResults = new VoteResults();
+            }
         }
 
         private void Start()
@@ -365,21 +378,48 @@ namespace RobotsGame.Managers
             playerFinalVotes.Clear();
         }
 
+        private VoteResults BuildVoteResultsFromTrackedVotes(Dictionary<string, string> trackedVotes)
+        {
+            var results = new VoteResults();
+
+            if (trackedVotes != null)
+            {
+                foreach (var kvp in trackedVotes)
+                {
+                    results.RecordPlayerVote(kvp.Key, kvp.Value);
+                }
+            }
+
+            results.CalculateElimination();
+            return results;
+        }
+
         // ===========================
         // SCORING
         // ===========================
-        public void CalculateRoundScores(VoteResults eliminationVotes, VoteResults votingVotes)
+        public void CalculateRoundScores(VoteResults eliminationVotes = null, VoteResults votingVotes = null)
         {
-            // Validate vote results
-            if (eliminationVotes == null || votingVotes == null)
+            var scoring = GameConstants.Scoring.GetScoring(gameMode);
+            this.eliminationResults = eliminationVotes ?? BuildVoteResultsFromTrackedVotes(playerEliminationVotes);
+            this.votingResults = votingVotes ?? BuildVoteResultsFromTrackedVotes(playerFinalVotes);
+
+            if (this.eliminationResults == null)
             {
-                Debug.LogError("Cannot calculate scores: Vote results are null");
-                return;
+                this.eliminationResults = new VoteResults();
             }
 
-            var scoring = GameConstants.Scoring.GetScoring(gameMode);
-            this.eliminationResults = eliminationVotes;
-            this.votingResults = votingVotes;
+            if (this.votingResults == null)
+            {
+                this.votingResults = new VoteResults();
+            }
+
+            if (currentRoundScores.Count == 0)
+            {
+                foreach (var player in players)
+                {
+                    currentRoundScores.Add(new RoundScore(player.PlayerName, player.Icon));
+                }
+            }
 
             foreach (var roundScore in currentRoundScores)
             {
@@ -517,23 +557,52 @@ namespace RobotsGame.Managers
         private void HandleEliminationComplete(string jsonData)
         {
             var data = JsonUtility.FromJson<EliminationCompleteData>(jsonData);
+            if (data == null)
+            {
+                data = new EliminationCompleteData();
+            }
 
             // Populate VoteResults from tracked votes
-            this.eliminationResults = new VoteResults();
-            foreach (var kvp in playerEliminationVotes)
+            this.eliminationResults = BuildVoteResultsFromTrackedVotes(playerEliminationVotes);
+
+            if (data.voteCounts != null && data.voteCounts.Length > 0)
             {
-                this.eliminationResults.AddVote(kvp.Value);
+                this.eliminationResults.ApplyVoteCounts(ConvertVoteCounts(data.voteCounts));
             }
-            this.eliminationResults.CalculateElimination();
+
+            if (data.votes != null && data.votes.Length > 0)
+            {
+                var playerVotes = ConvertVotesToDictionary(data.votes);
+                if (playerVotes.Count > 0)
+                {
+                    this.eliminationResults.ApplyPlayerVotes(playerVotes);
+                    SyncTrackedVotesDictionary(this.eliminationResults, playerEliminationVotes);
+                }
+            }
+            else
+            {
+                SyncTrackedVotesDictionary(this.eliminationResults, playerEliminationVotes);
+            }
+
+            if (data.totalVotesCast > 0)
+            {
+                this.eliminationResults.SetTotalVotes(data.totalVotesCast);
+            }
 
             if (!string.IsNullOrEmpty(data.eliminatedAnswer))
             {
+                this.eliminationResults.SetOutcome(data.eliminatedAnswer, false);
                 currentQuestion.AddEliminatedAnswer(data.eliminatedAnswer);
                 Debug.Log($"Answer eliminated: {data.eliminatedAnswer}");
             }
             else if (data.tieOccurred)
             {
+                this.eliminationResults.SetOutcome(null, true);
                 Debug.Log("Elimination tie - no answer eliminated");
+            }
+            else
+            {
+                this.eliminationResults.CalculateElimination();
             }
         }
 
@@ -546,14 +615,46 @@ namespace RobotsGame.Managers
         private void HandleAllVotesSubmitted(string jsonData)
         {
             var data = JsonUtility.FromJson<VotingResultsData>(jsonData);
+            if (data == null)
+            {
+                data = new VotingResultsData();
+            }
 
             // Populate VoteResults from tracked final votes
-            this.votingResults = new VoteResults();
-            foreach (var kvp in playerFinalVotes)
+            this.votingResults = BuildVoteResultsFromTrackedVotes(playerFinalVotes);
+
+            if (data.voteCounts != null && data.voteCounts.Length > 0)
             {
-                this.votingResults.AddVote(kvp.Value);
+                this.votingResults.ApplyVoteCounts(ConvertVoteCounts(data.voteCounts));
             }
-            this.votingResults.CalculateElimination(); // Calculate vote counts
+
+            if (data.votes != null && data.votes.Length > 0)
+            {
+                var playerVotes = ConvertVotesToDictionary(data.votes);
+                if (playerVotes.Count > 0)
+                {
+                    this.votingResults.ApplyPlayerVotes(playerVotes);
+                    SyncTrackedVotesDictionary(this.votingResults, playerFinalVotes);
+                }
+            }
+            else
+            {
+                SyncTrackedVotesDictionary(this.votingResults, playerFinalVotes);
+            }
+
+            if (data.totalVotesCast > 0)
+            {
+                this.votingResults.SetTotalVotes(data.totalVotesCast);
+            }
+
+            if (!string.IsNullOrEmpty(data.correctAnswer))
+            {
+                this.votingResults.SetOutcome(data.correctAnswer, false);
+            }
+            else
+            {
+                this.votingResults.CalculateElimination();
+            }
 
             // Calculate round scores now that we have all votes
             if (IsHost)
@@ -568,12 +669,205 @@ namespace RobotsGame.Managers
         private void HandleFinalRoundScores(string jsonData)
         {
             var data = JsonUtility.FromJson<RoundScoresData>(jsonData);
-            Debug.Log($"Round {currentRound} scores calculated");
+            if (data == null)
+            {
+                Debug.LogWarning("HandleFinalRoundScores: Received null data from server");
+                return;
+            }
+
+            if (data.roundNumber > 0)
+            {
+                currentRound = data.roundNumber;
+            }
+
+            if (data.scores != null && data.scores.Length > 0)
+            {
+                currentRoundScores.Clear();
+
+                var scoring = GameConstants.Scoring.GetScoring(gameMode);
+                foreach (var scoreEntry in data.scores)
+                {
+                    if (scoreEntry == null || string.IsNullOrEmpty(scoreEntry.playerName))
+                        continue;
+
+                    var player = GetPlayer(scoreEntry.playerName);
+                    string icon = player?.Icon ?? scoreEntry.icon ?? string.Empty;
+                    var roundScore = new RoundScore(scoreEntry.playerName, icon);
+
+                    int votesCount = scoreEntry.votesReceivedCount;
+                    if (votesCount == 0 && scoreEntry.votesReceivedPoints != 0)
+                    {
+                        int perVote = scoring.vote;
+                        if (perVote != 0)
+                        {
+                            votesCount = scoreEntry.votesReceivedPoints / perVote;
+                        }
+                    }
+
+                    roundScore.ApplyServerBreakdown(
+                        scoreEntry.correctAnswerPoints,
+                        scoreEntry.robotIdentifiedPoints,
+                        votesCount,
+                        scoreEntry.votesReceivedPoints,
+                        scoreEntry.fooledPoints,
+                        scoreEntry.total
+                    );
+
+                    currentRoundScores.Add(roundScore);
+                }
+            }
+
+            if (data.standings != null && data.standings.Length > 0)
+            {
+                foreach (var standing in data.standings)
+                {
+                    if (standing == null || string.IsNullOrEmpty(standing.playerName))
+                        continue;
+
+                    var player = GetPlayer(standing.playerName);
+                    if (player != null)
+                    {
+                        player.SetScore(standing.totalScore);
+                    }
+                }
+            }
+
+            if (data.eliminationResults != null)
+            {
+                var results = BuildVoteResultsFromPayload(data.eliminationResults);
+                if (results != null)
+                {
+                    eliminationResults = results;
+                    SyncTrackedVotesDictionary(eliminationResults, playerEliminationVotes);
+                }
+            }
+
+            if (data.votingResults != null)
+            {
+                var results = BuildVoteResultsFromPayload(data.votingResults);
+                if (results != null)
+                {
+                    votingResults = results;
+                    SyncTrackedVotesDictionary(votingResults, playerFinalVotes);
+                }
+            }
+
+            if (data.playerAnswers != null && data.playerAnswers.Length > 0)
+            {
+                currentAnswers.Clear();
+                foreach (var answerData in data.playerAnswers)
+                {
+                    if (answerData == null || string.IsNullOrEmpty(answerData.text))
+                        continue;
+
+                    var answerType = answerData.type == "robot" ? GameConstants.AnswerType.Robot :
+                                     answerData.type == "correct" ? GameConstants.AnswerType.Correct :
+                                     GameConstants.AnswerType.Player;
+
+                    currentAnswers.Add(new Answer(answerData.text, answerType, answerData.playerName));
+                }
+            }
+
+            Debug.Log($"Round {currentRound} scores updated from server");
         }
 
         // ===========================
         // UTILITY
         // ===========================
+        private Dictionary<string, int> ConvertVoteCounts(VoteCountData[] voteCountsData)
+        {
+            Dictionary<string, int> counts = new Dictionary<string, int>();
+
+            if (voteCountsData == null)
+            {
+                return counts;
+            }
+
+            foreach (var entry in voteCountsData)
+            {
+                if (entry == null || string.IsNullOrEmpty(entry.answer))
+                    continue;
+
+                counts[entry.answer] = entry.count;
+            }
+
+            return counts;
+        }
+
+        private Dictionary<string, string> ConvertVotesToDictionary(VoteData[] votes)
+        {
+            Dictionary<string, string> results = new Dictionary<string, string>();
+
+            if (votes == null)
+            {
+                return results;
+            }
+
+            foreach (var vote in votes)
+            {
+                if (vote == null || string.IsNullOrEmpty(vote.playerName) || string.IsNullOrEmpty(vote.answer))
+                    continue;
+
+                results[vote.playerName] = vote.answer;
+            }
+
+            return results;
+        }
+
+        private VoteResults BuildVoteResultsFromPayload(VoteResultsPayload payload)
+        {
+            if (payload == null)
+            {
+                return null;
+            }
+
+            var results = new VoteResults();
+
+            var playerVotes = ConvertVotesToDictionary(payload.votes);
+            if (playerVotes.Count > 0)
+            {
+                results.ApplyPlayerVotes(playerVotes);
+            }
+            else if (payload.voteCounts != null && payload.voteCounts.Length > 0)
+            {
+                results.ApplyVoteCounts(ConvertVoteCounts(payload.voteCounts));
+            }
+
+            if (payload.totalVotesCast > 0)
+            {
+                results.SetTotalVotes(payload.totalVotesCast);
+            }
+            else
+            {
+                results.RecalculateTotalsFromCounts();
+            }
+
+            if (!string.IsNullOrEmpty(payload.eliminatedAnswer) || payload.tieOccurred)
+            {
+                results.SetOutcome(payload.eliminatedAnswer, payload.tieOccurred);
+            }
+            else
+            {
+                results.CalculateElimination();
+            }
+
+            return results;
+        }
+
+        private void SyncTrackedVotesDictionary(VoteResults results, Dictionary<string, string> target)
+        {
+            if (results == null || target == null)
+            {
+                return;
+            }
+
+            target.Clear();
+            foreach (var kvp in results.GetPlayerVotes())
+            {
+                target[kvp.Key] = kvp.Value;
+            }
+        }
+
         public void ResetGame()
         {
             currentRound = 0;
@@ -658,12 +952,19 @@ namespace RobotsGame.Managers
         {
             public string eliminatedAnswer;
             public bool tieOccurred;
+            public VoteCountData[] voteCounts;
+            public int totalVotesCast;
+            public VoteData[] votes;
         }
 
         [System.Serializable]
         private class VotingResultsData
         {
             public VoteData[] votes;
+            public VoteCountData[] voteCounts;
+            public string correctAnswer;
+            public string robotAnswer;
+            public int totalVotesCast;
         }
 
         [System.Serializable]
@@ -677,6 +978,49 @@ namespace RobotsGame.Managers
         private class RoundScoresData
         {
             public int roundNumber;
+            public RoundScoreEntryData[] scores;
+            public PlayerStandingData[] standings;
+            public VoteResultsPayload eliminationResults;
+            public VoteResultsPayload votingResults;
+            public AnswerData[] playerAnswers;
+        }
+
+        [System.Serializable]
+        private class RoundScoreEntryData
+        {
+            public string playerName;
+            public int total;
+            public int correctAnswerPoints;
+            public int robotIdentifiedPoints;
+            public int votesReceivedPoints;
+            public int votesReceivedCount;
+            public int fooledPoints;
+            public string icon;
+        }
+
+        [System.Serializable]
+        private class PlayerStandingData
+        {
+            public string playerName;
+            public int totalScore;
+            public int placement;
+        }
+
+        [System.Serializable]
+        private class VoteResultsPayload
+        {
+            public VoteCountData[] voteCounts;
+            public VoteData[] votes;
+            public string eliminatedAnswer;
+            public bool tieOccurred;
+            public int totalVotesCast;
+        }
+
+        [System.Serializable]
+        private class VoteCountData
+        {
+            public string answer;
+            public int count;
         }
     }
 }

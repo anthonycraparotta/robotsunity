@@ -65,6 +65,24 @@ namespace RobotsGame.Data
             RecalculateTotal();
         }
 
+        public void ApplyServerBreakdown(int correctPoints, int robotPoints, int votesCount, int votesPoints, int fooledPoints, int? totalOverride = null)
+        {
+            correctAnswerPoints = correctPoints;
+            robotIdentifiedPoints = robotPoints;
+            votesReceivedCount = votesCount;
+            votesReceivedPoints = votesPoints;
+            this.fooledPoints = fooledPoints;
+
+            if (totalOverride.HasValue)
+            {
+                total = totalOverride.Value;
+            }
+            else
+            {
+                RecalculateTotal();
+            }
+        }
+
         private void RecalculateTotal()
         {
             total = correctAnswerPoints + robotIdentifiedPoints + votesReceivedPoints + fooledPoints;
