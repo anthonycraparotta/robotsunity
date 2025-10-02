@@ -324,13 +324,29 @@ namespace RobotsGame.Screens
             // For now, just eliminate the selected answer
             votingResults.CalculateElimination();
 
+            TrackEliminatedAnswer();
+
             // If no elimination calculated (because only one vote), set it
             if (votingResults.EliminatedAnswer == null && !votingResults.TieOccurred)
             {
                 // Simulate that our vote was enough
                 votingResults.AddVote(selectedAnswer);
                 votingResults.CalculateElimination();
+
+                TrackEliminatedAnswer();
             }
+        }
+
+        private void TrackEliminatedAnswer()
+        {
+            if (votingResults == null || votingResults.TieOccurred)
+                return;
+
+            string eliminatedAnswer = votingResults.EliminatedAnswer;
+            if (string.IsNullOrEmpty(eliminatedAnswer))
+                return;
+
+            GameManager.Instance.CurrentQuestion?.AddEliminatedAnswer(eliminatedAnswer);
         }
 
         // ===========================
