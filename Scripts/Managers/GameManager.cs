@@ -61,6 +61,9 @@ namespace RobotsGame.Managers
         public Question CurrentQuestion => currentQuestion;
         public List<Player> Players => players;
         public List<Answer> CurrentAnswers => currentAnswers;
+        public List<RoundScore> CurrentRoundScores => currentRoundScores;
+        public VoteResults EliminationResults => eliminationResults;
+        public VoteResults VotingResults => votingResults;
         public int TotalRounds => (int)gameMode;
         public string RoomCode => roomCode;
 
@@ -569,8 +572,302 @@ namespace RobotsGame.Managers
 
         private void HandleFinalRoundScores(string jsonData)
         {
+            if (string.IsNullOrEmpty(jsonData))
+            {
+                Debug.LogWarning("HandleFinalRoundScores received empty payload.");
+                return;
+            }
+
             var data = JsonUtility.FromJson<RoundScoresData>(jsonData);
-            Debug.Log($"Round {currentRound} scores calculated");
+            if (data == null)
+            {
+                Debug.LogWarning("Failed to parse RoundScoresData from server payload.");
+                return;
+            }
+
+            if (data.roundNumber > 0)
+            {
+                currentRound = data.roundNumber;
+            }
+
+            UpdateRoundScoresFromServer(data);
+            SyncPlayersWithServerData(data);
+
+            if (data.eliminationResults != null)
+            {
+                eliminationResults = BuildVoteResultsFromServer(data.eliminationResults, playerEliminationVotes, "elimination");
+            }
+
+            if (data.votingResults != null)
+            {
+                votingResults = BuildVoteResultsFromServer(data.votingResults, playerFinalVotes, "voting");
+            }
+
+            Debug.Log($"Round {currentRound} scores updated from server (Host: {IsHost})");
+
+            if (!IsHost && data.scores != null && data.scores.Length > 0)
+            {
+                bool totalsMatch = true;
+                foreach (var scoreData in data.scores)
+                {
+                    string playerName = !string.IsNullOrEmpty(scoreData.playerName) ? scoreData.playerName : scoreData.name;
+                    if (string.IsNullOrEmpty(playerName))
+                    {
+                        continue;
+                    }
+
+                    var player = GetPlayer(playerName);
+                    int expectedTotal = ResolveScoreTotal(scoreData);
+                    if (player == null || player.Score != expectedTotal)
+                    {
+                        totalsMatch = false;
+                        break;
+                    }
+                }
+
+                Debug.Assert(totalsMatch, "Non-host did not receive synchronized round totals from server.");
+                if (!totalsMatch)
+                {
+                    Debug.LogWarning("Non-host mismatch detected for round totals after server sync.");
+                }
+            }
+        }
+
+        private void UpdateRoundScoresFromServer(RoundScoresData data)
+        {
+            if (data.scores == null || data.scores.Length == 0)
+            {
+                return;
+            }
+
+            currentRoundScores.Clear();
+            var scoring = GameConstants.Scoring.GetScoring(gameMode);
+
+            foreach (var scoreEntry in data.scores)
+            {
+                if (scoreEntry == null)
+                {
+                    continue;
+                }
+
+                string playerName = !string.IsNullOrEmpty(scoreEntry.playerName) ? scoreEntry.playerName : scoreEntry.name;
+                if (string.IsNullOrEmpty(playerName))
+                {
+                    continue;
+                }
+
+                string icon = !string.IsNullOrEmpty(scoreEntry.icon) ? scoreEntry.icon : GetPlayer(playerName)?.Icon;
+                var roundScore = new RoundScore(playerName, icon ?? string.Empty);
+
+                int correctPoints = scoreEntry.correctAnswer != 0 ? scoreEntry.correctAnswer : scoreEntry.correctAnswerPoints;
+                int robotPoints = scoreEntry.robotIdentified != 0 ? scoreEntry.robotIdentified : scoreEntry.robotIdentifiedPoints;
+
+                int votesPoints = scoreEntry.votesReceivedPoints != 0 ? scoreEntry.votesReceivedPoints : scoreEntry.votesReceived;
+                int votesCount = scoreEntry.votesReceivedCount;
+                if (votesCount <= 0 && votesPoints != 0 && scoring.vote > 0)
+                {
+                    votesCount = Mathf.Max(0, votesPoints / scoring.vote);
+                }
+
+                int fooledTotal = 0;
+                if (scoreEntry.fooled != 0)
+                {
+                    fooledTotal = scoreEntry.fooled;
+                }
+                else if (scoreEntry.fooledPoints != 0)
+                {
+                    fooledTotal = scoreEntry.fooledPoints;
+                }
+                else if (scoreEntry.fooledPenalty != 0)
+                {
+                    fooledTotal = scoreEntry.fooledPenalty;
+                }
+
+                int totalPoints = ResolveScoreTotal(scoreEntry);
+
+                roundScore.ApplyServerBreakdown(correctPoints, robotPoints, votesCount, votesPoints, fooledTotal, totalPoints);
+                currentRoundScores.Add(roundScore);
+            }
+        }
+
+        private int ResolveScoreTotal(PlayerRoundScoreData data)
+        {
+            if (data == null)
+            {
+                return 0;
+            }
+
+            if (data.total != 0)
+            {
+                return data.total;
+            }
+
+            if (data.totalScore != 0)
+            {
+                return data.totalScore;
+            }
+
+            return data.score;
+        }
+
+        private void SyncPlayersWithServerData(RoundScoresData data)
+        {
+            bool hasScoreData = data.scores != null && data.scores.Length > 0;
+            bool hasStandings = data.standings != null && data.standings.Length > 0;
+
+            if (!hasScoreData && !hasStandings)
+            {
+                return;
+            }
+
+            Dictionary<string, PlayerRoundScoreData> scoreLookup = new Dictionary<string, PlayerRoundScoreData>();
+            if (hasScoreData)
+            {
+                foreach (var scoreEntry in data.scores)
+                {
+                    if (scoreEntry == null)
+                    {
+                        continue;
+                    }
+
+                    string name = !string.IsNullOrEmpty(scoreEntry.playerName) ? scoreEntry.playerName : scoreEntry.name;
+                    if (string.IsNullOrEmpty(name))
+                    {
+                        continue;
+                    }
+
+                    scoreLookup[name] = scoreEntry;
+                }
+            }
+
+            if (hasStandings)
+            {
+                foreach (var standing in data.standings)
+                {
+                    if (standing == null)
+                    {
+                        continue;
+                    }
+
+                    string name = !string.IsNullOrEmpty(standing.playerName) ? standing.playerName : standing.name;
+                    if (string.IsNullOrEmpty(name))
+                    {
+                        continue;
+                    }
+
+                    var player = GetPlayer(name);
+                    if (player == null)
+                    {
+                        string icon = !string.IsNullOrEmpty(standing.icon) ? standing.icon :
+                                      (scoreLookup.TryGetValue(name, out var scoreEntry) && !string.IsNullOrEmpty(scoreEntry.icon) ? scoreEntry.icon : "icon1");
+                        player = new Player(name, icon);
+                        players.Add(player);
+                    }
+
+                    int score = standing.totalScore != 0 ? standing.totalScore :
+                                standing.score != 0 ? standing.score :
+                                (scoreLookup.TryGetValue(name, out var lookupScore) ? ResolveScoreTotal(lookupScore) : player.Score);
+
+                    player.SetScore(score);
+                }
+            }
+            else
+            {
+                foreach (var kvp in scoreLookup)
+                {
+                    var player = GetPlayer(kvp.Key);
+                    if (player == null)
+                    {
+                        string icon = !string.IsNullOrEmpty(kvp.Value.icon) ? kvp.Value.icon : "icon1";
+                        player = new Player(kvp.Key, icon);
+                        players.Add(player);
+                    }
+
+                    player.SetScore(ResolveScoreTotal(kvp.Value));
+                }
+            }
+        }
+
+        private VoteResults BuildVoteResultsFromServer(VoteBreakdownData breakdown, Dictionary<string, string> voteTracker, string label)
+        {
+            if (breakdown == null)
+            {
+                return null;
+            }
+
+            if (breakdown.votes != null && breakdown.votes.Length > 0 && voteTracker != null)
+            {
+                voteTracker.Clear();
+                foreach (var vote in breakdown.votes)
+                {
+                    if (vote == null || string.IsNullOrEmpty(vote.playerName) || string.IsNullOrEmpty(vote.answer))
+                    {
+                        continue;
+                    }
+
+                    voteTracker[vote.playerName] = vote.answer;
+                }
+            }
+
+            var results = new VoteResults();
+
+            bool votesAdded = false;
+            if (breakdown.voteCounts != null && breakdown.voteCounts.Length > 0)
+            {
+                foreach (var voteCount in breakdown.voteCounts)
+                {
+                    if (voteCount == null || string.IsNullOrEmpty(voteCount.answer) || voteCount.count <= 0)
+                    {
+                        continue;
+                    }
+
+                    for (int i = 0; i < voteCount.count; i++)
+                    {
+                        results.AddVote(voteCount.answer);
+                    }
+
+                    votesAdded = true;
+                }
+            }
+
+            if (!votesAdded)
+            {
+                if (voteTracker != null && voteTracker.Count > 0)
+                {
+                    foreach (var vote in voteTracker.Values)
+                    {
+                        if (string.IsNullOrEmpty(vote))
+                        {
+                            continue;
+                        }
+
+                        results.AddVote(vote);
+                        votesAdded = true;
+                    }
+                }
+                else if (breakdown.votes != null && breakdown.votes.Length > 0)
+                {
+                    foreach (var vote in breakdown.votes)
+                    {
+                        if (vote == null || string.IsNullOrEmpty(vote.answer))
+                        {
+                            continue;
+                        }
+
+                        results.AddVote(vote.answer);
+                        votesAdded = true;
+                    }
+                }
+            }
+
+            results.CalculateElimination();
+
+            if (label == "elimination" && !string.IsNullOrEmpty(breakdown.eliminatedAnswer) && !breakdown.tieOccurred && results.EliminatedAnswer != breakdown.eliminatedAnswer)
+            {
+                Debug.LogWarning($"Server elimination results disagreed with local calculation. Server: {breakdown.eliminatedAnswer}, Local: {results.EliminatedAnswer}");
+            }
+
+            return results;
         }
 
         // ===========================
@@ -679,6 +976,58 @@ namespace RobotsGame.Managers
         private class RoundScoresData
         {
             public int roundNumber;
+            public PlayerRoundScoreData[] scores;
+            public PlayerStandingData[] standings;
+            public VoteBreakdownData eliminationResults;
+            public VoteBreakdownData votingResults;
+        }
+
+        [System.Serializable]
+        private class PlayerRoundScoreData
+        {
+            public string playerName;
+            public string name;
+            public string icon;
+            public int total;
+            public int totalScore;
+            public int score;
+            public int correctAnswer;
+            public int correctAnswerPoints;
+            public int robotIdentified;
+            public int robotIdentifiedPoints;
+            public int votesReceived;
+            public int votesReceivedPoints;
+            public int votesReceivedCount;
+            public int fooled;
+            public int fooledPoints;
+            public int fooledPenalty;
+        }
+
+        [System.Serializable]
+        private class PlayerStandingData
+        {
+            public string playerName;
+            public string name;
+            public string icon;
+            public int totalScore;
+            public int score;
+            public int placement;
+        }
+
+        [System.Serializable]
+        private class VoteBreakdownData
+        {
+            public VoteData[] votes;
+            public VoteCountData[] voteCounts;
+            public string eliminatedAnswer;
+            public bool tieOccurred;
+        }
+
+        [System.Serializable]
+        private class VoteCountData
+        {
+            public string answer;
+            public int count;
         }
     }
 }

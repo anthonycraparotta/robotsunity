@@ -72,5 +72,24 @@ namespace RobotsGame.Data
 
         public bool HasPositiveScore() => total > 0;
         public bool HasNegativeScore() => total < 0;
+
+        /// <summary>
+        /// Applies a complete scoring breakdown received from the server.
+        /// </summary>
+        /// <param name="correctPoints">Points awarded for the correct answer.</param>
+        /// <param name="robotPoints">Points awarded for identifying the robot.</param>
+        /// <param name="votesCount">Total votes received in the final voting phase.</param>
+        /// <param name="votesPoints">Points awarded for votes received.</param>
+        /// <param name="fooledTotal">Penalty (usually negative) for being fooled by the robot.</param>
+        /// <param name="totalPoints">Total score change for the round.</param>
+        public void ApplyServerBreakdown(int correctPoints, int robotPoints, int votesCount, int votesPoints, int fooledTotal, int totalPoints)
+        {
+            correctAnswerPoints = correctPoints;
+            robotIdentifiedPoints = robotPoints;
+            votesReceivedCount = Mathf.Max(0, votesCount);
+            votesReceivedPoints = votesPoints;
+            fooledPoints = fooledTotal;
+            total = totalPoints != 0 ? totalPoints : (correctAnswerPoints + robotIdentifiedPoints + votesReceivedPoints + fooledPoints);
+        }
     }
 }

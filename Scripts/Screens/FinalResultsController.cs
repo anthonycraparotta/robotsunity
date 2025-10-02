@@ -3,10 +3,12 @@ using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
 using DG.Tweening;
+using System.Collections;
 using System.Collections.Generic;
 using RobotsGame.Core;
 using RobotsGame.Data;
 using RobotsGame.Managers;
+using RobotsGame.Network;
 using RobotsGame.UI;
 using RobotsGame.UI.Utilities;
 
@@ -53,6 +55,7 @@ namespace RobotsGame.Screens
         private bool isDesktop;
         private List<Player> rankedPlayers;
         private Player localPlayer;
+        private Coroutine initializationCoroutine;
 
         // ===========================
         // LIFECYCLE
@@ -70,13 +73,32 @@ namespace RobotsGame.Screens
 
         private void Start()
         {
-            // Get ranked players
-            rankedPlayers = GameManager.Instance.GetRankedPlayers();
+            initializationCoroutine = StartCoroutine(InitializeWhenReady());
+        }
 
-            // Get local player
-            localPlayer = GameManager.Instance.Players.Count > 0
-                ? GameManager.Instance.Players[0]
-                : new Player("Player 1", "icon1");
+        private IEnumerator InitializeWhenReady()
+        {
+            GameManager gameManager = GameManager.Instance;
+
+            while (gameManager == null || gameManager.Players == null || gameManager.Players.Count == 0)
+            {
+                yield return null;
+                gameManager = GameManager.Instance;
+            }
+
+            rankedPlayers = gameManager.GetRankedPlayers();
+
+            localPlayer = null;
+            var network = NetworkManager.Instance;
+            if (network != null && !string.IsNullOrEmpty(network.LocalPlayerName))
+            {
+                localPlayer = gameManager.Players.Find(p => p.PlayerName == network.LocalPlayerName);
+            }
+
+            if (localPlayer == null && rankedPlayers.Count > 0)
+            {
+                localPlayer = rankedPlayers[0];
+            }
 
             if (isDesktop)
             {
@@ -87,11 +109,12 @@ namespace RobotsGame.Screens
                 SetupMobile();
             }
 
-            // Fade in
             FadeTransition.Instance.FadeIn(0.5f, () =>
             {
                 StartAnimations();
             });
+
+            initializationCoroutine = null;
         }
 
         // ===========================
@@ -332,6 +355,12 @@ namespace RobotsGame.Screens
         // ===========================
         private void OnDestroy()
         {
+            if (initializationCoroutine != null)
+            {
+                StopCoroutine(initializationCoroutine);
+                initializationCoroutine = null;
+            }
+
             if (newGameButton != null)
                 newGameButton.onClick.RemoveAllListeners();
 

@@ -371,17 +371,48 @@ namespace RobotsGame.Screens
 
             robotDecoyPanel.gameObject.SetActive(true);
 
-            // Get players who were not fooled vs fooled
-            List<Player> notFooled = new List<Player>();
-            List<Player> fooled = new List<Player>();
-
-            // Simplified: In real game, would check elimination votes
-            // For now, assume all players not fooled
-            notFooled.AddRange(allPlayers);
-
+            string robotAnswer = currentQuestion.RobotAnswer;
             var scoring = GameConstants.Scoring.GetScoring(gameManager.GameMode);
 
-            robotDecoyPanel.ShowPanel(currentQuestion.RobotAnswer, notFooled, fooled,
+            List<Player> notFooled = new List<Player>();
+            List<Player> fooled = new List<Player>();
+            HashSet<string> notFooledNames = new HashSet<string>();
+            HashSet<string> fooledNames = new HashSet<string>();
+
+            foreach (var player in allPlayers)
+            {
+                string eliminationVote = gameManager.GetPlayerEliminationVote(player.PlayerName);
+                if (!string.IsNullOrEmpty(robotAnswer) && !string.IsNullOrEmpty(eliminationVote) &&
+                    eliminationVote == robotAnswer && notFooledNames.Add(player.PlayerName))
+                {
+                    notFooled.Add(player);
+                }
+
+                string finalVote = gameManager.GetPlayerFinalVote(player.PlayerName);
+                if (!string.IsNullOrEmpty(robotAnswer) && !string.IsNullOrEmpty(finalVote) &&
+                    finalVote == robotAnswer && fooledNames.Add(player.PlayerName))
+                {
+                    fooled.Add(player);
+                }
+            }
+
+            if (fooled.Count > 0 && notFooled.Count > 0)
+            {
+                notFooled.RemoveAll(player => fooledNames.Contains(player.PlayerName));
+            }
+
+            if (notFooled.Count == 0 && allPlayers != null)
+            {
+                foreach (var player in allPlayers)
+                {
+                    if (!fooledNames.Contains(player.PlayerName))
+                    {
+                        notFooled.Add(player);
+                    }
+                }
+            }
+
+            robotDecoyPanel.ShowPanel(robotAnswer, notFooled, fooled,
                                      scoring.robotId, scoring.fooled, () =>
             {
                 robotDecoyPanel.Hide(() =>
@@ -414,14 +445,11 @@ namespace RobotsGame.Screens
 
             playerAnswersPanel.gameObject.SetActive(true);
 
-            // Get vote counts (simplified - would come from voting phase)
             Dictionary<string, int> voteCounts = new Dictionary<string, int>();
-            foreach (var answer in allAnswers)
+            var voteResults = gameManager.VotingResults;
+            if (voteResults != null)
             {
-                if (answer.Type == GameConstants.AnswerType.Player)
-                {
-                    voteCounts[answer.Text] = Random.Range(0, 3); // Mock votes
-                }
+                voteCounts = voteResults.GetVoteCounts();
             }
 
             var scoring = GameConstants.Scoring.GetScoring(gameManager.GameMode);

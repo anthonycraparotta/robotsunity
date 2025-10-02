@@ -73,6 +73,8 @@ namespace RobotsGame.Network
         public bool IsConnected => isConnected;
         public string RoomCode => roomCode;
         public List<Player> ConnectedPlayers => new List<Player>(connectedPlayers);
+        public string LocalPlayerName => playerName;
+        public string LocalPlayerIcon => playerIcon;
 
         private void Awake()
         {
