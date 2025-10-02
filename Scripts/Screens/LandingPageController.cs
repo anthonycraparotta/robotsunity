@@ -31,7 +31,7 @@ namespace RobotsGame.Screens
         [SerializeField] private float initialFadeDuration = 1f;
         [SerializeField] private float exitFadeDelay = 1f; // 1000ms before fade starts
         [SerializeField] private float exitFadeDuration = 1f;
-        [SerializeField] private string nextSceneName = "JoinRoom"; // Or "Lobby"
+        [SerializeField] private string nextSceneName = "QuestionScreen";
 
         private ResponsiveUI responsiveUI;
         private bool isTransitioning = false;
