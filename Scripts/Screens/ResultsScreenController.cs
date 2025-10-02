@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using System.Collections;
 using System.Collections.Generic;
 using DG.Tweening;
 using RobotsGame.Core;
@@ -50,6 +51,11 @@ namespace RobotsGame.Screens
         private List<Player> allPlayers;
         private int currentPanel = 0;
         private bool canProceed = false;
+        private bool questionDataReady = false;
+        private bool panelSequenceStarted = false;
+        private bool autoStartWhenDataReady = false;
+        private bool autoStartCalculateLocalScores = false;
+        private Coroutine waitForQuestionDataCoroutine;
 
         // ===========================
         // LIFECYCLE
@@ -67,36 +73,34 @@ namespace RobotsGame.Screens
 
         private void Start()
         {
-            // Get data from GameManager
-            currentQuestion = GameManager.Instance.CurrentQuestion;
-            allAnswers = GameManager.Instance.CurrentAnswers;
-            allPlayers = GameManager.Instance.Players;
+            var gameManager = GameManager.Instance;
+            bool isMultiplayerGame = gameManager != null && gameManager.IsMultiplayer;
 
-            // Subscribe to network events for multiplayer
-            if (GameManager.Instance.IsMultiplayer)
+            if (gameManager == null)
+            {
+                Debug.LogWarning("ResultsScreenController: GameManager instance not found. Waiting for initialization.");
+            }
+
+            autoStartWhenDataReady = !isMultiplayerGame;
+            autoStartCalculateLocalScores = !isMultiplayerGame;
+
+            if (isMultiplayerGame)
             {
                 SubscribeToNetworkEvents();
 
-                // Wait for OnFinalRoundScores before showing panels
                 Debug.Log("Waiting for server to calculate round scores...");
 
-                // Add timeout fallback (10 seconds)
                 DOVirtual.DelayedCall(10f, () =>
                 {
-                    if (currentPanel == 0) // Still waiting for results
+                    if (!panelSequenceStarted)
                     {
                         Debug.LogWarning("Timeout waiting for OnFinalRoundScores. Calculating scores locally...");
-                        CalculateLocalScores();
-                        StartPanelSequence();
+                        StartPanelSequence(true);
                     }
                 });
             }
-            else
-            {
-                // Single-player: calculate scores locally and show panels
-                CalculateLocalScores();
-                StartPanelSequence();
-            }
+
+            waitForQuestionDataCoroutine = StartCoroutine(WaitForQuestionData());
 
             if (isDesktop)
             {
@@ -107,7 +111,6 @@ namespace RobotsGame.Screens
                 SetupMobile();
             }
 
-            // Fade in
             FadeTransition.Instance.FadeIn(0.5f);
         }
 
@@ -116,12 +119,54 @@ namespace RobotsGame.Screens
         /// </summary>
         private void CalculateLocalScores()
         {
-            // Create mock vote results for single-player
+            var gameManager = GameManager.Instance;
+            if (gameManager == null)
+            {
+                Debug.LogWarning("ResultsScreenController: Cannot calculate local scores without GameManager.");
+                return;
+            }
+
             VoteResults eliminationResults = new VoteResults();
             VoteResults votingResults = new VoteResults();
 
-            // Calculate round scores
-            GameManager.Instance.CalculateRoundScores(eliminationResults, votingResults);
+            gameManager.CalculateRoundScores(eliminationResults, votingResults);
+        }
+
+        private IEnumerator WaitForQuestionData()
+        {
+            while (!TryCacheGameData())
+            {
+                yield return null;
+            }
+
+            questionDataReady = true;
+
+            if (autoStartWhenDataReady)
+            {
+                StartPanelSequence(autoStartCalculateLocalScores);
+            }
+
+            waitForQuestionDataCoroutine = null;
+        }
+
+        private bool TryCacheGameData()
+        {
+            var gameManager = GameManager.Instance;
+            if (gameManager == null)
+            {
+                return false;
+            }
+
+            currentQuestion = gameManager.CurrentQuestion;
+            allAnswers = gameManager.CurrentAnswers;
+            allPlayers = gameManager.Players;
+
+            if (currentQuestion == null || allAnswers == null || allPlayers == null)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         // ===========================
@@ -191,7 +236,37 @@ namespace RobotsGame.Screens
         // PANEL SEQUENCE
         // ===========================
 
-        private void StartPanelSequence()
+        private void StartPanelSequence(bool calculateLocalScores)
+        {
+            if (panelSequenceStarted)
+                return;
+
+            if (!TryCacheGameData())
+            {
+                if (!autoStartWhenDataReady)
+                {
+                    Debug.Log("ResultsScreenController: Panel sequence requested before question data was ready. Waiting...");
+                }
+
+                autoStartWhenDataReady = true;
+                autoStartCalculateLocalScores = calculateLocalScores;
+                return;
+            }
+
+            questionDataReady = true;
+
+            if (calculateLocalScores)
+            {
+                CalculateLocalScores();
+            }
+
+            panelSequenceStarted = true;
+            autoStartWhenDataReady = false;
+
+            BeginPanelSequence();
+        }
+
+        private void BeginPanelSequence()
         {
             currentPanel = 0;
             ShowNextPanel();
@@ -233,6 +308,19 @@ namespace RobotsGame.Screens
         {
             if (correctAnswerPanel == null) return;
 
+            if (!questionDataReady || currentQuestion == null || allAnswers == null)
+            {
+                Debug.LogWarning("ResultsScreenController: Skipping correct answer panel until question data is ready.");
+                return;
+            }
+
+            var gameManager = GameManager.Instance;
+            if (gameManager == null)
+            {
+                Debug.LogWarning("ResultsScreenController: GameManager unavailable while showing correct answer panel.");
+                return;
+            }
+
             correctAnswerPanel.gameObject.SetActive(true);
 
             // Get players who got it right
@@ -242,14 +330,14 @@ namespace RobotsGame.Screens
                 if (answer.Type == GameConstants.AnswerType.Player &&
                     AnswerValidator.IsCorrectAnswer(answer.Text, currentQuestion.CorrectAnswer))
                 {
-                    Player player = GameManager.Instance.GetPlayer(answer.PlayerName);
+                    Player player = gameManager.GetPlayer(answer.PlayerName);
                     if (player != null)
                         playersWhoGotIt.Add(player);
                 }
             }
 
             // Get points value
-            var scoring = GameConstants.Scoring.GetScoring(GameManager.Instance.GameMode);
+            var scoring = GameConstants.Scoring.GetScoring(gameManager.GameMode);
 
             correctAnswerPanel.ShowPanel(currentQuestion.CorrectAnswer, playersWhoGotIt, scoring.correct, () =>
             {
@@ -268,6 +356,19 @@ namespace RobotsGame.Screens
         {
             if (robotDecoyPanel == null) return;
 
+            if (!questionDataReady || currentQuestion == null || allPlayers == null)
+            {
+                Debug.LogWarning("ResultsScreenController: Skipping robot decoy panel until question data is ready.");
+                return;
+            }
+
+            var gameManager = GameManager.Instance;
+            if (gameManager == null)
+            {
+                Debug.LogWarning("ResultsScreenController: GameManager unavailable while showing robot decoy panel.");
+                return;
+            }
+
             robotDecoyPanel.gameObject.SetActive(true);
 
             // Get players who were not fooled vs fooled
@@ -278,7 +379,7 @@ namespace RobotsGame.Screens
             // For now, assume all players not fooled
             notFooled.AddRange(allPlayers);
 
-            var scoring = GameConstants.Scoring.GetScoring(GameManager.Instance.GameMode);
+            var scoring = GameConstants.Scoring.GetScoring(gameManager.GameMode);
 
             robotDecoyPanel.ShowPanel(currentQuestion.RobotAnswer, notFooled, fooled,
                                      scoring.robotId, scoring.fooled, () =>
@@ -298,6 +399,19 @@ namespace RobotsGame.Screens
         {
             if (playerAnswersPanel == null) return;
 
+            if (!questionDataReady || allAnswers == null)
+            {
+                Debug.LogWarning("ResultsScreenController: Skipping player answers panel until answer data is ready.");
+                return;
+            }
+
+            var gameManager = GameManager.Instance;
+            if (gameManager == null)
+            {
+                Debug.LogWarning("ResultsScreenController: GameManager unavailable while showing player answers panel.");
+                return;
+            }
+
             playerAnswersPanel.gameObject.SetActive(true);
 
             // Get vote counts (simplified - would come from voting phase)
@@ -310,7 +424,7 @@ namespace RobotsGame.Screens
                 }
             }
 
-            var scoring = GameConstants.Scoring.GetScoring(GameManager.Instance.GameMode);
+            var scoring = GameConstants.Scoring.GetScoring(gameManager.GameMode);
 
             playerAnswersPanel.ShowPanel(allAnswers, voteCounts, scoring.vote, () =>
             {
@@ -329,10 +443,28 @@ namespace RobotsGame.Screens
         {
             if (standingsPanel == null) return;
 
+            if (!questionDataReady)
+            {
+                Debug.LogWarning("ResultsScreenController: Skipping standings panel until question data is ready.");
+                return;
+            }
+
+            var gameManager = GameManager.Instance;
+            if (gameManager == null)
+            {
+                Debug.LogWarning("ResultsScreenController: GameManager unavailable while showing standings panel.");
+                return;
+            }
+
             standingsPanel.gameObject.SetActive(true);
 
             // Get ranked players
-            List<Player> rankedPlayers = GameManager.Instance.GetRankedPlayers();
+            List<Player> rankedPlayers = gameManager.GetRankedPlayers();
+            if (rankedPlayers == null)
+            {
+                Debug.LogWarning("ResultsScreenController: No ranked players available for standings panel.");
+                return;
+            }
 
             standingsPanel.ShowPanel(rankedPlayers, () =>
             {
@@ -443,7 +575,7 @@ namespace RobotsGame.Screens
             Debug.Log("Received round scores from server. Starting panel sequence...");
 
             // Server has calculated all scores, safe to show results
-            StartPanelSequence();
+            StartPanelSequence(false);
         }
 
         // ===========================
@@ -455,6 +587,12 @@ namespace RobotsGame.Screens
             if (GameManager.Instance != null && GameManager.Instance.IsMultiplayer)
             {
                 UnsubscribeFromNetworkEvents();
+            }
+
+            if (waitForQuestionDataCoroutine != null)
+            {
+                StopCoroutine(waitForQuestionDataCoroutine);
+                waitForQuestionDataCoroutine = null;
             }
 
             // Unsubscribe from UI events
