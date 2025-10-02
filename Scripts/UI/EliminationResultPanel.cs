@@ -10,6 +10,7 @@ namespace RobotsGame.UI
     /// Shows elimination result: "ROBOT IDENTIFIED" or "TIE VOTE"
     /// Based on unityspec.md EliminationScreen result specifications.
     /// </summary>
+    [RequireComponent(typeof(RectTransform))]
     public class EliminationResultPanel : MonoBehaviour
     {
         [Header("UI References")]
@@ -29,12 +30,18 @@ namespace RobotsGame.UI
         [SerializeField] private float holdDuration = 5f; // Hold before transition
 
         private bool isShowing = false;
+        private RectTransform rectTransform;
 
         // ===========================
         // LIFECYCLE
         // ===========================
         private void Awake()
         {
+            if (!TryGetComponent(out rectTransform))
+            {
+                Debug.LogError($"{nameof(EliminationResultPanel)} requires a {nameof(RectTransform)} component.", this);
+            }
+
             if (canvasGroup == null)
                 canvasGroup = GetComponent<CanvasGroup>() ?? gameObject.AddComponent<CanvasGroup>();
 
@@ -120,7 +127,15 @@ namespace RobotsGame.UI
         {
             gameObject.SetActive(true);
 
-            RectTransform rect = GetComponent<RectTransform>();
+            RectTransform rect = rectTransform;
+
+            if (rect == null && !TryGetComponent(out rect))
+            {
+                Debug.LogError($"{nameof(EliminationResultPanel)} could not find required {nameof(RectTransform)} for animation.", this);
+                return;
+            }
+
+            rectTransform = rect;
 
             // Start position (off-screen down)
             Vector2 startPos = rect.anchoredPosition;
@@ -160,7 +175,15 @@ namespace RobotsGame.UI
         {
             DOTween.Kill(this);
             DOTween.Kill(canvasGroup);
-            DOTween.Kill(GetComponent<RectTransform>());
+            if (rectTransform == null && TryGetComponent(out RectTransform rect))
+            {
+                rectTransform = rect;
+            }
+
+            if (rectTransform != null)
+            {
+                DOTween.Kill(rectTransform);
+            }
         }
     }
 }
