@@ -402,7 +402,7 @@ namespace RobotsGame.Managers
             players.Clear();
             foreach (var playerData in data.players)
             {
-                players.Add(new Player(playerData.name, playerData.icon));
+                players.Add(new Player(playerData.name, playerData.icon, playerData.score));
             }
 
             Debug.Log($"Players updated: {players.Count} players");
