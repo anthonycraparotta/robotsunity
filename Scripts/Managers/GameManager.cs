@@ -241,11 +241,16 @@ namespace RobotsGame.Managers
 
         public void StartNextRound(Question question)
         {
+            // Ensure no stale vote data leaks into the new round
+            ClearVoteTracking();
+
             currentRound++;
             currentQuestion = question;
+            currentQuestion?.ClearEliminatedAnswers();
             currentAnswers.Clear();
             currentRoundScores.Clear();
-            ClearVoteTracking();
+            eliminationResults = new VoteResults();
+            votingResults = new VoteResults();
 
             // Initialize round scores for all players
             foreach (var player in players)
