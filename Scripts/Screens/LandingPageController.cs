@@ -116,8 +116,10 @@ namespace RobotsGame.Screens
                 // Start playing
                 videoPlayer.Play();
 
-                // Play voice over for rules
-                AudioManager.Instance.PlayVoiceOver(GameConstants.Audio.VO_LandingRules);
+                if (AudioManager.TryGetInstance(out var audioManager))
+                {
+                    audioManager.PlayVoiceOver(GameConstants.Audio.VO_LandingRules);
+                }
             }
 
             // Setup start button
@@ -183,8 +185,10 @@ namespace RobotsGame.Screens
 
             isTransitioning = true;
 
-            // Stop any voice overs
-            AudioManager.Instance.StopVoiceOver();
+            if (AudioManager.TryGetInstance(out var audioManager))
+            {
+                audioManager.StopVoiceOver();
+            }
 
             // Button press sound is handled by ButtonEffects component
 
@@ -202,7 +206,10 @@ namespace RobotsGame.Screens
             isTransitioning = true;
 
             // Mobile: immediate transition, no fade
-            AudioManager.Instance.PlayButtonPress();
+            if (AudioManager.TryGetInstance(out var audioManager))
+            {
+                audioManager.PlayButtonPress();
+            }
             GoToNextScene();
         }
 

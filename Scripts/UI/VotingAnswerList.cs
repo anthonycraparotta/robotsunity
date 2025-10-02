@@ -112,9 +112,9 @@ namespace RobotsGame.UI
             }
 
             // Play success sound if player voted correctly (mobile only)
-            if (isMobile && playerGotItRight)
+            if (isMobile && playerGotItRight && AudioManager.TryGetInstance(out var audioManager))
             {
-                AudioManager.Instance.PlaySuccess();
+                audioManager.PlaySuccess();
             }
 
             // Grey out all other answers

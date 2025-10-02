@@ -84,7 +84,10 @@ namespace RobotsGame.UI
             AnimateIconIn(iconObj);
 
             // Play sound
-            AudioManager.Instance.PlayPlayerIconPop();
+            if (AudioManager.TryGetInstance(out var audioManager))
+            {
+                audioManager.PlayPlayerIconPop();
+            }
         }
 
         /// <summary>

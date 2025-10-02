@@ -170,7 +170,11 @@ namespace RobotsGame.UI
 
                 if (!hasPlayedFinalSFX)
                 {
-                    AudioManager.Instance.PlayTimerFinal10Sec();
+                    if (AudioManager.TryGetInstance(out var finalAudioManager))
+                    {
+                        finalAudioManager.PlayTimerFinal10Sec();
+                    }
+
                     hasPlayedFinalSFX = true;
                 }
             }
@@ -182,8 +186,12 @@ namespace RobotsGame.UI
 
                 if (!hasPlayedTimeWarningVO)
                 {
-                    AudioManager.Instance.PlayVoiceOver(GameConstants.Audio.VO_TimeWarning,
-                                                       GameConstants.Delays.TimeWarningDelay);
+                    if (AudioManager.TryGetInstance(out var warningAudioManager))
+                    {
+                        warningAudioManager.PlayVoiceOver(GameConstants.Audio.VO_TimeWarning,
+                                                          GameConstants.Delays.TimeWarningDelay);
+                    }
+
                     hasPlayedTimeWarningVO = true;
                 }
             }
