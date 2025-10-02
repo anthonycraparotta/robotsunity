@@ -65,14 +65,12 @@ namespace RobotsGame.Screens
             responsiveUI = GetComponentInParent<ResponsiveUI>();
             if (responsiveUI == null)
                 responsiveUI = FindObjectOfType<ResponsiveUI>();
-
-            isDesktop = responsiveUI != null ? responsiveUI.IsDesktop : (Screen.width > GameConstants.UI.MobileMaxWidth);
-
-            SetupPlatformContent();
         }
 
         private void Start()
         {
+            InitializePlatform();
+
             var gameManager = GameManager.Instance;
             bool isMultiplayerGame = gameManager != null && gameManager.IsMultiplayer;
 
@@ -180,6 +178,20 @@ namespace RobotsGame.Screens
 
             if (mobileContent != null)
                 mobileContent.SetActive(!isDesktop);
+        }
+
+        private void InitializePlatform()
+        {
+            if (responsiveUI != null)
+            {
+                isDesktop = responsiveUI.IsDesktop;
+            }
+            else
+            {
+                isDesktop = Screen.width > GameConstants.UI.MobileMaxWidth;
+            }
+
+            SetupPlatformContent();
         }
 
         private void SetupDesktop()
