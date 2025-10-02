@@ -28,6 +28,14 @@ namespace RobotsGame.Data
             this.isDesktop = isDesktop;
         }
 
+        public Player(string playerName, string icon, int score, bool isDesktop = false)
+        {
+            this.playerName = playerName;
+            this.icon = icon;
+            this.score = score;
+            this.isDesktop = isDesktop;
+        }
+
         public void AddScore(int points)
         {
             score += points;
