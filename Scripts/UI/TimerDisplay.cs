@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -39,6 +40,8 @@ namespace RobotsGame.UI
         public bool IsRunning => isRunning;
         public bool IsExpired => timeRemaining <= 0f;
 
+        public event Action TimerExpired;
+
         // ===========================
         // LIFECYCLE
         // ===========================
@@ -77,7 +80,7 @@ namespace RobotsGame.UI
                 {
                     timeRemaining = 0;
                     isRunning = false;
-                    OnTimerExpired();
+                    NotifyTimerExpired();
                 }
 
                 UpdateTimerDisplay();
@@ -228,10 +231,11 @@ namespace RobotsGame.UI
         // EVENTS
         // ===========================
 
-        private void OnTimerExpired()
+        private void NotifyTimerExpired()
         {
             Debug.Log("Timer expired!");
             // Controller will handle submission
+            TimerExpired?.Invoke();
         }
 
         // ===========================
