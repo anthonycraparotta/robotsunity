@@ -74,8 +74,24 @@ namespace RobotsGame.Screens
             currentQuestion = GameManager.Instance.CurrentQuestion;
 
             // Get remaining answers (after elimination)
-            // For now, use all current answers (real game would filter eliminated)
-            remainingAnswers = new List<Answer>(GameManager.Instance.CurrentAnswers);
+            var allAnswers = GameManager.Instance.CurrentAnswers;
+            var eliminatedAnswers = currentQuestion != null ? currentQuestion.EliminatedAnswers : null;
+
+            if (eliminatedAnswers != null && eliminatedAnswers.Count > 0)
+            {
+                remainingAnswers = new List<Answer>();
+                foreach (var answer in allAnswers)
+                {
+                    if (!eliminatedAnswers.Contains(answer.Text))
+                    {
+                        remainingAnswers.Add(answer);
+                    }
+                }
+            }
+            else
+            {
+                remainingAnswers = new List<Answer>(allAnswers);
+            }
 
             // Get local player
             localPlayer = GameManager.Instance.Players.Count > 0
