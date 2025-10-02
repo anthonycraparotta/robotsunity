@@ -80,7 +80,7 @@ namespace RobotsGame.UI
                 {
                     timeRemaining = 0;
                     isRunning = false;
-                    NotifyTimerExpired();
+                    OnTimerExpired();
                 }
 
                 UpdateTimerDisplay();
@@ -231,11 +231,11 @@ namespace RobotsGame.UI
         // EVENTS
         // ===========================
 
-        private void NotifyTimerExpired()
+        private void OnTimerExpired()
         {
+            TimerExpired?.Invoke();
             Debug.Log("Timer expired!");
             // Controller will handle submission
-            TimerExpired?.Invoke();
         }
 
         // ===========================
