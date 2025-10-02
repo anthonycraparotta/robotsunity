@@ -64,14 +64,12 @@ namespace RobotsGame.Screens
             responsiveUI = GetComponentInParent<ResponsiveUI>();
             if (responsiveUI == null)
                 responsiveUI = FindObjectOfType<ResponsiveUI>();
-
-            isDesktop = responsiveUI != null ? responsiveUI.IsDesktop : (Screen.width > GameConstants.UI.MobileMaxWidth);
-
-            SetupPlatformContent();
         }
 
         private void Start()
         {
+            InitializePlatform();
+
             // Get question and answers from GameManager
             currentQuestion = GameManager.Instance.CurrentQuestion;
 
@@ -155,6 +153,20 @@ namespace RobotsGame.Screens
 
             if (mobileContent != null)
                 mobileContent.SetActive(!isDesktop);
+        }
+
+        private void InitializePlatform()
+        {
+            if (responsiveUI != null)
+            {
+                isDesktop = responsiveUI.IsDesktop;
+            }
+            else
+            {
+                isDesktop = Screen.width > GameConstants.UI.MobileMaxWidth;
+            }
+
+            SetupPlatformContent();
         }
 
         private void SetupDesktop(string playerAnswer)
