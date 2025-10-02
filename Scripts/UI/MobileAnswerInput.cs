@@ -12,6 +12,7 @@ namespace RobotsGame.UI
     /// Manages the mobile answer input field with validation and flash warnings.
     /// Based on unityspec.md QuestionScreen - Mobile InputField specifications.
     /// </summary>
+    [RequireComponent(typeof(TMP_InputField))]
     public class MobileAnswerInput : MonoBehaviour
     {
         [Header("UI References")]
@@ -51,8 +52,12 @@ namespace RobotsGame.UI
         // ===========================
         private void Awake()
         {
-            if (inputField == null)
-                inputField = GetComponent<TMP_InputField>();
+            if (!TryGetComponent(out inputField))
+            {
+                Debug.LogError($"{nameof(MobileAnswerInput)} on '{gameObject.name}' requires a {nameof(TMP_InputField)} component.", this);
+                enabled = false;
+                return;
+            }
 
             if (inputBackground == null)
                 inputBackground = GetComponent<Image>();
@@ -210,7 +215,7 @@ namespace RobotsGame.UI
             inputField.text = warningMessage;
             if (inputBackground != null)
                 inputBackground.DOColor(warningBackgroundColor, 0.2f);
-            inputField.textComponent.DOColor(warningTextColor, 0.2f);
+            inputField.textComponent?.DOColor(warningTextColor, 0.2f);
 
             // Wait for flash duration
             yield return new WaitForSeconds(flashDuration);
@@ -229,7 +234,7 @@ namespace RobotsGame.UI
 
             if (inputBackground != null)
                 inputBackground.DOColor(normalBackgroundColor, 0.2f);
-            inputField.textComponent.DOColor(normalTextColor, 0.2f);
+            inputField.textComponent?.DOColor(normalTextColor, 0.2f);
 
             // Re-enable input
             inputField.interactable = !hasSubmitted;
