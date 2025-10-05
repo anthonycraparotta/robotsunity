@@ -1,0 +1,2125 @@
+====================================================================================================
+UNITY SCENE COMPONENT ANALYSIS - COMPLETE REPORT
+====================================================================================================
+
+
+====================================================================================================
+SCENE: LandingScreen.unity
+====================================================================================================
+
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: DesktopDisplay
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - Canvas
+    - UnityEngine.UI.CanvasScaler
+    - UnityEngine.UI.GraphicRaycaster
+GameObject: 
+  Components:
+    - UnityEngine.EventSystems.EventSystem
+    - UnityEngine.EventSystems.StandaloneInputModule
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.RawImage
+    - VideoPlayer
+GameObject: MobileDisplay
+  Components:
+    - RectTransform
+GameObject: Main Camera
+  Components:
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+    - UnityEngine.UI.Button
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: JoinScreen
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+    - UnityEngine.UI.Button
+
+Statistics:
+  Total GameObjects: 12
+  Total Components: 30
+
+Component Types:
+  Canvas: 1
+  CanvasRenderer: 6
+  RectTransform: 10
+  UnityEngine.EventSystems.EventSystem: 1
+  UnityEngine.EventSystems.StandaloneInputModule: 1
+  UnityEngine.UI.Button: 2
+  UnityEngine.UI.CanvasScaler: 1
+  UnityEngine.UI.GraphicRaycaster: 1
+  UnityEngine.UI.Image: 5
+  UnityEngine.UI.RawImage: 1
+  VideoPlayer: 1
+
+
+====================================================================================================
+SCENE: LobbyScreen.unity
+====================================================================================================
+
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+    - UnityEngine.UI.Button
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+    - UnityEngine.UI.Button
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - UnityEngine.EventSystems.EventSystem
+    - UnityEngine.EventSystems.StandaloneInputModule
+GameObject: JoinWait
+  Components:
+    - RectTransform
+GameObject: DesktopDisplay
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+    - UnityEngine.UI.Button
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: SelectedIconContainer
+  Components:
+    - RectTransform
+GameObject: MobileDisplay
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - Canvas
+    - UnityEngine.UI.CanvasScaler
+    - UnityEngine.UI.GraphicRaycaster
+GameObject: JoinScreen
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+    - UnityEngine.UI.Button
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+    - UnityEngine.UI.LayoutElement
+GameObject: ScrollingPlayerIconContainer
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - UnityEngine.UI.RectMask2D
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+    - TMPro.TMP_InputField
+GameObject: JoinForm
+  Components:
+    - RectTransform
+GameObject: PlayerIconContainer
+  Components:
+    - RectTransform
+GameObject: PlayerIconContainer
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+    - UnityEngine.UI.Button
+GameObject: PlayerIconLobby
+  Components:
+    - RectTransform
+GameObject: Main Camera
+  Components:
+
+Statistics:
+  Total GameObjects: 39
+  Total Components: 100
+
+Component Types:
+  Canvas: 1
+  CanvasRenderer: 25
+  RectTransform: 37
+  TMPro.TMP_InputField: 1
+  TMPro.TextMeshProUGUI: 6
+  UnityEngine.EventSystems.EventSystem: 1
+  UnityEngine.EventSystems.StandaloneInputModule: 1
+  UnityEngine.UI.Button: 5
+  UnityEngine.UI.CanvasScaler: 1
+  UnityEngine.UI.GraphicRaycaster: 1
+  UnityEngine.UI.Image: 19
+  UnityEngine.UI.LayoutElement: 1
+  UnityEngine.UI.RectMask2D: 1
+
+
+====================================================================================================
+SCENE: QuestionScreen.unity
+====================================================================================================
+
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: QuestionCard
+  Components:
+    - RectTransform
+GameObject: TimerAnimationContainer
+  Components:
+    - RectTransform
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: Main Camera
+  Components:
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: DesktopDisplay
+  Components:
+    - RectTransform
+GameObject: MobileDisplay
+  Components:
+    - RectTransform
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+    - UnityEngine.UI.LayoutElement
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - Canvas
+    - UnityEngine.UI.CanvasScaler
+    - UnityEngine.UI.GraphicRaycaster
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: RobotForegrounds
+  Components:
+    - RectTransform
+GameObject: TimerContainer
+  Components:
+    - RectTransform
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+    - TMPro.TMP_InputField
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: PlayerIconQuestion
+  Components:
+    - RectTransform
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+    - UnityEngine.UI.Button
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - UnityEngine.EventSystems.EventSystem
+    - UnityEngine.EventSystems.StandaloneInputModule
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - UnityEngine.UI.RectMask2D
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - UnityEngine.UI.GridLayoutGroup
+
+Statistics:
+  Total GameObjects: 52
+  Total Components: 140
+
+Component Types:
+  Canvas: 1
+  CanvasRenderer: 40
+  RectTransform: 50
+  TMPro.TMP_InputField: 1
+  TMPro.TextMeshProUGUI: 6
+  UnityEngine.EventSystems.EventSystem: 1
+  UnityEngine.EventSystems.StandaloneInputModule: 1
+  UnityEngine.UI.Button: 1
+  UnityEngine.UI.CanvasScaler: 1
+  UnityEngine.UI.GraphicRaycaster: 1
+  UnityEngine.UI.GridLayoutGroup: 1
+  UnityEngine.UI.Image: 34
+  UnityEngine.UI.LayoutElement: 1
+  UnityEngine.UI.RectMask2D: 1
+
+
+====================================================================================================
+SCENE: PictureQuestionScreen.unity
+====================================================================================================
+
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+    - UnityEngine.UI.Button
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - UnityEngine.UI.RectMask2D
+GameObject: TimerAnimationContainer
+  Components:
+    - RectTransform
+GameObject: Main Camera
+  Components:
+GameObject: TimerContainer
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - UnityEngine.UI.GridLayoutGroup
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: MobileDisplay
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+    - UnityEngine.UI.LayoutElement
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: DesktopDisplay
+  Components:
+    - RectTransform
+GameObject: PlayerIconPictureQuestion
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+    - TMPro.TMP_InputField
+GameObject: PictureContainer
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - Canvas
+    - UnityEngine.UI.CanvasScaler
+    - UnityEngine.UI.GraphicRaycaster
+GameObject: 
+  Components:
+    - UnityEngine.EventSystems.EventSystem
+    - UnityEngine.EventSystems.StandaloneInputModule
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: PictureContainer
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+
+Statistics:
+  Total GameObjects: 30
+  Total Components: 74
+
+Component Types:
+  Canvas: 1
+  CanvasRenderer: 18
+  RectTransform: 28
+  TMPro.TMP_InputField: 1
+  TMPro.TextMeshProUGUI: 5
+  UnityEngine.EventSystems.EventSystem: 1
+  UnityEngine.EventSystems.StandaloneInputModule: 1
+  UnityEngine.UI.Button: 1
+  UnityEngine.UI.CanvasScaler: 1
+  UnityEngine.UI.GraphicRaycaster: 1
+  UnityEngine.UI.GridLayoutGroup: 1
+  UnityEngine.UI.Image: 13
+  UnityEngine.UI.LayoutElement: 1
+  UnityEngine.UI.RectMask2D: 1
+
+
+====================================================================================================
+SCENE: EliminationScreen.unity
+====================================================================================================
+
+GameObject: MobileDisplay
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - Canvas
+    - UnityEngine.UI.CanvasScaler
+    - UnityEngine.UI.GraphicRaycaster
+GameObject: 
+  Components:
+    - RectTransform
+    - UnityEngine.UI.VerticalLayoutGroup
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+    - UnityEngine.UI.Button
+    - UnityEngine.UI.Outline
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: DesktopDisplay
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - UnityEngine.EventSystems.EventSystem
+    - UnityEngine.EventSystems.StandaloneInputModule
+GameObject: TimerAnimationContainer
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: Main Camera
+  Components:
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: TimerContainer
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - UnityEngine.UI.VerticalLayoutGroup
+
+Statistics:
+  Total GameObjects: 18
+  Total Components: 45
+
+Component Types:
+  Canvas: 1
+  CanvasRenderer: 9
+  RectTransform: 18
+  TMPro.TextMeshProUGUI: 3
+  UnityEngine.EventSystems.EventSystem: 1
+  UnityEngine.EventSystems.StandaloneInputModule: 1
+  UnityEngine.UI.Button: 1
+  UnityEngine.UI.CanvasScaler: 1
+  UnityEngine.UI.GraphicRaycaster: 1
+  UnityEngine.UI.Image: 6
+  UnityEngine.UI.Outline: 1
+  UnityEngine.UI.VerticalLayoutGroup: 2
+
+
+====================================================================================================
+SCENE: VotingScreen.unity
+====================================================================================================
+
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+    - UnityEngine.UI.Button
+    - UnityEngine.UI.Outline
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - Canvas
+    - UnityEngine.UI.CanvasScaler
+    - UnityEngine.UI.GraphicRaycaster
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: TimerContainer
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - UnityEngine.EventSystems.EventSystem
+    - UnityEngine.EventSystems.StandaloneInputModule
+GameObject: 
+  Components:
+    - RectTransform
+    - UnityEngine.UI.VerticalLayoutGroup
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - UnityEngine.UI.VerticalLayoutGroup
+GameObject: TimerAnimationContainer
+  Components:
+    - RectTransform
+GameObject: Main Camera
+  Components:
+GameObject: DesktopDisplay
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: MobileDisplay
+  Components:
+    - RectTransform
+
+Statistics:
+  Total GameObjects: 18
+  Total Components: 45
+
+Component Types:
+  Canvas: 1
+  CanvasRenderer: 9
+  RectTransform: 18
+  TMPro.TextMeshProUGUI: 3
+  UnityEngine.EventSystems.EventSystem: 1
+  UnityEngine.EventSystems.StandaloneInputModule: 1
+  UnityEngine.UI.Button: 1
+  UnityEngine.UI.CanvasScaler: 1
+  UnityEngine.UI.GraphicRaycaster: 1
+  UnityEngine.UI.Image: 6
+  UnityEngine.UI.Outline: 1
+  UnityEngine.UI.VerticalLayoutGroup: 2
+
+
+====================================================================================================
+SCENE: ResultsScreen.unity
+====================================================================================================
+
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - UnityEngine.UI.VerticalLayoutGroup
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - UnityEngine.UI.VerticalLayoutGroup
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: ' True Answer'
+  Components:
+    - RectTransform
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: PlayerIconZone-Fooled
+  Components:
+    - RectTransform
+GameObject: PlayerRank
+  Components:
+    - RectTransform
+GameObject: PlayerIconZone-NotFooled
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+    - UnityEngine.UI.Outline
+GameObject: Main Camera
+  Components:
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+    - UnityEngine.UI.Outline
+GameObject: Robot Answer
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: Panel1
+  Components:
+    - RectTransform
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+    - UnityEngine.UI.Button
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: Panel3
+  Components:
+    - RectTransform
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: MobileResultsContainer
+  Components:
+    - RectTransform
+GameObject: PlayerIconZone
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: MobileDisplay
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - UnityEngine.EventSystems.EventSystem
+    - UnityEngine.EventSystems.StandaloneInputModule
+GameObject: ResultsPanelContainer
+  Components:
+    - RectTransform
+GameObject: Panel2
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: Round Results Hero
+  Components:
+    - RectTransform
+GameObject: PlayerResponse
+  Components:
+    - RectTransform
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: Panel1ResultsContainer
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+    - UnityEngine.UI.Outline
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+    - UnityEngine.UI.Outline
+GameObject: DesktopDisplay
+  Components:
+    - RectTransform
+GameObject: OtherIconsContainer
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+    - UnityEngine.UI.Button
+GameObject: 
+  Components:
+    - RectTransform
+    - Canvas
+    - UnityEngine.UI.CanvasScaler
+    - UnityEngine.UI.GraphicRaycaster
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+
+Statistics:
+  Total GameObjects: 76
+  Total Components: 195
+
+Component Types:
+  Canvas: 1
+  CanvasRenderer: 54
+  RectTransform: 74
+  TMPro.TextMeshProUGUI: 21
+  UnityEngine.EventSystems.EventSystem: 1
+  UnityEngine.EventSystems.StandaloneInputModule: 1
+  UnityEngine.UI.Button: 2
+  UnityEngine.UI.CanvasScaler: 1
+  UnityEngine.UI.GraphicRaycaster: 1
+  UnityEngine.UI.Image: 33
+  UnityEngine.UI.Outline: 4
+  UnityEngine.UI.VerticalLayoutGroup: 2
+
+
+====================================================================================================
+SCENE: RoundArtScreen.unity
+====================================================================================================
+
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: MobileDisplay
+  Components:
+    - RectTransform
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: BackgroundContainer
+  Components:
+    - RectTransform
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: DesktopDisplay
+  Components:
+    - RectTransform
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: Main Camera
+  Components:
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+    - UnityEngine.UI.Button
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - Canvas
+    - UnityEngine.UI.CanvasScaler
+    - UnityEngine.UI.GraphicRaycaster
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - UnityEngine.EventSystems.EventSystem
+    - UnityEngine.EventSystems.StandaloneInputModule
+
+Statistics:
+  Total GameObjects: 21
+  Total Components: 55
+
+Component Types:
+  Canvas: 1
+  CanvasRenderer: 15
+  RectTransform: 19
+  UnityEngine.EventSystems.EventSystem: 1
+  UnityEngine.EventSystems.StandaloneInputModule: 1
+  UnityEngine.UI.Button: 1
+  UnityEngine.UI.CanvasScaler: 1
+  UnityEngine.UI.GraphicRaycaster: 1
+  UnityEngine.UI.Image: 15
+
+
+====================================================================================================
+SCENE: HalftimeResultsScreen.unity
+====================================================================================================
+
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: WinnerSection
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - UnityEngine.EventSystems.EventSystem
+    - UnityEngine.EventSystems.StandaloneInputModule
+GameObject: DesktopDisplay
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+    - UnityEngine.UI.Button
+GameObject: 
+  Components:
+    - RectTransform
+    - Canvas
+    - UnityEngine.UI.CanvasScaler
+    - UnityEngine.UI.GraphicRaycaster
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+    - UnityEngine.UI.Outline
+GameObject: PlayerIconZone
+  Components:
+    - RectTransform
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: MobileDisplay
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: LoserSection
+  Components:
+    - RectTransform
+GameObject: PlayerIconZone
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+    - UnityEngine.UI.Outline
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: Main Camera
+  Components:
+
+Statistics:
+  Total GameObjects: 25
+  Total Components: 63
+
+Component Types:
+  Canvas: 1
+  CanvasRenderer: 16
+  RectTransform: 23
+  TMPro.TextMeshProUGUI: 6
+  UnityEngine.EventSystems.EventSystem: 1
+  UnityEngine.EventSystems.StandaloneInputModule: 1
+  UnityEngine.UI.Button: 1
+  UnityEngine.UI.CanvasScaler: 1
+  UnityEngine.UI.GraphicRaycaster: 1
+  UnityEngine.UI.Image: 10
+  UnityEngine.UI.Outline: 2
+
+
+====================================================================================================
+SCENE: BonusIntroScreen.unity
+====================================================================================================
+
+GameObject: 
+  Components:
+    - UnityEngine.EventSystems.EventSystem
+    - UnityEngine.EventSystems.StandaloneInputModule
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: MobileDisplay
+  Components:
+    - RectTransform
+GameObject: DesktopDisplay
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+    - UnityEngine.UI.Button
+GameObject: Main Camera
+  Components:
+GameObject: 
+  Components:
+    - RectTransform
+    - Canvas
+    - UnityEngine.UI.CanvasScaler
+    - UnityEngine.UI.GraphicRaycaster
+
+Statistics:
+  Total GameObjects: 9
+  Total Components: 21
+
+Component Types:
+  Canvas: 1
+  CanvasRenderer: 4
+  RectTransform: 7
+  UnityEngine.EventSystems.EventSystem: 1
+  UnityEngine.EventSystems.StandaloneInputModule: 1
+  UnityEngine.UI.Button: 1
+  UnityEngine.UI.CanvasScaler: 1
+  UnityEngine.UI.GraphicRaycaster: 1
+  UnityEngine.UI.Image: 4
+
+
+====================================================================================================
+SCENE: BonusQuestionScreen.unity
+====================================================================================================
+
+GameObject: 
+  Components:
+    - UnityEngine.EventSystems.EventSystem
+    - UnityEngine.EventSystems.StandaloneInputModule
+GameObject: DesktopDisplay
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - Canvas
+    - UnityEngine.UI.CanvasScaler
+    - UnityEngine.UI.GraphicRaycaster
+GameObject: MobileDisplay
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - UnityEngine.UI.GridLayoutGroup
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: TimerContainer
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+    - UnityEngine.UI.Button
+    - UnityEngine.UI.Outline
+GameObject: PlayerIconBonus
+  Components:
+    - RectTransform
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+    - UnityEngine.UI.Button
+    - UnityEngine.UI.Outline
+GameObject: TimerAnimationContainer
+  Components:
+    - RectTransform
+GameObject: Main Camera
+  Components:
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - UnityEngine.UI.VerticalLayoutGroup
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: BonusQuestionCard
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+
+Statistics:
+  Total GameObjects: 28
+  Total Components: 71
+
+Component Types:
+  Canvas: 1
+  CanvasRenderer: 17
+  RectTransform: 26
+  TMPro.TextMeshProUGUI: 6
+  UnityEngine.EventSystems.EventSystem: 1
+  UnityEngine.EventSystems.StandaloneInputModule: 1
+  UnityEngine.UI.Button: 2
+  UnityEngine.UI.CanvasScaler: 1
+  UnityEngine.UI.GraphicRaycaster: 1
+  UnityEngine.UI.GridLayoutGroup: 1
+  UnityEngine.UI.Image: 11
+  UnityEngine.UI.Outline: 2
+  UnityEngine.UI.VerticalLayoutGroup: 1
+
+
+====================================================================================================
+SCENE: FinalResults.unity
+====================================================================================================
+
+GameObject: 
+  Components:
+    - UnityEngine.EventSystems.EventSystem
+    - UnityEngine.EventSystems.StandaloneInputModule
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+    - UnityEngine.UI.Button
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: MobileDisplay
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: WinnerSection
+  Components:
+    - RectTransform
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+    - UnityEngine.UI.Button
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+    - UnityEngine.UI.Outline
+GameObject: 
+  Components:
+    - RectTransform
+    - Canvas
+    - UnityEngine.UI.CanvasScaler
+    - UnityEngine.UI.GraphicRaycaster
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: PlayerIconZone
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+    - UnityEngine.UI.Outline
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: LoserSection
+  Components:
+    - RectTransform
+GameObject: MobileResultsContainer
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: Main Camera
+  Components:
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - TMPro.TextMeshProUGUI
+GameObject: DesktopDisplay
+  Components:
+    - RectTransform
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: PlayerIconZone
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+    - UnityEngine.UI.Button
+
+Statistics:
+  Total GameObjects: 32
+  Total Components: 84
+
+Component Types:
+  Canvas: 1
+  CanvasRenderer: 22
+  RectTransform: 30
+  TMPro.TextMeshProUGUI: 9
+  UnityEngine.EventSystems.EventSystem: 1
+  UnityEngine.EventSystems.StandaloneInputModule: 1
+  UnityEngine.UI.Button: 3
+  UnityEngine.UI.CanvasScaler: 1
+  UnityEngine.UI.GraphicRaycaster: 1
+  UnityEngine.UI.Image: 13
+  UnityEngine.UI.Outline: 2
+
+
+====================================================================================================
+SCENE: CreditsScreen.unity
+====================================================================================================
+
+GameObject: 
+  Components:
+    - RectTransform
+    - Canvas
+    - UnityEngine.UI.CanvasScaler
+    - UnityEngine.UI.GraphicRaycaster
+GameObject: Main Camera
+  Components:
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.RawImage
+GameObject: DesktopDisplay
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+    - UnityEngine.UI.Button
+GameObject: Credits Scroll Zone
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.RawImage
+    - VideoPlayer
+GameObject: MobileDisplay
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - UnityEngine.EventSystems.EventSystem
+    - UnityEngine.EventSystems.StandaloneInputModule
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject:  (INACTIVE)
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+    - UnityEngine.UI.Button
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+
+Statistics:
+  Total GameObjects: 15
+  Total Components: 39
+
+Component Types:
+  Canvas: 1
+  CanvasRenderer: 9
+  RectTransform: 13
+  UnityEngine.EventSystems.EventSystem: 1
+  UnityEngine.EventSystems.StandaloneInputModule: 1
+  UnityEngine.UI.Button: 2
+  UnityEngine.UI.CanvasScaler: 1
+  UnityEngine.UI.GraphicRaycaster: 1
+  UnityEngine.UI.Image: 7
+  UnityEngine.UI.RawImage: 2
+  VideoPlayer: 1
+
+
+====================================================================================================
+SCENE: LoadingScreen.unity
+====================================================================================================
+
+GameObject: DesktopDisplay
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - RectTransform
+    - Canvas
+    - UnityEngine.UI.CanvasScaler
+    - UnityEngine.UI.GraphicRaycaster
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: Main Camera
+  Components:
+GameObject: MobileDisplay
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+GameObject: 
+  Components:
+    - UnityEngine.EventSystems.EventSystem
+    - UnityEngine.EventSystems.StandaloneInputModule
+
+Statistics:
+  Total GameObjects: 9
+  Total Components: 20
+
+Component Types:
+  Canvas: 1
+  CanvasRenderer: 4
+  RectTransform: 7
+  UnityEngine.EventSystems.EventSystem: 1
+  UnityEngine.EventSystems.StandaloneInputModule: 1
+  UnityEngine.UI.CanvasScaler: 1
+  UnityEngine.UI.GraphicRaycaster: 1
+  UnityEngine.UI.Image: 4
+
+
+====================================================================================================
+SCENE: IntroVideoScreen.unity
+====================================================================================================
+
+GameObject: Main Camera
+  Components:
+GameObject: DesktopDisplay
+  Components:
+    - RectTransform
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.RawImage
+    - VideoPlayer
+GameObject: 
+  Components:
+    - RectTransform
+    - Canvas
+    - UnityEngine.UI.CanvasScaler
+    - UnityEngine.UI.GraphicRaycaster
+GameObject: 
+  Components:
+    - UnityEngine.EventSystems.EventSystem
+    - UnityEngine.EventSystems.StandaloneInputModule
+GameObject: 
+  Components:
+    - RectTransform
+    - CanvasRenderer
+    - UnityEngine.UI.Image
+
+Statistics:
+  Total GameObjects: 6
+  Total Components: 14
+
+Component Types:
+  Canvas: 1
+  CanvasRenderer: 2
+  RectTransform: 4
+  UnityEngine.EventSystems.EventSystem: 1
+  UnityEngine.EventSystems.StandaloneInputModule: 1
+  UnityEngine.UI.CanvasScaler: 1
+  UnityEngine.UI.GraphicRaycaster: 1
+  UnityEngine.UI.Image: 1
+  UnityEngine.UI.RawImage: 1
+  VideoPlayer: 1
