@@ -61,7 +61,7 @@ public class PlayerManager : MonoBehaviour
             return playerIconSprites[iconName];
         }
         
-        Debug.LogWarning("Player icon not found: " + iconName);
+        // Debug.LogWarning("Player icon not found: " + iconName);
         return null;
     }
     

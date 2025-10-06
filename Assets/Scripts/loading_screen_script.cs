@@ -87,28 +87,23 @@ public class LoadingScreen : MonoBehaviour
 
     void InitializeGlobalManagers()
     {
-        // Create a DontDestroyOnLoad parent object for all managers
-        GameObject managersParent = new GameObject("_GlobalManagers");
-        DontDestroyOnLoad(managersParent);
-
-        // Initialize each manager as a child of the parent
-        CreateManager<GameManager>("GameManager", managersParent.transform);
-        CreateManager<AudioManager>("AudioManager", managersParent.transform);
-        CreateManager<PlayerManager>("PlayerManager", managersParent.transform);
-        CreateManager<SceneTransitionManager>("SceneTransitionManager", managersParent.transform);
-        CreateManager<DeviceDetector>("DeviceDetector", managersParent.transform);
-        CreateManager<ContentFilterManager>("ContentFilterManager", managersParent.transform);
-        CreateManager<RWMNetworkManager>("NetworkManager", managersParent.transform);
-        CreateManager<PlayerAuthSystem>("PlayerAuthSystem", managersParent.transform);
-        CreateManager<DebugManager>("DebugManager", managersParent.transform);
+        // Initialize each manager as a root GameObject (they handle DontDestroyOnLoad themselves)
+        CreateManager<GameManager>("GameManager");
+        CreateManager<AudioManager>("AudioManager");
+        CreateManager<PlayerManager>("PlayerManager");
+        CreateManager<SceneTransitionManager>("SceneTransitionManager");
+        CreateManager<DeviceDetector>("DeviceDetector");
+        CreateManager<ContentFilterManager>("ContentFilterManager");
+        CreateManager<RWMNetworkManager>("NetworkManager");
+        CreateManager<PlayerAuthSystem>("PlayerAuthSystem");
+        CreateManager<DebugManager>("DebugManager");
 
         Debug.Log("All global managers initialized");
     }
 
-    void CreateManager<T>(string managerName, Transform parent) where T : MonoBehaviour
+    void CreateManager<T>(string managerName) where T : MonoBehaviour
     {
         GameObject managerObj = new GameObject(managerName);
-        managerObj.transform.SetParent(parent);
         managerObj.AddComponent<T>();
         Debug.Log($"Created {managerName}");
     }

@@ -23,19 +23,19 @@ public class LandingScreen : MonoBehaviour
         {
             startTestButton.onClick.AddListener(OnStartGameClicked);
         }
-        
+
         if (joinGameButton != null)
         {
             joinGameButton.onClick.AddListener(OnJoinGameClicked);
         }
-        
+
         // Setup video if present
         if (rulesVideo != null)
         {
             rulesVideo.prepareCompleted += OnVideoPrepared;
             rulesVideo.loopPointReached += OnVideoFinished;
         }
-        
+
         // Determine which display to show based on device
         ShowAppropriateDisplay();
     }
@@ -60,6 +60,13 @@ public class LandingScreen : MonoBehaviour
     {
         // Desktop host starts the game - go to lobby
         Debug.Log("Start Game clicked - transitioning to Lobby");
+
+        if (GameManager.Instance == null)
+        {
+            Debug.LogError("GameManager.Instance is NULL! Cannot advance to next screen. Make sure to start from LoadingScreen scene.");
+            return;
+        }
+
         GameManager.Instance.AdvanceToNextScreen();
     }
     
@@ -67,6 +74,13 @@ public class LandingScreen : MonoBehaviour
     {
         // Mobile player wants to join - go to lobby/join screen
         Debug.Log("Join Game clicked - transitioning to Lobby");
+
+        if (GameManager.Instance == null)
+        {
+            Debug.LogError("GameManager.Instance is NULL! Cannot advance to next screen. Make sure to start from LoadingScreen scene.");
+            return;
+        }
+
         GameManager.Instance.AdvanceToNextScreen();
     }
     

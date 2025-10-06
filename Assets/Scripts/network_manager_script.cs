@@ -32,21 +32,34 @@ public class RWMNetworkManager : NetworkBehaviour
     
     void Start()
     {
-        // Subscribe to network events
-        NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
-        NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
+        // Subscribe to network events only if NetworkManager exists
+        if (NetworkManager.Singleton != null)
+        {
+            NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
+            NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
+        }
+        else
+        {
+            Debug.LogWarning("NetworkManager.Singleton is null - networking features disabled. Add a NetworkManager GameObject to enable multiplayer.");
+        }
     }
     
     // === HOST METHODS ===
     
     public void StartHost()
     {
+        if (NetworkManager.Singleton == null)
+        {
+            Debug.LogError("Cannot start host - NetworkManager.Singleton is null");
+            return;
+        }
+
         isHost = true;
         NetworkManager.Singleton.StartHost();
-        
+
         // Generate room code
         GenerateRoomCode();
-        
+
         Debug.Log("Host started with room code: " + roomCode);
     }
     
@@ -72,13 +85,19 @@ public class RWMNetworkManager : NetworkBehaviour
     
     public void JoinGame(string code)
     {
+        if (NetworkManager.Singleton == null)
+        {
+            Debug.LogError("Cannot join game - NetworkManager.Singleton is null");
+            return;
+        }
+
         isHost = false;
         roomCode = code;
-        
+
         // In a real implementation, this would connect to a relay/matchmaking service
         // For local testing, just start as client
         NetworkManager.Singleton.StartClient();
-        
+
         Debug.Log("Attempting to join room: " + code);
     }
     

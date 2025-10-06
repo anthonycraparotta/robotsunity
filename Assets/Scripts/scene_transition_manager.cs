@@ -53,10 +53,11 @@ public class SceneTransitionManager : MonoBehaviour
         // Create fade image
         GameObject imageObj = new GameObject("FadeImage");
         imageObj.transform.SetParent(canvasObj.transform);
-        
+
         fadeImage = imageObj.AddComponent<Image>();
         fadeImage.color = new Color(fadeColor.r, fadeColor.g, fadeColor.b, 0); // Start transparent
-        
+        fadeImage.raycastTarget = false; // Don't block clicks when transparent
+
         RectTransform rect = fadeImage.GetComponent<RectTransform>();
         rect.anchorMin = Vector2.zero;
         rect.anchorMax = Vector2.one;
