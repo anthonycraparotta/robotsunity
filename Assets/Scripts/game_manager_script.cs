@@ -14,9 +14,9 @@ public class GameManager : MonoBehaviour
     public GameMode gameMode = GameMode.EightQuestions;
     
     // === GAME STATE ===
-    [System.NonSerialized] public int currentRound = 0;
-    [System.NonSerialized] public bool isHalftimePlayed = false;
-    [System.NonSerialized] public bool isBonusRoundPlayed = false;
+    public int currentRound = 0;
+    public bool isHalftimePlayed = false;
+    public bool isBonusRoundPlayed = false;
     
     // === PLAYER DATA ===
     [Header("Player Data")]
