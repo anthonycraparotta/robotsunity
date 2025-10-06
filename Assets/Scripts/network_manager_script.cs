@@ -165,15 +165,22 @@ public class RWMNetworkManager : NetworkBehaviour
     
     void Update()
     {
+        // When the networking stack isn't running we shouldn't push/pull state,
+        // otherwise local single-player sessions get overwritten with default values.
+        if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
+        {
+            return;
+        }
+
         if (IsServer)
         {
             // Host continuously syncs timer
             SyncTimerToClients();
-            
+
             // Sync round number
             networkCurrentRound.Value = GameManager.Instance.currentRound;
         }
-        else
+        else if (IsClient)
         {
             // Clients update their local GameManager from network
             GameManager.Instance.currentTimerValue = networkTimerValue.Value;
