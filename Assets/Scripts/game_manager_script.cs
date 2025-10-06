@@ -14,10 +14,9 @@ public class GameManager : MonoBehaviour
     public GameMode gameMode = GameMode.EightQuestions;
     
     // === GAME STATE ===
-    [Header("Game State")]
-    public int currentRound = 0;
-    public bool isHalftimePlayed = false;
-    public bool isBonusRoundPlayed = false;
+    [System.NonSerialized] public int currentRound = 0;
+    [System.NonSerialized] public bool isHalftimePlayed = false;
+    [System.NonSerialized] public bool isBonusRoundPlayed = false;
     
     // === PLAYER DATA ===
     [Header("Player Data")]
@@ -93,7 +92,7 @@ public class GameManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
-            Debug.Log("GameManager created - currentRound: " + currentRound);
+            Debug.Log("GameManager created");
         }
         else
         {
