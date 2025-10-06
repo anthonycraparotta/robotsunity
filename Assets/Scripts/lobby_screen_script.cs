@@ -54,23 +54,30 @@ public class LobbyScreen : MonoBehaviour
     void Start()
     {
         isMobile = DeviceDetector.Instance != null && DeviceDetector.Instance.IsMobile();
-        
+
+        // Set game state to Lobby
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.currentGameState = GameManager.GameState.Lobby;
+            Debug.Log("LobbyScreen loaded - set currentGameState to Lobby");
+        }
+
         // Setup desktop buttons
         if (startTestButton != null)
         {
             startTestButton.onClick.AddListener(OnStartGameClicked);
         }
-        
+
         if (eightQButton != null)
         {
             eightQButton.onClick.AddListener(() => OnGameModeSelected(GameManager.GameMode.EightQuestions));
         }
-        
+
         if (twelveQButton != null)
         {
             twelveQButton.onClick.AddListener(() => OnGameModeSelected(GameManager.GameMode.TwelveQuestions));
         }
-        
+
         // Setup mobile join game button (shows the form)
         if (joinGameButton != null)
         {
@@ -85,7 +92,7 @@ public class LobbyScreen : MonoBehaviour
 
         // Show appropriate display
         ShowAppropriateDisplay();
-        
+
         // Generate room code if desktop
         if (!isMobile)
         {
@@ -157,15 +164,15 @@ public class LobbyScreen : MonoBehaviour
     
     void GenerateRoomCode()
     {
-        // Generate a random 4-character room code
+        // Generate a random 5-character room code
         const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         System.Text.StringBuilder code = new System.Text.StringBuilder();
-        
-        for (int i = 0; i < 4; i++)
+
+        for (int i = 0; i < 5; i++)
         {
             code.Append(chars[Random.Range(0, chars.Length)]);
         }
-        
+
         roomCode = code.ToString();
         
         if (roomCodeDisplay != null)
@@ -204,9 +211,11 @@ public class LobbyScreen : MonoBehaviour
             Debug.LogWarning("Need at least 2 players to start!");
             return;
         }
-        
-        // Start the game
-        GameManager.Instance.StartGame(GameManager.Instance.gameMode);
+
+        Debug.Log("Start button clicked - currentGameState: " + GameManager.Instance.currentGameState + ", currentRound: " + GameManager.Instance.currentRound);
+
+        // Advance to Round Art (which will load Round 1)
+        GameManager.Instance.AdvanceToNextScreen();
     }
     
     // === MOBILE JOIN FORM ===
@@ -350,45 +359,56 @@ public class LobbyScreen : MonoBehaviour
     void UpdatePlayerList()
     {
         if (playerIconContainer == null) return;
-        
+
         List<PlayerData> players = GameManager.Instance.GetAllPlayers();
-        
+
         // Clear existing icons
         foreach (GameObject icon in spawnedPlayerIcons)
         {
             Destroy(icon);
         }
         spawnedPlayerIcons.Clear();
-        
-        // Spawn new icons for each player
+
+        // Count non-host players
+        int nonHostPlayerCount = 0;
+
+        // Spawn new icons for each player (excluding host)
         foreach (PlayerData player in players)
         {
+            // Skip host player
+            if (player.isHost)
+            {
+                continue;
+            }
+
+            nonHostPlayerCount++;
+
             if (playerIconLobbyPrefab != null)
             {
                 GameObject iconObj = Instantiate(playerIconLobbyPrefab, playerIconContainer);
-                
+
                 // Set player name
                 TextMeshProUGUI nameText = iconObj.transform.Find("PlayerName")?.GetComponent<TextMeshProUGUI>();
                 if (nameText != null)
                 {
                     nameText.text = player.playerName;
                 }
-                
+
                 // Set player icon
                 Image iconImage = iconObj.transform.Find("PlayerIcon")?.GetComponent<Image>();
                 if (iconImage != null && PlayerManager.Instance != null)
                 {
                     iconImage.sprite = PlayerManager.Instance.GetPlayerIcon(player.iconName);
                 }
-                
+
                 spawnedPlayerIcons.Add(iconObj);
             }
         }
-        
-        // Update player count on mobile wait screen
+
+        // Update player count on mobile wait screen (excluding host)
         if (isMobile && waitData != null)
         {
-            waitData.text = players.Count + " Players\n" + 
+            waitData.text = nonHostPlayerCount + " Players\n" +
                            (GameManager.Instance.gameMode == GameManager.GameMode.EightQuestions ? "8" : "12") + " Questions\n" +
                            roomCode;
         }

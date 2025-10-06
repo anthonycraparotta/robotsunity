@@ -53,18 +53,21 @@ public class FinalResultsScreen : MonoBehaviour
     void Start()
     {
         isMobile = DeviceDetector.Instance != null && DeviceDetector.Instance.IsMobile();
-        
+
         if (isMobile)
         {
             playerID = GetLocalPlayerID();
         }
-        
+
         // Show appropriate display
         ShowAppropriateDisplay();
-        
+
         // Display final results
         DisplayFinalResults();
-        
+
+        // Preload credits data for faster transition
+        PreloadCreditsData();
+
         // Setup buttons
         if (creditsButton != null)
         {
@@ -84,6 +87,21 @@ public class FinalResultsScreen : MonoBehaviour
         if (mobileWebButton != null)
         {
             mobileWebButton.onClick.AddListener(OnWebsiteClicked);
+        }
+    }
+
+    void PreloadCreditsData()
+    {
+        // Preload the credits JSON file so it's cached for CreditsScreen
+        TextAsset creditsFile = Resources.Load<TextAsset>("credits");
+
+        if (creditsFile != null)
+        {
+            Debug.Log("Credits data preloaded successfully");
+        }
+        else
+        {
+            Debug.LogWarning("Could not preload credits data - credits.json not found in Resources folder");
         }
     }
     

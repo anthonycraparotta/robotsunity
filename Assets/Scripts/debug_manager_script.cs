@@ -253,21 +253,31 @@ public class DebugManager : MonoBehaviour
     
     public void AddTestPlayers()
     {
+        // Find next available test player index
+        int startIndex = 0;
+        while (GameManager.Instance.players.ContainsKey("test_player_" + startIndex))
+        {
+            startIndex++;
+        }
+
         for (int i = 0; i < numberOfTestPlayers; i++)
         {
-            if (i >= testPlayerNames.Count) break;
-            
-            string playerID = "test_player_" + i;
-            string playerName = testPlayerNames[i];
-            string iconName = "player icon (" + ((i % 20) + 1) + ")";
-            
-            if (!GameManager.Instance.players.ContainsKey(playerID))
+            int playerIndex = startIndex + i;
+
+            if (playerIndex >= testPlayerNames.Count)
             {
-                GameManager.Instance.AddPlayer(playerID, playerName, iconName);
+                Debug.LogWarning("Reached maximum test players (" + testPlayerNames.Count + ")");
+                break;
             }
+
+            string playerID = "test_player_" + playerIndex;
+            string playerName = testPlayerNames[playerIndex];
+            string iconName = "player icon (" + ((playerIndex % 20) + 1) + ")";
+
+            GameManager.Instance.AddPlayer(playerID, playerName, iconName);
         }
-        
-        Debug.Log("Added " + numberOfTestPlayers + " test players");
+
+        Debug.Log("Added " + numberOfTestPlayers + " test players (starting from index " + startIndex + ")");
     }
     
     public void ClearAllPlayers()

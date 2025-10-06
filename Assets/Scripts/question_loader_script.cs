@@ -107,17 +107,29 @@ public class QuestionLoader : MonoBehaviour
     void LoadBonusQuestions()
     {
         TextAsset jsonFile = Resources.Load<TextAsset>(bonusQuestionsPath);
-        
+
         if (jsonFile == null)
         {
             Debug.LogError("Could not find bonusquestions.json at Resources/" + bonusQuestionsPath);
             return;
         }
-        
-        BonusQuestion bonusData = JsonUtility.FromJson<BonusQuestion>(jsonFile.text);
-        
-        if (bonusData != null && bonusData.miniQuestions != null)
+
+        // Wrap the array in an object: {"bonusQuestions": [...]}
+        string wrappedJson = "{\"bonusQuestions\":" + jsonFile.text + "}";
+
+        RawBonusQuestionArrayWrapper wrapper = JsonUtility.FromJson<RawBonusQuestionArrayWrapper>(wrappedJson);
+
+        if (wrapper != null && wrapper.bonusQuestions != null)
         {
+            // Convert to BonusQuestion format
+            BonusQuestion bonusData = new BonusQuestion();
+            bonusData.miniQuestions = new List<string>();
+
+            foreach (RawBonusQuestionData raw in wrapper.bonusQuestions)
+            {
+                bonusData.miniQuestions.Add(raw.question);
+            }
+
             GameManager.Instance.bonusQuestions = bonusData;
             Debug.Log("Loaded " + bonusData.miniQuestions.Count + " bonus questions");
         }
@@ -130,31 +142,21 @@ public class QuestionLoader : MonoBehaviour
     List<Question> ParseQuestionArray(string json)
     {
         // The JSON is an array like: [{"QUESTION": ..., "CORRECT ANSWER": ..., "ROBOT ANSWER": ...}, ...]
-        // We need to parse it manually since Unity's JsonUtility doesn't handle root arrays
-        
+        // Wrap it in an object so Unity's JsonUtility can parse it
+
         List<Question> questions = new List<Question>();
-        
+
         try
         {
-            // Remove outer brackets and split by objects
-            json = json.Trim();
-            if (json.StartsWith("[")) json = json.Substring(1);
-            if (json.EndsWith("]")) json = json.Substring(0, json.Length - 1);
-            
-            // Split by },{ pattern
-            string[] questionObjects = json.Split(new string[] { "},{" }, System.StringSplitOptions.None);
-            
-            foreach (string objStr in questionObjects)
+            // Wrap the array in a JSON object: {"questions": [...]}
+            string wrappedJson = "{\"questions\":" + json + "}";
+
+            // Parse using wrapper class
+            RawQuestionArrayWrapper wrapper = JsonUtility.FromJson<RawQuestionArrayWrapper>(wrappedJson);
+
+            if (wrapper != null && wrapper.questions != null)
             {
-                // Add back the braces
-                string jsonObj = objStr.Trim();
-                if (!jsonObj.StartsWith("{")) jsonObj = "{" + jsonObj;
-                if (!jsonObj.EndsWith("}")) jsonObj = jsonObj + "}";
-                
-                // Parse individual question
-                RawQuestionData raw = JsonUtility.FromJson<RawQuestionData>(jsonObj);
-                
-                if (raw != null)
+                foreach (RawQuestionData raw in wrapper.questions)
                 {
                     Question q = new Question();
                     q.questionText = raw.QUESTION;
@@ -163,7 +165,7 @@ public class QuestionLoader : MonoBehaviour
                     q.robotAnecdote = ""; // Not in current data structure
                     q.questionType = "standard";
                     q.imageURL = ""; // For picture questions, would be added
-                    
+
                     questions.Add(q);
                 }
             }
@@ -172,7 +174,7 @@ public class QuestionLoader : MonoBehaviour
         {
             Debug.LogError("Error parsing question array: " + e.Message);
         }
-        
+
         return questions;
     }
 }
@@ -185,6 +187,25 @@ public class RawQuestionData
     public string QUESTION;
     public string CORRECT_ANSWER;
     public string ROBOT_ANSWER;
+}
+
+[System.Serializable]
+public class RawQuestionArrayWrapper
+{
+    public List<RawQuestionData> questions;
+}
+
+[System.Serializable]
+public class RawBonusQuestionData
+{
+    public int id;
+    public string question;
+}
+
+[System.Serializable]
+public class RawBonusQuestionArrayWrapper
+{
+    public List<RawBonusQuestionData> bonusQuestions;
 }
 
 [System.Serializable]

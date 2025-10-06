@@ -93,9 +93,11 @@ public class GameManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            Debug.Log("GameManager created - currentRound: " + currentRound);
         }
         else
         {
+            Debug.Log("Duplicate GameManager found and destroyed");
             Destroy(gameObject);
         }
     }
@@ -145,21 +147,22 @@ public class GameManager : MonoBehaviour
         switch (currentGameState)
         {
             case GameState.Loading:
+                LoadScene("IntroVideoScreen");
+                currentGameState = GameState.IntroVideo;
+                break;
+
+            case GameState.IntroVideo:
                 LoadScene("LandingScreen");
                 currentGameState = GameState.Landing;
                 break;
-                
+
             case GameState.Landing:
                 LoadScene("LobbyScreen");
                 currentGameState = GameState.Lobby;
                 break;
-                
+
             case GameState.Lobby:
-                LoadScene("IntroVideoScreen");
-                currentGameState = GameState.IntroVideo;
-                break;
-                
-            case GameState.IntroVideo:
+                Debug.Log("AdvanceToNextScreen - Lobby state detected, calling StartNextRound()");
                 StartNextRound();
                 break;
                 
@@ -242,18 +245,23 @@ public class GameManager : MonoBehaviour
     void StartNextRound()
     {
         currentRound++;
-        
+
+        Debug.Log("StartNextRound called - currentRound incremented to: " + currentRound);
+
         int totalRounds = (gameMode == GameMode.EightQuestions) ? 8 : 12;
-        
+
         if (currentRound > totalRounds)
         {
             LoadScene("FinalResults");
             currentGameState = GameState.FinalResults;
             return;
         }
-        
+
+        Debug.Log("Loading RoundArtScreen for round " + currentRound);
+        Debug.Log("About to load scene - currentRound is: " + currentRound + ", GameManager instance ID: " + GetInstanceID());
         LoadScene("RoundArtScreen");
         currentGameState = GameState.RoundArt;
+        Debug.Log("After setting RoundArt state - currentRound is: " + currentRound);
     }
     
     void LoadQuestionScreen()

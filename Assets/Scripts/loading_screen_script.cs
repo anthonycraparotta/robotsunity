@@ -89,6 +89,8 @@ public class LoadingScreen : MonoBehaviour
     {
         // Initialize each manager as a root GameObject (they handle DontDestroyOnLoad themselves)
         CreateManager<GameManager>("GameManager");
+        CreateManager<QuestionLoader>("QuestionLoader");
+        CreateManager<PictureQuestionLoader>("PictureQuestionLoader");
         CreateManager<AudioManager>("AudioManager");
         CreateManager<PlayerManager>("PlayerManager");
         CreateManager<SceneTransitionManager>("SceneTransitionManager");
