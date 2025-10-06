@@ -719,7 +719,7 @@ GameObject:
   - component: {fileID: 939270648}
   - component: {fileID: 939270647}
   m_Layer: 5
-  m_Name: NextRoundButton
+  m_Name: SkipButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -901,6 +901,73 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1017933766}
   m_CullTransparentMesh: 1
+--- !u!1 &1034539917
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1034539918}
+  - component: {fileID: 1034539919}
+  m_Layer: 5
+  m_Name: RoundArtScreenManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1034539918
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1034539917}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1776389286}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1034539919
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1034539917}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5bfc5e6a3395fe4f850f2ba1820f2ae, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoundArtScreen
+  desktopDisplay: {fileID: 729673370}
+  mobileDisplay: {fileID: 269332379}
+  backgroundContainer: {fileID: 375626873}
+  continueButton: {fileID: 939270647}
+  mobileBackground: {fileID: 1938381886}
+  roundBackgrounds:
+  - {fileID: 2096588542}
+  - {fileID: 2075109298}
+  - {fileID: 322895830}
+  - {fileID: 1017933768}
+  - {fileID: 721999146}
+  - {fileID: 1306829730}
+  - {fileID: 1839743663}
+  - {fileID: 790041733}
+  - {fileID: 1097137603}
+  - {fileID: 1248673850}
+  - {fileID: 386576116}
+  - {fileID: 33418260}
+  autoAdvanceDelay: 3
 --- !u!1 &1097137601
 GameObject:
   m_ObjectHideFlags: 0
@@ -1296,6 +1363,7 @@ RectTransform:
   m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 1034539918}
   - {fileID: 729673371}
   - {fileID: 269332380}
   m_Father: {fileID: 0}

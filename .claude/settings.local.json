@@ -1,13 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Read(//c/Users/User/**)",
-      "Bash(git init:*)",
-      "Bash(git remote add:*)",
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(git push:*)",
-      "Bash(python:*)"
+      "Bash(done)",
+      "Bash(while read scene)",
+      "Bash(do echo \"=== $scene ===\")"
     ],
     "deny": [],
     "ask": []

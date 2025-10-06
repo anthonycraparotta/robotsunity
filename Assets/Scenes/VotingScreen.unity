@@ -486,6 +486,7 @@ RectTransform:
   m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 1564547055}
   - {fileID: 1552509377}
   - {fileID: 2069139565}
   m_Father: {fileID: 0}
@@ -1289,6 +1290,68 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1563470939}
   m_CullTransparentMesh: 1
+--- !u!1 &1564547054
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1564547055}
+  - component: {fileID: 1564547056}
+  m_Layer: 5
+  m_Name: VotingScreenManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1564547055
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1564547054}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 94030437}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1564547056
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1564547054}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3cefe4469d59e014f9df7f66ba913932, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VotingScreen
+  desktopDisplay: {fileID: 1552509376}
+  headerText: {fileID: 0}
+  answerListContainer: {fileID: 998502337}
+  timerCountdown: {fileID: 1851227699}
+  hero: {fileID: 553718703}
+  desktopBackground: {fileID: 1595638289}
+  timerContainer: {fileID: 501911036}
+  mobileDisplay: {fileID: 2069139564}
+  mobileHeaderText: {fileID: 0}
+  voteListMobile: {fileID: 809455186}
+  votingSubmitButton: {fileID: 1641667}
+  mobileBackground: {fileID: 1563470941}
+  desktopAnswerPrefab: {fileID: 9021567387596010879}
+  mobileAnswerButtonPrefab: {fileID: 1062845151718211897}
 --- !u!1 &1595638287
 GameObject:
   m_ObjectHideFlags: 0
@@ -1710,6 +1773,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 53ef5063b290a6d4b8e924fe7ea06f89, type: 3}
+--- !u!1 &1062845151718211897 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8567293707117634266, guid: 53ef5063b290a6d4b8e924fe7ea06f89, type: 3}
+  m_PrefabInstance: {fileID: 1062845151718211896}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &9021567387596010878
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1807,6 +1875,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: c756e28d08078774fb2a01743515e903, type: 3}
+--- !u!1 &9021567387596010879 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1166358472751397745, guid: c756e28d08078774fb2a01743515e903, type: 3}
+  m_PrefabInstance: {fileID: 9021567387596010878}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

@@ -251,6 +251,7 @@ RectTransform:
   m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 1232204888}
   - {fileID: 444270483}
   - {fileID: 69231012}
   m_Father: {fileID: 0}
@@ -1297,6 +1298,68 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1228368131}
   m_CullTransparentMesh: 1
+--- !u!1 &1232204886
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1232204888}
+  - component: {fileID: 1232204887}
+  m_Layer: 5
+  m_Name: EliminationScreenManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1232204887
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1232204886}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e46129b20e9d394aa8d8d5ffb0311ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EliminationScreen
+  desktopDisplay: {fileID: 444270482}
+  headerText: {fileID: 0}
+  answerListContainer: {fileID: 2079015689}
+  timerCountdown: {fileID: 1228368133}
+  hero: {fileID: 291310046}
+  desktopBackground: {fileID: 809681585}
+  timerContainer: {fileID: 1566380772}
+  mobileDisplay: {fileID: 69231011}
+  mobileHeaderText: {fileID: 0}
+  elimListMobile: {fileID: 211332066}
+  elimSubmitButton: {fileID: 255303619}
+  mobileBackground: {fileID: 288122034}
+  desktopAnswerPrefab: {fileID: 166033289052230507}
+  mobileAnswerButtonPrefab: {fileID: 3447529345060351578}
+--- !u!224 &1232204888
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1232204886}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 198692226}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1549924510
 GameObject:
   m_ObjectHideFlags: 0
@@ -1710,6 +1773,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d489a19c79f5c124998bb0a5232918d7, type: 3}
+--- !u!1 &166033289052230507 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6947963473604164973, guid: d489a19c79f5c124998bb0a5232918d7, type: 3}
+  m_PrefabInstance: {fileID: 166033289052230506}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &3447529345060351577
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1807,6 +1875,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 708c77918034dd440a68e04c03b62eb4, type: 3}
+--- !u!1 &3447529345060351578 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1320012692476924843, guid: 708c77918034dd440a68e04c03b62eb4, type: 3}
+  m_PrefabInstance: {fileID: 3447529345060351577}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
