@@ -457,6 +457,9 @@ public class RoundResultsScreen : MonoBehaviour
         }
 
         Debug.Log($"Panel2: Total instantiated responses={panel2ResultsContainer.childCount}, container activeInHierarchy={panel2ResultsContainer.gameObject.activeInHierarchy}");
+
+        // Force layout rebuild to ensure instantiated UI elements are visible
+        LayoutRebuilder.ForceRebuildLayoutImmediate(panel2ResultsContainer.GetComponent<RectTransform>());
     }
 
     void PopulatePanel3GameStandings()
@@ -521,6 +524,9 @@ public class RoundResultsScreen : MonoBehaviour
         }
 
         Debug.Log($"Panel3: Total instantiated ranks={panel3ResultsContainer.childCount}, container activeInHierarchy={panel3ResultsContainer.gameObject.activeInHierarchy}");
+
+        // Force layout rebuild to ensure instantiated UI elements are visible
+        LayoutRebuilder.ForceRebuildLayoutImmediate(panel3ResultsContainer.GetComponent<RectTransform>());
     }
 
     void DisplayFooledPlayers(Dictionary<string, int> votingResults)
