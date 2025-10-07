@@ -38,6 +38,7 @@ public class RoundResultsScreen : MonoBehaviour
     [SerializeField] private string panel2ScoreDiffName = "ScoreDiff";
     [SerializeField] private string panel2ScoreNumberName = "ScoreNumber";
     [SerializeField] private string panel2NumberOfFooledName = "NumberOfFooled";
+    [SerializeField] private string panel2ResponseBackgroundName = "ResponseBackground";
 
     [Header("Panel 3 - Game Standings")]
     public GameObject panel3;
@@ -373,17 +374,45 @@ public class RoundResultsScreen : MonoBehaviour
             if (targetZone != null && iconPrefab != null)
             {
                 GameObject iconObj = Instantiate(iconPrefab, targetZone);
+                iconObj.SetActive(true);
 
-                // Try to set the icon sprite
-                Image iconImage = iconObj.GetComponent<Image>();
-                if (iconImage != null && PlayerManager.Instance != null)
+                Debug.Log($"Panel1: Instantiated icon for '{player.playerName}' in zone '{targetZone.name}' (activeSelf={iconObj.activeSelf}, activeInHierarchy={iconObj.activeInHierarchy})");
+                Debug.Log($"Panel1: Icon prefab children: {string.Join(", ", GetAllChildrenNames(iconObj.transform))}");
+
+                // Find the PlayerIcon child that has the Image component
+                Transform playerIconTransform = FindDeepChild(iconObj.transform, "PlayerIcon");
+                if (playerIconTransform != null)
                 {
-                    Sprite iconSprite = PlayerManager.Instance.GetPlayerIcon(player.iconName);
-                    if (iconSprite != null)
+                    playerIconTransform.gameObject.SetActive(true);
+                    Image iconImage = playerIconTransform.GetComponent<Image>();
+
+                    if (iconImage != null && PlayerManager.Instance != null)
                     {
-                        iconImage.sprite = iconSprite;
+                        iconImage.enabled = true;
+                        Sprite iconSprite = PlayerManager.Instance.GetPlayerIcon(player.iconName);
+                        if (iconSprite != null)
+                        {
+                            iconImage.sprite = iconSprite;
+                            Debug.Log($"Panel1: Set icon sprite for '{player.playerName}' to '{player.iconName}'");
+                        }
+                        else
+                        {
+                            Debug.LogError($"Panel1: Failed to get icon sprite for '{player.iconName}'");
+                        }
+                    }
+                    else if (iconImage == null)
+                    {
+                        Debug.LogError($"Panel1: Image component is NULL on PlayerIcon child");
                     }
                 }
+                else
+                {
+                    Debug.LogError($"Panel1: Could not find 'PlayerIcon' child in instantiated icon prefab");
+                }
+            }
+            else
+            {
+                Debug.LogError($"Panel1: Cannot instantiate - targetZone={targetZone != null}, iconPrefab={iconPrefab != null}");
             }
         }
 
@@ -429,30 +458,85 @@ public class RoundResultsScreen : MonoBehaviour
             RectTransform responseRect = responseObj.GetComponent<RectTransform>();
             Debug.Log($"Panel2: Spawned response for '{player.playerName}' (activeSelf={responseObj.activeSelf}, activeInHierarchy={responseObj.activeInHierarchy}, anchoredPos={responseRect?.anchoredPosition})");
 
+            // Debug: Log all children names
+            Debug.Log($"Panel2: Prefab children: {string.Join(", ", GetAllChildrenNames(responseObj.transform))}");
+
             // Find components in the prefab using configured names (search all descendants, not just direct children)
             Transform playerResponseTransform = FindDeepChild(responseObj.transform, panel2PlayerResponseName);
+            Transform responseBackgroundTransform = FindDeepChild(responseObj.transform, panel2ResponseBackgroundName);
+            Transform scoreDiffContainerTransform = FindDeepChild(responseObj.transform, panel2ScoreDiffName);
             Transform scoreNumberTransform = FindDeepChild(responseObj.transform, panel2ScoreNumberName);
             Transform fooledCountTransform = FindDeepChild(responseObj.transform, panel2NumberOfFooledName);
 
+            Debug.Log($"Panel2: Looking for '{panel2PlayerResponseName}' - Found: {playerResponseTransform != null}");
+            Debug.Log($"Panel2: Looking for '{panel2ResponseBackgroundName}' - Found: {responseBackgroundTransform != null}");
+            Debug.Log($"Panel2: Looking for '{panel2ScoreDiffName}' (container) - Found: {scoreDiffContainerTransform != null}");
+            Debug.Log($"Panel2: Looking for '{panel2ScoreNumberName}' - Found: {scoreNumberTransform != null}");
+            Debug.Log($"Panel2: Looking for '{panel2NumberOfFooledName}' - Found: {fooledCountTransform != null}");
+
             TextMeshProUGUI playerResponseText = playerResponseTransform?.GetComponent<TextMeshProUGUI>();
+            Image responseBackground = responseBackgroundTransform?.GetComponent<Image>();
+            Image scoreDiffBackground = scoreDiffContainerTransform?.GetComponent<Image>();
             TextMeshProUGUI scoreNumberText = scoreNumberTransform?.GetComponent<TextMeshProUGUI>();
             TextMeshProUGUI fooledCountText = fooledCountTransform?.GetComponent<TextMeshProUGUI>();
 
+            Debug.Log($"Panel2: Component checks - PlayerResponse: {playerResponseText != null}, ResponseBackground: {responseBackground != null}, ScoreDiff (Image): {scoreDiffBackground != null}, ScoreNumber: {scoreNumberText != null}, NumberOfFooled: {fooledCountText != null}");
+
+            // Activate and set PlayerResponse
+            if (playerResponseTransform != null) playerResponseTransform.gameObject.SetActive(true);
             if (playerResponseText != null)
             {
                 playerResponseText.text = playerAnswer;
+                playerResponseText.enabled = true;
+                Debug.Log($"Panel2: Set PlayerResponse to '{playerAnswer}' (enabled={playerResponseText.enabled}, gameObject.activeSelf={playerResponseText.gameObject.activeSelf})");
+            }
+            else
+            {
+                Debug.LogError($"Panel2: PlayerResponseText component is NULL on transform '{playerResponseTransform?.name}'");
             }
 
+            // Activate ResponseBackground
+            if (responseBackgroundTransform != null)
+            {
+                responseBackgroundTransform.gameObject.SetActive(true);
+                if (responseBackground != null) responseBackground.enabled = true;
+                Debug.Log($"Panel2: ResponseBackground activated (hasImage={responseBackground != null})");
+            }
+
+            // Activate ScoreDiff container
+            if (scoreDiffContainerTransform != null)
+            {
+                scoreDiffContainerTransform.gameObject.SetActive(true);
+                if (scoreDiffBackground != null) scoreDiffBackground.enabled = true;
+                Debug.Log($"Panel2: ScoreDiff container activated (hasImage={scoreDiffBackground != null})");
+            }
+
+            // Activate and set ScoreNumber
+            if (scoreNumberTransform != null) scoreNumberTransform.gameObject.SetActive(true);
             if (scoreNumberText != null)
             {
-                // Score diff would need to be calculated from previous score vs current
-                scoreNumberText.text = "+0"; // Placeholder - actual score calculation needed
+                // Score number would need to be calculated from previous score vs current
+                scoreNumberText.text = "0"; // Placeholder - actual score calculation needed
+                scoreNumberText.enabled = true;
+                Debug.Log($"Panel2: Set ScoreNumber to '0' (enabled={scoreNumberText.enabled}, gameObject.activeSelf={scoreNumberText.gameObject.activeSelf})");
+            }
+            else
+            {
+                Debug.LogError($"Panel2: ScoreNumberText component is NULL on transform '{scoreNumberTransform?.name}'");
             }
 
+            // Activate and set NumberOfFooled
+            if (fooledCountTransform != null) fooledCountTransform.gameObject.SetActive(true);
             if (fooledCountText != null)
             {
                 int fooledCount = votingResults.ContainsKey(playerAnswer) ? votingResults[playerAnswer] : 0;
-                fooledCountText.text = fooledCount + " fooled";
+                fooledCountText.text = $"HUMANS FOOLED: {fooledCount}";
+                fooledCountText.enabled = true;
+                Debug.Log($"Panel2: Set NumberOfFooled to 'HUMANS FOOLED: {fooledCount}' (enabled={fooledCountText.enabled}, gameObject.activeSelf={fooledCountText.gameObject.activeSelf})");
+            }
+            else
+            {
+                Debug.LogError($"Panel2: FooledCountText component is NULL on transform '{fooledCountTransform?.name}'");
             }
         }
 
@@ -494,32 +578,69 @@ public class RoundResultsScreen : MonoBehaviour
             RectTransform rankRect = rankObj.GetComponent<RectTransform>();
             Debug.Log($"Panel3: Spawned rank entry for '{player.playerName}' (activeSelf={rankObj.activeSelf}, activeInHierarchy={rankObj.activeInHierarchy}, anchoredPos={rankRect?.anchoredPosition})");
 
+            // Debug: Log all children names
+            Debug.Log($"Panel3: Prefab children: {string.Join(", ", GetAllChildrenNames(rankObj.transform))}");
+
             // Find components in the prefab using configured names (search all descendants, not just direct children)
             Transform playerNameTransform = FindDeepChild(rankObj.transform, panel3PlayerNameName);
             Transform scoreTransform = FindDeepChild(rankObj.transform, panel3PlayerCumulativeScoreName);
             Transform playerIconTransform = FindDeepChild(rankObj.transform, panel3PlayerIconName);
 
+            Debug.Log($"Panel3: Looking for '{panel3PlayerNameName}' - Found: {playerNameTransform != null}");
+            Debug.Log($"Panel3: Looking for '{panel3PlayerCumulativeScoreName}' - Found: {scoreTransform != null}");
+            Debug.Log($"Panel3: Looking for '{panel3PlayerIconName}' - Found: {playerIconTransform != null}");
+
             TextMeshProUGUI playerNameText = playerNameTransform?.GetComponent<TextMeshProUGUI>();
             TextMeshProUGUI scoreText = scoreTransform?.GetComponent<TextMeshProUGUI>();
             Image playerIconImage = playerIconTransform?.GetComponent<Image>();
 
+            Debug.Log($"Panel3: Component checks - PlayerName: {playerNameText != null}, PlayerCumulitiveScore: {scoreText != null}, PlayerIcon: {playerIconImage != null}");
+
+            // Activate and set PlayerName
+            if (playerNameTransform != null) playerNameTransform.gameObject.SetActive(true);
             if (playerNameText != null)
             {
                 playerNameText.text = player.playerName;
+                playerNameText.enabled = true;
+                Debug.Log($"Panel3: Set PlayerName to '{player.playerName}' (enabled={playerNameText.enabled}, gameObject.activeSelf={playerNameText.gameObject.activeSelf})");
+            }
+            else
+            {
+                Debug.LogError($"Panel3: PlayerNameText component is NULL on transform '{playerNameTransform?.name}'");
             }
 
+            // Activate and set PlayerCumulitiveScore
+            if (scoreTransform != null) scoreTransform.gameObject.SetActive(true);
             if (scoreText != null)
             {
                 scoreText.text = player.scorePercentage + "%";
+                scoreText.enabled = true;
+                Debug.Log($"Panel3: Set PlayerCumulitiveScore to '{player.scorePercentage}%' (enabled={scoreText.enabled}, gameObject.activeSelf={scoreText.gameObject.activeSelf})");
+            }
+            else
+            {
+                Debug.LogError($"Panel3: ScoreText component is NULL on transform '{scoreTransform?.name}'");
             }
 
+            // Activate and set PlayerIcon
+            if (playerIconTransform != null) playerIconTransform.gameObject.SetActive(true);
             if (playerIconImage != null && PlayerManager.Instance != null)
             {
                 Sprite iconSprite = PlayerManager.Instance.GetPlayerIcon(player.iconName);
                 if (iconSprite != null)
                 {
                     playerIconImage.sprite = iconSprite;
+                    playerIconImage.enabled = true;
+                    Debug.Log($"Panel3: Set PlayerIcon sprite (enabled={playerIconImage.enabled}, gameObject.activeSelf={playerIconImage.gameObject.activeSelf})");
                 }
+                else
+                {
+                    Debug.LogError($"Panel3: Failed to get icon sprite for '{player.iconName}'");
+                }
+            }
+            else if (playerIconImage == null)
+            {
+                Debug.LogError($"Panel3: PlayerIconImage component is NULL on transform '{playerIconTransform?.name}'");
             }
         }
 
@@ -633,6 +754,18 @@ public class RoundResultsScreen : MonoBehaviour
         }
 
         return null;
+    }
+
+    // Helper method to get all children names recursively
+    List<string> GetAllChildrenNames(Transform parent)
+    {
+        List<string> names = new List<string>();
+        foreach (Transform child in parent)
+        {
+            names.Add(child.name);
+            names.AddRange(GetAllChildrenNames(child));
+        }
+        return names;
     }
     
     void OnDestroy()
