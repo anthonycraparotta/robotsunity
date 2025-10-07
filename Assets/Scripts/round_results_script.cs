@@ -426,6 +426,9 @@ public class RoundResultsScreen : MonoBehaviour
 
             GameObject responseObj = Instantiate(resultsPlayerResponsePrefab, panel2ResultsContainer);
 
+            RectTransform responseRect = responseObj.GetComponent<RectTransform>();
+            Debug.Log($"Panel2: Spawned response for '{player.playerName}' (activeSelf={responseObj.activeSelf}, activeInHierarchy={responseObj.activeInHierarchy}, anchoredPos={responseRect?.anchoredPosition})");
+
             // Find components in the prefab using configured names (search all descendants, not just direct children)
             Transform playerResponseTransform = FindDeepChild(responseObj.transform, panel2PlayerResponseName);
             Transform scoreNumberTransform = FindDeepChild(responseObj.transform, panel2ScoreNumberName);
@@ -452,6 +455,8 @@ public class RoundResultsScreen : MonoBehaviour
                 fooledCountText.text = fooledCount + " fooled";
             }
         }
+
+        Debug.Log($"Panel2: Total instantiated responses={panel2ResultsContainer.childCount}, container activeInHierarchy={panel2ResultsContainer.gameObject.activeInHierarchy}");
     }
 
     void PopulatePanel3GameStandings()
@@ -483,6 +488,9 @@ public class RoundResultsScreen : MonoBehaviour
             PlayerData player = rankedPlayers[i];
             GameObject rankObj = Instantiate(resultsPlayerRankPrefab, panel3ResultsContainer);
 
+            RectTransform rankRect = rankObj.GetComponent<RectTransform>();
+            Debug.Log($"Panel3: Spawned rank entry for '{player.playerName}' (activeSelf={rankObj.activeSelf}, activeInHierarchy={rankObj.activeInHierarchy}, anchoredPos={rankRect?.anchoredPosition})");
+
             // Find components in the prefab using configured names (search all descendants, not just direct children)
             Transform playerNameTransform = FindDeepChild(rankObj.transform, panel3PlayerNameName);
             Transform scoreTransform = FindDeepChild(rankObj.transform, panel3PlayerCumulativeScoreName);
@@ -511,6 +519,8 @@ public class RoundResultsScreen : MonoBehaviour
                 }
             }
         }
+
+        Debug.Log($"Panel3: Total instantiated ranks={panel3ResultsContainer.childCount}, container activeInHierarchy={panel3ResultsContainer.gameObject.activeInHierarchy}");
     }
 
     void DisplayFooledPlayers(Dictionary<string, int> votingResults)
