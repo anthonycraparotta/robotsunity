@@ -38,9 +38,6 @@ public class BonusQuestionScreen : MonoBehaviour
     {
         isMobile = DeviceDetector.Instance != null && DeviceDetector.Instance.IsMobile();
 
-        // Clear any placeholder player icons from the scene
-        ClearPlayerIconPlaceholders();
-
         if (isMobile)
         {
             playerID = PlayerAuthSystem.Instance != null ? PlayerAuthSystem.Instance.GetLocalPlayerID() : GetLocalPlayerID();
@@ -201,17 +198,6 @@ public class BonusQuestionScreen : MonoBehaviour
         spawnedPlayerButtons.Add(buttonObj);
     }
     
-    void ClearPlayerIconPlaceholders()
-    {
-        if (playerIconContainer == null) return;
-
-        // Destroy all children (placeholders from the scene)
-        foreach (Transform child in playerIconContainer)
-        {
-            Destroy(child.gameObject);
-        }
-    }
-
     void DisplayDesktopPlayerIcons(List<PlayerData> players)
     {
         if (playerIconContainer == null) return;

@@ -35,9 +35,6 @@ public class PictureQuestionScreen : MonoBehaviour
     {
         isMobile = DeviceDetector.Instance != null && DeviceDetector.Instance.IsMobile();
 
-        // Clear any placeholder player icons from the scene
-        ClearPlayerIconPlaceholders();
-
         // Get player ID for mobile
         if (isMobile)
         {
@@ -141,17 +138,6 @@ public class PictureQuestionScreen : MonoBehaviour
         }
     }
     
-    void ClearPlayerIconPlaceholders()
-    {
-        if (playerIconContainer == null) return;
-
-        // Destroy all children (placeholders from the scene)
-        foreach (Transform child in playerIconContainer)
-        {
-            Destroy(child.gameObject);
-        }
-    }
-
     void UpdatePlayerStatusIndicators()
     {
         if (playerIconContainer == null) return;
