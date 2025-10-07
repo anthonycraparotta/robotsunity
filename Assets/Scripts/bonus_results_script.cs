@@ -22,7 +22,13 @@ public class BonusResultsScreen : MonoBehaviour
     
     [Header("Prefabs")]
     public GameObject resultRowPrefab;
-    
+
+    [Header("Prefab Component Names")]
+    [SerializeField] private string rankComponentName = "Rank";
+    [SerializeField] private string playerNameComponentName = "PlayerName";
+    [SerializeField] private string scoreComponentName = "Score";
+    [SerializeField] private string playerIconComponentName = "PlayerIcon";
+
     [Header("State")]
     private bool isMobile = false;
     private string playerID = "";
@@ -100,10 +106,11 @@ public class BonusResultsScreen : MonoBehaviour
     void CreateResultRow(PlayerData player, int rank, Transform parent)
     {
         GameObject rowObj;
-        
+
         if (resultRowPrefab != null)
         {
             rowObj = Instantiate(resultRowPrefab, parent);
+            rowObj.SetActive(true);
         }
         else
         {
@@ -112,34 +119,51 @@ public class BonusResultsScreen : MonoBehaviour
             rowObj.transform.SetParent(parent);
             rowObj.AddComponent<RectTransform>();
         }
-        
-        // Set rank
-        TextMeshProUGUI rankText = rowObj.transform.Find("Rank")?.GetComponent<TextMeshProUGUI>();
+
+        // Find and activate components using configurable names
+        Transform rankTransform = FindDeepChild(rowObj.transform, rankComponentName);
+        Transform nameTransform = FindDeepChild(rowObj.transform, playerNameComponentName);
+        Transform scoreTransform = FindDeepChild(rowObj.transform, scoreComponentName);
+        Transform iconTransform = FindDeepChild(rowObj.transform, playerIconComponentName);
+
+        // Activate and set rank
+        if (rankTransform != null) rankTransform.gameObject.SetActive(true);
+        TextMeshProUGUI rankText = rankTransform?.GetComponent<TextMeshProUGUI>();
         if (rankText != null)
         {
+            rankText.enabled = true;
             rankText.text = rank.ToString();
         }
-        
-        // Set player name
-        TextMeshProUGUI nameText = rowObj.transform.Find("PlayerName")?.GetComponent<TextMeshProUGUI>();
+
+        // Activate and set player name
+        if (nameTransform != null) nameTransform.gameObject.SetActive(true);
+        TextMeshProUGUI nameText = nameTransform?.GetComponent<TextMeshProUGUI>();
         if (nameText != null)
         {
+            nameText.enabled = true;
             nameText.text = player.playerName;
         }
-        
-        // Set score
-        TextMeshProUGUI scoreText = rowObj.transform.Find("Score")?.GetComponent<TextMeshProUGUI>();
+
+        // Activate and set score
+        if (scoreTransform != null) scoreTransform.gameObject.SetActive(true);
+        TextMeshProUGUI scoreText = scoreTransform?.GetComponent<TextMeshProUGUI>();
         if (scoreText != null)
         {
+            scoreText.enabled = true;
             scoreText.text = player.scorePercentage + "%";
         }
-        
-        // Set player icon
-        Image iconImage = rowObj.transform.Find("PlayerIcon")?.GetComponent<Image>();
-        if (iconImage != null)
+
+        // Activate and set player icon
+        if (iconTransform != null) iconTransform.gameObject.SetActive(true);
+        Image iconImage = iconTransform?.GetComponent<Image>();
+        if (iconImage != null && PlayerManager.Instance != null)
         {
-            // Load player icon
-            // iconImage.sprite = Resources.Load<Sprite>("PlayerIcons/" + player.iconName);
+            iconImage.enabled = true;
+            Sprite iconSprite = PlayerManager.Instance.GetPlayerIcon(player.iconName);
+            if (iconSprite != null)
+            {
+                iconImage.sprite = iconSprite;
+            }
         }
     }
     
@@ -153,7 +177,26 @@ public class BonusResultsScreen : MonoBehaviour
     {
         return "player_" + SystemInfo.deviceUniqueIdentifier;
     }
-    
+
+    // Helper method to find child by name recursively (search all descendants)
+    Transform FindDeepChild(Transform parent, string childName)
+    {
+        // Check direct children first
+        Transform result = parent.Find(childName);
+        if (result != null)
+            return result;
+
+        // Search all descendants
+        foreach (Transform child in parent)
+        {
+            result = FindDeepChild(child, childName);
+            if (result != null)
+                return result;
+        }
+
+        return null;
+    }
+
     void OnDestroy()
     {
         if (continueButton != null)

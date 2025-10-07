@@ -38,7 +38,12 @@ public class HalftimeResultsScreen : MonoBehaviour
     [Header("Prefabs")]
     public GameObject playerScoreRowPrefab; // Desktop prefab
     public GameObject playerIconHalftimePrefab; // Mobile prefab
-    
+
+    [Header("Prefab Component Names")]
+    [SerializeField] private string playerNameComponentName = "PlayerName";
+    [SerializeField] private string playerScoreComponentName = "Score";
+    [SerializeField] private string playerIconComponentName = "PlayerIcon";
+
     [Header("State")]
     private bool isMobile = false;
     private string playerID = "";
@@ -196,10 +201,11 @@ public class HalftimeResultsScreen : MonoBehaviour
     GameObject CreatePlayerRow(PlayerData player, Transform parent)
     {
         GameObject rowObj;
-        
+
         if (playerScoreRowPrefab != null)
         {
             rowObj = Instantiate(playerScoreRowPrefab, parent);
+            rowObj.SetActive(true);
         }
         else
         {
@@ -208,29 +214,43 @@ public class HalftimeResultsScreen : MonoBehaviour
             rowObj.transform.SetParent(parent);
             rowObj.AddComponent<RectTransform>();
         }
-        
-        // Set player name
-        TextMeshProUGUI nameText = rowObj.GetComponentInChildren<TextMeshProUGUI>();
+
+        // Find and activate components using configurable names
+        Transform nameTransform = FindDeepChild(rowObj.transform, playerNameComponentName);
+        Transform scoreTransform = FindDeepChild(rowObj.transform, playerScoreComponentName);
+        Transform iconTransform = FindDeepChild(rowObj.transform, playerIconComponentName);
+
+        // Activate and set player name
+        if (nameTransform != null) nameTransform.gameObject.SetActive(true);
+        TextMeshProUGUI nameText = nameTransform?.GetComponent<TextMeshProUGUI>();
         if (nameText != null)
         {
+            nameText.enabled = true;
             nameText.text = player.playerName;
         }
-        
-        // Find and set score text
-        TextMeshProUGUI[] allText = rowObj.GetComponentsInChildren<TextMeshProUGUI>();
-        if (allText.Length > 1)
+
+        // Activate and set score
+        if (scoreTransform != null) scoreTransform.gameObject.SetActive(true);
+        TextMeshProUGUI scoreText = scoreTransform?.GetComponent<TextMeshProUGUI>();
+        if (scoreText != null)
         {
-            allText[1].text = player.scorePercentage + "%";
+            scoreText.enabled = true;
+            scoreText.text = player.scorePercentage + "%";
         }
-        
-        // Set player icon
-        Image iconImage = rowObj.GetComponentInChildren<Image>();
-        if (iconImage != null)
+
+        // Activate and set player icon
+        if (iconTransform != null) iconTransform.gameObject.SetActive(true);
+        Image iconImage = iconTransform?.GetComponent<Image>();
+        if (iconImage != null && PlayerManager.Instance != null)
         {
-            // Load player icon
-            // iconImage.sprite = Resources.Load<Sprite>("PlayerIcons/" + player.iconName);
+            iconImage.enabled = true;
+            Sprite iconSprite = PlayerManager.Instance.GetPlayerIcon(player.iconName);
+            if (iconSprite != null)
+            {
+                iconImage.sprite = iconSprite;
+            }
         }
-        
+
         return rowObj;
     }
     
@@ -244,7 +264,26 @@ public class HalftimeResultsScreen : MonoBehaviour
     {
         return "player_" + SystemInfo.deviceUniqueIdentifier;
     }
-    
+
+    // Helper method to find child by name recursively (search all descendants)
+    Transform FindDeepChild(Transform parent, string childName)
+    {
+        // Check direct children first
+        Transform result = parent.Find(childName);
+        if (result != null)
+            return result;
+
+        // Search all descendants
+        foreach (Transform child in parent)
+        {
+            result = FindDeepChild(child, childName);
+            if (result != null)
+                return result;
+        }
+
+        return null;
+    }
+
     void OnDestroy()
     {
         if (nextRoundButton != null)

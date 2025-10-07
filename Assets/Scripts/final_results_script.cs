@@ -45,7 +45,11 @@ public class FinalResultsScreen : MonoBehaviour
     
     [Header("Prefabs")]
     public GameObject playerRowPrefab;
-    
+
+    [Header("Prefab Component Names")]
+    [SerializeField] private string playerNameComponentName = "PlayerName";
+    [SerializeField] private string playerIconComponentName = "PlayerIcon";
+
     [Header("State")]
     private bool isMobile = false;
     private string playerID = "";
@@ -235,25 +239,37 @@ public class FinalResultsScreen : MonoBehaviour
         {
             Destroy(child.gameObject);
         }
-        
+
         // Create player icon
         if (playerRowPrefab != null)
         {
             GameObject iconObj = Instantiate(playerRowPrefab, container);
-            
-            // Set player name
-            TextMeshProUGUI nameText = iconObj.GetComponentInChildren<TextMeshProUGUI>();
+            iconObj.SetActive(true);
+
+            // Find and activate components using configurable names
+            Transform nameTransform = FindDeepChild(iconObj.transform, playerNameComponentName);
+            Transform iconTransform = FindDeepChild(iconObj.transform, playerIconComponentName);
+
+            // Activate and set player name
+            if (nameTransform != null) nameTransform.gameObject.SetActive(true);
+            TextMeshProUGUI nameText = nameTransform?.GetComponent<TextMeshProUGUI>();
             if (nameText != null)
             {
+                nameText.enabled = true;
                 nameText.text = player.playerName;
             }
-            
-            // Set player icon image
-            Image iconImage = iconObj.GetComponentInChildren<Image>();
-            if (iconImage != null)
+
+            // Activate and set player icon
+            if (iconTransform != null) iconTransform.gameObject.SetActive(true);
+            Image iconImage = iconTransform?.GetComponent<Image>();
+            if (iconImage != null && PlayerManager.Instance != null)
             {
-                // Load player icon
-                // iconImage.sprite = Resources.Load<Sprite>("PlayerIcons/" + player.iconName);
+                iconImage.enabled = true;
+                Sprite iconSprite = PlayerManager.Instance.GetPlayerIcon(player.iconName);
+                if (iconSprite != null)
+                {
+                    iconImage.sprite = iconSprite;
+                }
             }
         }
     }
@@ -321,7 +337,26 @@ public class FinalResultsScreen : MonoBehaviour
     {
         return "player_" + SystemInfo.deviceUniqueIdentifier;
     }
-    
+
+    // Helper method to find child by name recursively (search all descendants)
+    Transform FindDeepChild(Transform parent, string childName)
+    {
+        // Check direct children first
+        Transform result = parent.Find(childName);
+        if (result != null)
+            return result;
+
+        // Search all descendants
+        foreach (Transform child in parent)
+        {
+            result = FindDeepChild(child, childName);
+            if (result != null)
+                return result;
+        }
+
+        return null;
+    }
+
     void OnDestroy()
     {
         if (creditsButton != null)
