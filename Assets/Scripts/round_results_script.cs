@@ -17,7 +17,14 @@ public class RoundResultsScreen : MonoBehaviour
     public TextMeshProUGUI trueResponse;
     public TextMeshProUGUI robotResponse;
     public TextMeshProUGUI scoreDiffTrue; // Score difference for getting it right
-    public GameObject resultsPlayerIconPrefab; // Icon prefab for Panel 1
+
+    [Header("Panel 1 Icon Zones")]
+    public GameObject trueAnswerIconPrefab; // Icon prefab for True Answer zone
+    public Transform trueAnswerIconZone; // Container for players who voted for True answer
+    public GameObject robotFooledIconPrefab; // Icon prefab for Robot Fooled zone
+    public Transform robotFooledIconZone; // Container for players fooled by Robot
+    public GameObject robotNotFooledIconPrefab; // Icon prefab for Robot Not Fooled zone
+    public Transform robotNotFooledIconZone; // Container for players not fooled by Robot
 
     [Header("Panel 2 - Player Responses")]
     public GameObject panel2;
@@ -26,6 +33,12 @@ public class RoundResultsScreen : MonoBehaviour
     public Transform panel2ResultsContainer; // Container for ResultsPlayerResponse prefabs
     public GameObject resultsPlayerResponsePrefab; // Prefab with: ScoreDiff, PlayerResponse, Number of Testers Fooled
 
+    [Header("Panel 2 Prefab Component Names")]
+    [SerializeField] private string panel2PlayerResponseName = "PlayerResponse";
+    [SerializeField] private string panel2ScoreDiffName = "ScoreDiff";
+    [SerializeField] private string panel2ScoreNumberName = "ScoreNumber";
+    [SerializeField] private string panel2NumberOfFooledName = "NumberOfFooled";
+
     [Header("Panel 3 - Game Standings")]
     public GameObject panel3;
     public Image panel3Background;
@@ -33,6 +46,11 @@ public class RoundResultsScreen : MonoBehaviour
     public Transform panel3ResultsContainer; // Container for ResultsPlayerRank prefabs
     public GameObject resultsPlayerRankPrefab;
     public GameObject panel3ResultsPlayerIconPrefab; // Icon prefab for Panel 3
+
+    [Header("Panel 3 Prefab Component Names")]
+    [SerializeField] private string panel3PlayerNameName = "PlayerName";
+    [SerializeField] private string panel3PlayerCumulativeScoreName = "PlayerCumulitiveScore";
+    [SerializeField] private string panel3PlayerIconName = "PlayerIcon";
     
     [Header("Navigation")]
     public Button nextRoundButton;
@@ -62,7 +80,10 @@ public class RoundResultsScreen : MonoBehaviour
     [Header("State")]
     private bool isMobile = false;
     private string playerID = "";
-    
+    private int currentPanel = 0;
+    private float panelTimer = 0f;
+    private const float PANEL_DISPLAY_DURATION = 5f;
+
     void Start()
     {
         isMobile = DeviceDetector.Instance != null && DeviceDetector.Instance.IsMobile();
@@ -71,24 +92,24 @@ public class RoundResultsScreen : MonoBehaviour
         {
             playerID = PlayerAuthSystem.Instance != null ? PlayerAuthSystem.Instance.GetLocalPlayerID() : GetLocalPlayerID();
         }
-        
+
         // Show appropriate display
         ShowAppropriateDisplay();
-        
+
         // Display results
         DisplayResults();
-        
+
         // Setup navigation buttons
         if (nextRoundButton != null)
         {
             nextRoundButton.onClick.AddListener(OnNextRoundClicked);
         }
-        
+
         if (finalResultsButton != null)
         {
             finalResultsButton.onClick.AddListener(OnFinalResultsClicked);
         }
-        
+
         // Show/hide appropriate button
         UpdateNavigationButtons();
 
@@ -96,6 +117,77 @@ public class RoundResultsScreen : MonoBehaviour
         if (AudioManager.Instance != null)
         {
             AudioManager.Instance.PlayResultsMusic();
+        }
+
+        // Start panel sequence for desktop
+        if (!isMobile)
+        {
+            StartPanelSequence();
+        }
+    }
+
+    void Update()
+    {
+        // Handle panel sequence timing for desktop
+        if (!isMobile && currentPanel > 0 && currentPanel <= 3)
+        {
+            panelTimer += Time.deltaTime;
+
+            if (panelTimer >= PANEL_DISPLAY_DURATION)
+            {
+                AdvanceToNextPanel();
+            }
+        }
+    }
+
+    void StartPanelSequence()
+    {
+        // Hide all panels initially
+        if (panel1 != null) panel1.SetActive(false);
+        if (panel2 != null) panel2.SetActive(false);
+        if (panel3 != null) panel3.SetActive(false);
+
+        // Start with panel 1
+        currentPanel = 1;
+        panelTimer = 0f;
+        ShowCurrentPanel();
+    }
+
+    void ShowCurrentPanel()
+    {
+        // Hide all panels
+        if (panel1 != null) panel1.SetActive(false);
+        if (panel2 != null) panel2.SetActive(false);
+        if (panel3 != null) panel3.SetActive(false);
+
+        // Show the current panel
+        switch (currentPanel)
+        {
+            case 1:
+                if (panel1 != null) panel1.SetActive(true);
+                break;
+            case 2:
+                if (panel2 != null) panel2.SetActive(true);
+                break;
+            case 3:
+                if (panel3 != null) panel3.SetActive(true);
+                break;
+        }
+    }
+
+    void AdvanceToNextPanel()
+    {
+        currentPanel++;
+        panelTimer = 0f;
+
+        if (currentPanel <= 3)
+        {
+            ShowCurrentPanel();
+        }
+        else
+        {
+            // All panels shown, advance to next screen
+            GameManager.Instance.AdvanceToNextScreen();
         }
     }
     
@@ -151,20 +243,20 @@ public class RoundResultsScreen : MonoBehaviour
                 this.robotResponse.text = robotAnswer;
             }
 
-            // Calculate score changes for each player
-            // This would show all players' results in a real implementation
+            // Populate player icons based on who voted correctly
+            PopulatePanel1PlayerIcons(correctAnswer, robotAnswer);
         }
 
-        // Panel 2: Highlight correct answer
+        // Panel 2: Show all player responses with fooled counts
         if (panel2 != null)
         {
-            // Visual indication of correct vs robot answer
+            PopulatePanel2PlayerResponses();
         }
 
-        // Panel 3: Show who was fooled
+        // Panel 3: Show game standings (all players ranked)
         if (panel3 != null)
         {
-            DisplayFooledPlayers(votingResults);
+            PopulatePanel3GameStandings();
         }
     }
     
@@ -207,12 +299,259 @@ public class RoundResultsScreen : MonoBehaviour
         }
     }
     
+    void PopulatePanel1PlayerIcons(string correctAnswer, string robotAnswer)
+    {
+        Debug.Log($"Panel1: correctAnswer='{correctAnswer}', robotAnswer='{robotAnswer}'");
+
+        // Clear existing icons from all zones
+        if (trueAnswerIconZone != null)
+        {
+            foreach (Transform child in trueAnswerIconZone)
+            {
+                Destroy(child.gameObject);
+            }
+        }
+
+        if (robotFooledIconZone != null)
+        {
+            foreach (Transform child in robotFooledIconZone)
+            {
+                Destroy(child.gameObject);
+            }
+        }
+
+        if (robotNotFooledIconZone != null)
+        {
+            foreach (Transform child in robotNotFooledIconZone)
+            {
+                Destroy(child.gameObject);
+            }
+        }
+
+        // Get voting results
+        var votingVotes = GameManager.Instance.votingVotes;
+        List<PlayerData> allPlayers = GameManager.Instance.GetAllPlayers();
+
+        int trueCount = 0, robotCount = 0, otherCount = 0;
+
+        foreach (PlayerData player in allPlayers)
+        {
+            // Check if player voted
+            if (!votingVotes.ContainsKey(player.playerID))
+                continue;
+
+            string playerVote = votingVotes[player.playerID];
+
+            Debug.Log($"Panel1: Player {player.playerName} voted for '{playerVote}'");
+
+            // Determine which zone to add icon to
+            Transform targetZone = null;
+            GameObject iconPrefab = null;
+
+            if (playerVote == correctAnswer)
+            {
+                // Voted for True answer
+                targetZone = trueAnswerIconZone;
+                iconPrefab = trueAnswerIconPrefab;
+                trueCount++;
+            }
+            else if (playerVote == robotAnswer)
+            {
+                // Fooled by Robot answer
+                targetZone = robotFooledIconZone;
+                iconPrefab = robotFooledIconPrefab;
+                robotCount++;
+            }
+            else
+            {
+                // Voted for other wrong answer (not fooled by robot)
+                targetZone = robotNotFooledIconZone;
+                iconPrefab = robotNotFooledIconPrefab;
+                otherCount++;
+            }
+
+            if (targetZone != null && iconPrefab != null)
+            {
+                GameObject iconObj = Instantiate(iconPrefab, targetZone);
+
+                // Try to set the icon sprite
+                Image iconImage = iconObj.GetComponent<Image>();
+                if (iconImage != null && PlayerManager.Instance != null)
+                {
+                    Sprite iconSprite = PlayerManager.Instance.GetPlayerIcon(player.iconName);
+                    if (iconSprite != null)
+                    {
+                        iconImage.sprite = iconSprite;
+                    }
+                }
+            }
+        }
+
+        Debug.Log($"Panel1: True={trueCount}, RobotFooled={robotCount}, Other={otherCount}");
+    }
+
+    void PopulatePanel2PlayerResponses()
+    {
+        if (panel2ResultsContainer == null)
+        {
+            Debug.LogError("Panel2ResultsContainer is null!");
+            return;
+        }
+
+        if (resultsPlayerResponsePrefab == null)
+        {
+            Debug.LogError("resultsPlayerResponsePrefab is null!");
+            return;
+        }
+
+        // Clear existing entries
+        foreach (Transform child in panel2ResultsContainer)
+        {
+            Destroy(child.gameObject);
+        }
+
+        // Get player answers and voting results
+        var playerAnswers = GameManager.Instance.currentRoundAnswers;
+        var votingResults = GameManager.Instance.GetVotingResults();
+        List<PlayerData> allPlayers = GameManager.Instance.GetAllPlayers();
+
+        Debug.Log("PopulatePanel2: " + allPlayers.Count + " players, " + playerAnswers.Count + " answers");
+
+        // Create an entry for each player's response
+        foreach (PlayerData player in allPlayers)
+        {
+            // Get this player's answer
+            string playerAnswer = playerAnswers.ContainsKey(player.playerID) ? playerAnswers[player.playerID] : "";
+
+            if (string.IsNullOrEmpty(playerAnswer))
+                continue;
+
+            GameObject responseObj = Instantiate(resultsPlayerResponsePrefab, panel2ResultsContainer);
+
+            // Debug: List all child objects
+            Debug.Log($"Panel2 prefab children: {string.Join(", ", System.Linq.Enumerable.Select(responseObj.GetComponentsInChildren<Transform>(), t => t.name))}");
+
+            // Find components in the prefab using configured names (search all descendants, not just direct children)
+            Transform playerResponseTransform = FindDeepChild(responseObj.transform, panel2PlayerResponseName);
+            Transform scoreNumberTransform = FindDeepChild(responseObj.transform, panel2ScoreNumberName);
+            Transform fooledCountTransform = FindDeepChild(responseObj.transform, panel2NumberOfFooledName);
+
+            TextMeshProUGUI playerResponseText = playerResponseTransform?.GetComponent<TextMeshProUGUI>();
+            TextMeshProUGUI scoreNumberText = scoreNumberTransform?.GetComponent<TextMeshProUGUI>();
+            TextMeshProUGUI fooledCountText = fooledCountTransform?.GetComponent<TextMeshProUGUI>();
+
+            // Debug what we found
+            if (playerResponseText == null) Debug.LogWarning($"Panel2: Could not find '{panel2PlayerResponseName}' TextMeshProUGUI in prefab");
+            if (scoreNumberText == null) Debug.LogWarning($"Panel2: Could not find '{panel2ScoreNumberName}' TextMeshProUGUI in prefab");
+            if (fooledCountText == null) Debug.LogWarning($"Panel2: Could not find '{panel2NumberOfFooledName}' TextMeshProUGUI in prefab");
+
+            if (playerResponseText != null)
+            {
+                playerResponseText.text = playerAnswer;
+            }
+
+            if (scoreNumberText != null)
+            {
+                // Score diff would need to be calculated from previous score vs current
+                scoreNumberText.text = "+0"; // Placeholder - actual score calculation needed
+            }
+
+            if (fooledCountText != null)
+            {
+                int fooledCount = votingResults.ContainsKey(playerAnswer) ? votingResults[playerAnswer] : 0;
+                fooledCountText.text = fooledCount + " fooled";
+            }
+        }
+    }
+
+    void PopulatePanel3GameStandings()
+    {
+        if (panel3ResultsContainer == null)
+        {
+            Debug.LogError("Panel3ResultsContainer is null!");
+            return;
+        }
+
+        if (resultsPlayerRankPrefab == null)
+        {
+            Debug.LogError("resultsPlayerRankPrefab is null!");
+            return;
+        }
+
+        // Clear existing entries
+        foreach (Transform child in panel3ResultsContainer)
+        {
+            Destroy(child.gameObject);
+        }
+
+        // Get players ranked by score
+        List<PlayerData> rankedPlayers = GameManager.Instance.GetPlayersByRank();
+        Debug.Log("PopulatePanel3: Found " + rankedPlayers.Count + " players to display");
+
+        // Create a rank entry for each player
+        for (int i = 0; i < rankedPlayers.Count; i++)
+        {
+            PlayerData player = rankedPlayers[i];
+            GameObject rankObj = Instantiate(resultsPlayerRankPrefab, panel3ResultsContainer);
+
+            // Debug: List all child objects (only once)
+            if (i == 0)
+            {
+                Debug.Log($"Panel3 prefab children: {string.Join(", ", System.Linq.Enumerable.Select(rankObj.GetComponentsInChildren<Transform>(), t => t.name))}");
+            }
+
+            // Find components in the prefab using configured names (search all descendants, not just direct children)
+            Transform playerNameTransform = FindDeepChild(rankObj.transform, panel3PlayerNameName);
+            Transform scoreTransform = FindDeepChild(rankObj.transform, panel3PlayerCumulativeScoreName);
+            Transform playerIconTransform = FindDeepChild(rankObj.transform, panel3PlayerIconName);
+
+            TextMeshProUGUI playerNameText = playerNameTransform?.GetComponent<TextMeshProUGUI>();
+            TextMeshProUGUI scoreText = scoreTransform?.GetComponent<TextMeshProUGUI>();
+            Image playerIconImage = playerIconTransform?.GetComponent<Image>();
+
+            // Debug what we found
+            if (playerNameText == null) Debug.LogWarning($"Panel3: Could not find '{panel3PlayerNameName}' TextMeshProUGUI in prefab");
+            if (scoreText == null) Debug.LogWarning($"Panel3: Could not find '{panel3PlayerCumulativeScoreName}' TextMeshProUGUI in prefab");
+            if (playerIconImage == null) Debug.LogWarning($"Panel3: Could not find '{panel3PlayerIconName}' Image in prefab");
+
+            if (playerNameText != null)
+            {
+                playerNameText.text = player.playerName;
+            }
+
+            if (scoreText != null)
+            {
+                scoreText.text = player.scorePercentage + "%";
+            }
+
+            if (playerIconImage != null)
+            {
+                if (PlayerManager.Instance != null)
+                {
+                    Sprite iconSprite = PlayerManager.Instance.GetPlayerIcon(player.iconName);
+                    if (iconSprite != null)
+                    {
+                        playerIconImage.sprite = iconSprite;
+                    }
+                    else
+                    {
+                        Debug.LogWarning("Could not load icon sprite for: " + player.iconName);
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning("PlayerManager.Instance is null - cannot load player icons");
+                }
+            }
+        }
+    }
+
     void DisplayFooledPlayers(Dictionary<string, int> votingResults)
     {
         // This data is now displayed via ResultsPlayerResponse prefabs in Panel 2
         // Each prefab shows the number of testers fooled by that specific answer
     }
-    
+
     void UpdateRoundLabel()
     {
         int currentRound = GameManager.Instance.GetCurrentRound();
@@ -292,6 +631,25 @@ public class RoundResultsScreen : MonoBehaviour
     string GetLocalPlayerID()
     {
         return "player_" + SystemInfo.deviceUniqueIdentifier;
+    }
+
+    // Helper method to find child by name recursively (search all descendants)
+    Transform FindDeepChild(Transform parent, string childName)
+    {
+        // Check direct children first
+        Transform result = parent.Find(childName);
+        if (result != null)
+            return result;
+
+        // Search all descendants
+        foreach (Transform child in parent)
+        {
+            result = FindDeepChild(child, childName);
+            if (result != null)
+                return result;
+        }
+
+        return null;
     }
     
     void OnDestroy()
