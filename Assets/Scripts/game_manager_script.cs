@@ -177,6 +177,7 @@ public class GameManager : MonoBehaviour
                 break;
                 
             case GameState.Elimination:
+                ProcessEliminationVotes();
                 LoadScene("VotingScreen");
                 currentGameState = GameState.Voting;
                 PrepareVotingPhase();
@@ -287,19 +288,11 @@ public class GameManager : MonoBehaviour
                 LoadScene("PictureQuestionScreen");
                 break;
         }
-        
+
         currentGameState = GameState.Question;
         correctAnswer = currentQuestion.correctAnswer;
         robotAnswer = currentQuestion.robotAnswer;
-        
-        // Clear previous round data
-        currentRoundAnswers.Clear();
-        eliminationVotes.Clear();
-        votingVotes.Clear();
-        allAnswers.Clear();
-        remainingAnswers.Clear();
-        eliminatedAnswer = "";
-        
+
         StartTimer(questionTimer);
     }
     
@@ -441,6 +434,16 @@ public class GameManager : MonoBehaviour
 
     public void SubmitPlayerAnswer(string playerID, string answer)
     {
+        // Clear previous round data when first answer of new round is submitted
+        if (currentRoundAnswers.Count == 0)
+        {
+            eliminationVotes.Clear();
+            votingVotes.Clear();
+            allAnswers.Clear();
+            remainingAnswers.Clear();
+            eliminatedAnswer = "";
+        }
+
         if (!currentRoundAnswers.ContainsKey(playerID))
         {
             currentRoundAnswers.Add(playerID, answer);
@@ -478,9 +481,15 @@ public class GameManager : MonoBehaviour
     
     void ProcessEliminationVotes()
     {
+        // Skip if no votes or already processed
+        if (eliminationVotes.Count == 0 || !string.IsNullOrEmpty(eliminatedAnswer))
+        {
+            return;
+        }
+
         // Count votes for each answer
         Dictionary<string, int> voteCounts = new Dictionary<string, int>();
-        
+
         foreach (var vote in eliminationVotes.Values)
         {
             if (!voteCounts.ContainsKey(vote))
@@ -489,11 +498,11 @@ public class GameManager : MonoBehaviour
             }
             voteCounts[vote]++;
         }
-        
+
         // Find most voted answer
         string mostVoted = "";
         int maxVotes = 0;
-        
+
         foreach (var kvp in voteCounts)
         {
             if (kvp.Value > maxVotes)
@@ -502,7 +511,7 @@ public class GameManager : MonoBehaviour
                 mostVoted = kvp.Key;
             }
         }
-        
+
         eliminatedAnswer = mostVoted;
         
         // Award points for correct elimination
