@@ -293,6 +293,14 @@ public class GameManager : MonoBehaviour
         correctAnswer = currentQuestion.correctAnswer;
         robotAnswer = currentQuestion.robotAnswer;
 
+        // Clear previous round data at start of new question
+        currentRoundAnswers.Clear();
+        eliminationVotes.Clear();
+        votingVotes.Clear();
+        allAnswers.Clear();
+        remainingAnswers.Clear();
+        eliminatedAnswer = "";
+
         StartTimer(questionTimer);
     }
     
@@ -434,16 +442,6 @@ public class GameManager : MonoBehaviour
 
     public void SubmitPlayerAnswer(string playerID, string answer)
     {
-        // Clear previous round data when first answer of new round is submitted
-        if (currentRoundAnswers.Count == 0)
-        {
-            eliminationVotes.Clear();
-            votingVotes.Clear();
-            allAnswers.Clear();
-            remainingAnswers.Clear();
-            eliminatedAnswer = "";
-        }
-
         if (!currentRoundAnswers.ContainsKey(playerID))
         {
             currentRoundAnswers.Add(playerID, answer);

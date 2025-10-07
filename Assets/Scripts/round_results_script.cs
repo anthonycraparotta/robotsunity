@@ -415,8 +415,6 @@ public class RoundResultsScreen : MonoBehaviour
         var votingResults = GameManager.Instance.GetVotingResults();
         List<PlayerData> allPlayers = GameManager.Instance.GetAllPlayers();
 
-        Debug.Log("PopulatePanel2: " + allPlayers.Count + " players, " + playerAnswers.Count + " answers");
-
         // Create an entry for each player's response
         foreach (PlayerData player in allPlayers)
         {
@@ -428,9 +426,6 @@ public class RoundResultsScreen : MonoBehaviour
 
             GameObject responseObj = Instantiate(resultsPlayerResponsePrefab, panel2ResultsContainer);
 
-            // Debug: List all child objects
-            Debug.Log($"Panel2 prefab children: {string.Join(", ", System.Linq.Enumerable.Select(responseObj.GetComponentsInChildren<Transform>(), t => t.name))}");
-
             // Find components in the prefab using configured names (search all descendants, not just direct children)
             Transform playerResponseTransform = FindDeepChild(responseObj.transform, panel2PlayerResponseName);
             Transform scoreNumberTransform = FindDeepChild(responseObj.transform, panel2ScoreNumberName);
@@ -439,11 +434,6 @@ public class RoundResultsScreen : MonoBehaviour
             TextMeshProUGUI playerResponseText = playerResponseTransform?.GetComponent<TextMeshProUGUI>();
             TextMeshProUGUI scoreNumberText = scoreNumberTransform?.GetComponent<TextMeshProUGUI>();
             TextMeshProUGUI fooledCountText = fooledCountTransform?.GetComponent<TextMeshProUGUI>();
-
-            // Debug what we found
-            if (playerResponseText == null) Debug.LogWarning($"Panel2: Could not find '{panel2PlayerResponseName}' TextMeshProUGUI in prefab");
-            if (scoreNumberText == null) Debug.LogWarning($"Panel2: Could not find '{panel2ScoreNumberName}' TextMeshProUGUI in prefab");
-            if (fooledCountText == null) Debug.LogWarning($"Panel2: Could not find '{panel2NumberOfFooledName}' TextMeshProUGUI in prefab");
 
             if (playerResponseText != null)
             {
@@ -486,19 +476,12 @@ public class RoundResultsScreen : MonoBehaviour
 
         // Get players ranked by score
         List<PlayerData> rankedPlayers = GameManager.Instance.GetPlayersByRank();
-        Debug.Log("PopulatePanel3: Found " + rankedPlayers.Count + " players to display");
 
         // Create a rank entry for each player
         for (int i = 0; i < rankedPlayers.Count; i++)
         {
             PlayerData player = rankedPlayers[i];
             GameObject rankObj = Instantiate(resultsPlayerRankPrefab, panel3ResultsContainer);
-
-            // Debug: List all child objects (only once)
-            if (i == 0)
-            {
-                Debug.Log($"Panel3 prefab children: {string.Join(", ", System.Linq.Enumerable.Select(rankObj.GetComponentsInChildren<Transform>(), t => t.name))}");
-            }
 
             // Find components in the prefab using configured names (search all descendants, not just direct children)
             Transform playerNameTransform = FindDeepChild(rankObj.transform, panel3PlayerNameName);
@@ -508,11 +491,6 @@ public class RoundResultsScreen : MonoBehaviour
             TextMeshProUGUI playerNameText = playerNameTransform?.GetComponent<TextMeshProUGUI>();
             TextMeshProUGUI scoreText = scoreTransform?.GetComponent<TextMeshProUGUI>();
             Image playerIconImage = playerIconTransform?.GetComponent<Image>();
-
-            // Debug what we found
-            if (playerNameText == null) Debug.LogWarning($"Panel3: Could not find '{panel3PlayerNameName}' TextMeshProUGUI in prefab");
-            if (scoreText == null) Debug.LogWarning($"Panel3: Could not find '{panel3PlayerCumulativeScoreName}' TextMeshProUGUI in prefab");
-            if (playerIconImage == null) Debug.LogWarning($"Panel3: Could not find '{panel3PlayerIconName}' Image in prefab");
 
             if (playerNameText != null)
             {
@@ -524,23 +502,12 @@ public class RoundResultsScreen : MonoBehaviour
                 scoreText.text = player.scorePercentage + "%";
             }
 
-            if (playerIconImage != null)
+            if (playerIconImage != null && PlayerManager.Instance != null)
             {
-                if (PlayerManager.Instance != null)
+                Sprite iconSprite = PlayerManager.Instance.GetPlayerIcon(player.iconName);
+                if (iconSprite != null)
                 {
-                    Sprite iconSprite = PlayerManager.Instance.GetPlayerIcon(player.iconName);
-                    if (iconSprite != null)
-                    {
-                        playerIconImage.sprite = iconSprite;
-                    }
-                    else
-                    {
-                        Debug.LogWarning("Could not load icon sprite for: " + player.iconName);
-                    }
-                }
-                else
-                {
-                    Debug.LogWarning("PlayerManager.Instance is null - cannot load player icons");
+                    playerIconImage.sprite = iconSprite;
                 }
             }
         }
