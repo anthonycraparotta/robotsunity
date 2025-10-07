@@ -21,7 +21,8 @@ public class BonusResultsScreen : MonoBehaviour
     public Button continueButton;
     
     [Header("Prefabs")]
-    public GameObject resultRowPrefab;
+    public GameObject resultRowPrefab; // Desktop prefab
+    public GameObject mobileResultRowPrefab; // Mobile prefab
 
     [Header("Prefab Component Names")]
     [SerializeField] private string rankComponentName = "Rank";
@@ -81,40 +82,60 @@ public class BonusResultsScreen : MonoBehaviour
     
     void DisplayBonusResults()
     {
+        Debug.Log("DisplayBonusResults called");
+
         // Show updated scores after bonus round
         List<PlayerData> rankedPlayers = GameManager.Instance.GetPlayersByRank();
-        
+
+        Debug.Log($"Got {rankedPlayers.Count} ranked players");
+
         Transform container = isMobile ? mobileResultsContainer : resultsContainer;
-        
-        if (container == null) return;
-        
+
+        Debug.Log($"Container is null: {container == null}, isMobile: {isMobile}");
+
+        if (container == null)
+        {
+            Debug.LogError("Results container is NULL! Cannot display results.");
+            return;
+        }
+
         // Clear existing content
         foreach (Transform child in container)
         {
             Destroy(child.gameObject);
         }
-        
+
         // Display each player's result
         int rank = 1;
         foreach (PlayerData player in rankedPlayers)
         {
+            Debug.Log($"Creating result row for {player.playerName} (rank {rank}, score {player.scorePercentage}%)");
             CreateResultRow(player, rank, container);
             rank++;
         }
+
+        Debug.Log("DisplayBonusResults complete");
     }
     
     void CreateResultRow(PlayerData player, int rank, Transform parent)
     {
         GameObject rowObj;
 
-        if (resultRowPrefab != null)
+        // Use appropriate prefab based on mobile/desktop
+        GameObject prefabToUse = isMobile ? mobileResultRowPrefab : resultRowPrefab;
+
+        Debug.Log($"CreateResultRow - prefab is null: {prefabToUse == null}, isMobile: {isMobile}");
+
+        if (prefabToUse != null)
         {
-            rowObj = Instantiate(resultRowPrefab, parent);
+            rowObj = Instantiate(prefabToUse, parent);
             rowObj.SetActive(true);
+            Debug.Log($"Instantiated prefab for {player.playerName}");
         }
         else
         {
             // Create row programmatically
+            Debug.LogWarning("Prefab is NULL, creating row programmatically");
             rowObj = new GameObject("ResultRow");
             rowObj.transform.SetParent(parent);
             rowObj.AddComponent<RectTransform>();

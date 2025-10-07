@@ -39,15 +39,18 @@ public class CreditsLoader : MonoBehaviour
     void LoadAndDisplayCredits()
     {
         TextAsset jsonFile = Resources.Load<TextAsset>(creditsFilePath);
-        
+
         if (jsonFile == null)
         {
             Debug.LogError("Could not find credits.json at Resources/" + creditsFilePath);
             return;
         }
-        
-        CreditsList creditsData = JsonUtility.FromJson<CreditsList>(jsonFile.text);
-        
+
+        // Wrap the array in an object: {"credits": [...]}
+        string wrappedJson = "{\"credits\":" + jsonFile.text + "}";
+
+        CreditsList creditsData = JsonUtility.FromJson<CreditsList>(wrappedJson);
+
         if (creditsData != null && creditsData.credits != null)
         {
             DisplayCredits(creditsData.credits);
@@ -155,6 +158,13 @@ public class CreditsList
 [System.Serializable]
 public class CreditEntry
 {
-    public string role;
     public string name;
+    public string job;
+
+    // Property to provide backwards compatibility
+    public string role
+    {
+        get { return job; }
+        set { job = value; }
+    }
 }

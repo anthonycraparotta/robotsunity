@@ -200,25 +200,31 @@ public class GameManager : MonoBehaviour
                 break;
                 
             case GameState.BonusIntro:
+                Debug.Log("Advancing from BonusIntro to BonusQuestion");
                 LoadScene("BonusQuestionScreen");
                 currentGameState = GameState.BonusQuestion;
                 currentBonusQuestion = 0;
+                Debug.Log($"Reset currentBonusQuestion to 0, starting timer");
                 StartTimer(votingTimer);
                 break;
-                
+
             case GameState.BonusQuestion:
+                Debug.Log($"BonusQuestion AdvanceToNextScreen called - currentBonusQuestion before increment: {currentBonusQuestion}");
                 ProcessBonusVotes();
                 currentBonusQuestion++;
-                
+                Debug.Log($"After increment: currentBonusQuestion = {currentBonusQuestion}");
+
                 if (currentBonusQuestion < 4)
                 {
                     // Next bonus question
+                    Debug.Log($"Continuing to bonus question {currentBonusQuestion}");
                     bonusVotes.Clear();
                     StartTimer(votingTimer);
                 }
                 else
                 {
                     // Bonus round complete
+                    Debug.Log("All 4 bonus questions complete, going to BonusResults");
                     isBonusRoundPlayed = true;
                     LoadScene("BonusResultsScreen");
                     currentGameState = GameState.BonusResults;
@@ -639,6 +645,8 @@ public class GameManager : MonoBehaviour
     
     public void SubmitBonusVote(string playerID, string votedPlayerID)
     {
+        Debug.Log($"SubmitBonusVote: player {playerID} voted for {votedPlayerID} (question {currentBonusQuestion})");
+
         if (!bonusVotes.ContainsKey(playerID))
         {
             bonusVotes.Add(playerID, votedPlayerID);
@@ -647,10 +655,13 @@ public class GameManager : MonoBehaviour
         {
             bonusVotes[playerID] = votedPlayerID;
         }
-        
+
+        Debug.Log($"Bonus votes now: {bonusVotes.Count}/{players.Count}");
+
         // Check if all players have voted
         if (bonusVotes.Count >= players.Count)
         {
+            Debug.Log("All players voted, advancing to next screen");
             StopTimer();
             AdvanceToNextScreen();
         }

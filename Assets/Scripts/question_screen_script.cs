@@ -52,10 +52,10 @@ public class QuestionScreen : MonoBehaviour
 
         // Show appropriate display
         ShowAppropriateDisplay();
-        
+
         // Display question
         DisplayQuestion();
-        
+
         // Show round-specific visuals
         ShowRoundVisuals();
         
@@ -122,7 +122,22 @@ public class QuestionScreen : MonoBehaviour
 
             if (questionText != null)
             {
-                questionText.text = currentQuestion.questionText;
+                string displayText = currentQuestion.questionText;
+
+                // Replace [player.name] placeholder with random player name for Player Questions
+                if (GameManager.Instance.IsPlayerQuestion() && displayText.Contains("[player.name]"))
+                {
+                    List<PlayerData> allPlayers = GameManager.Instance.GetAllPlayers();
+                    if (allPlayers.Count > 0)
+                    {
+                        // Pick a random player
+                        PlayerData randomPlayer = allPlayers[Random.Range(0, allPlayers.Count)];
+                        displayText = displayText.Replace("[player.name]", randomPlayer.playerName);
+                        Debug.Log($"Replaced [player.name] with: {randomPlayer.playerName}");
+                    }
+                }
+
+                questionText.text = displayText;
                 Debug.Log($"DisplayQuestion - Set questionText to: '{questionText.text}'");
             }
         }
@@ -176,15 +191,49 @@ public class QuestionScreen : MonoBehaviour
             }
         }
         
-        // Show current round robot
+        // Show current round robot with slide-in animation
         if (currentRound > 0 && currentRound <= robotImages.Length)
         {
             if (robotImages[currentRound - 1] != null)
             {
-                robotImages[currentRound - 1].gameObject.SetActive(true);
+                GameObject robotObj = robotImages[currentRound - 1].gameObject;
+                robotObj.SetActive(true);
+
+                // Start slide-in animation from left
+                StartCoroutine(SlideInFromLeft(robotObj.GetComponent<RectTransform>()));
             }
         }
     }
+
+    System.Collections.IEnumerator SlideInFromLeft(RectTransform rectTransform)
+    {
+        if (rectTransform == null) yield break;
+
+        float duration = 1f;
+        float elapsed = 0f;
+
+        // Store original position
+        Vector2 targetPosition = rectTransform.anchoredPosition;
+
+        // Start position (off screen to the left)
+        Vector2 startPosition = new Vector2(targetPosition.x - Screen.width, targetPosition.y);
+        rectTransform.anchoredPosition = startPosition;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+
+            // Ease out cubic
+            float easedT = 1f - Mathf.Pow(1f - t, 3f);
+
+            rectTransform.anchoredPosition = Vector2.Lerp(startPosition, targetPosition, easedT);
+            yield return null;
+        }
+
+        rectTransform.anchoredPosition = targetPosition;
+    }
+
     
     void UpdateTimerDisplay()
     {

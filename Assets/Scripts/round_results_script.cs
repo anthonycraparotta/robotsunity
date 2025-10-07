@@ -738,9 +738,17 @@ public class RoundResultsScreen : MonoBehaviour
 
     public void OnFinalResultsClicked()
     {
-        // Force to final results even if game logic would go elsewhere
+        // Load final results screen
+        if (SceneTransitionManager.Instance != null)
+        {
+            SceneTransitionManager.Instance.LoadScene("FinalResults");
+        }
+        else
+        {
+            UnityEngine.SceneManagement.SceneManager.LoadScene("FinalResults");
+        }
+
         GameManager.Instance.currentGameState = GameManager.GameState.FinalResults;
-        GameManager.Instance.AdvanceToNextScreen();
     }
     
     string GetLocalPlayerID()

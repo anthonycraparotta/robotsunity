@@ -253,14 +253,22 @@ public class LobbyScreen : MonoBehaviour
     
     public void OnPlayerIconSelected(string iconName)
     {
+        // Check if icon is available (not already selected by another player)
+        if (PlayerManager.Instance != null && !PlayerManager.Instance.IsIconAvailable(iconName))
+        {
+            Debug.LogWarning($"Icon {iconName} is already selected by another player!");
+            ShowError("This icon is already taken. Please choose another one.");
+            return;
+        }
+
         selectedPlayerIconName = iconName;
-        
+
         // Update selected icon display
         if (selectedIcon != null && PlayerManager.Instance != null)
         {
             selectedIcon.sprite = PlayerManager.Instance.GetPlayerIcon(iconName);
         }
-        
+
         Debug.Log("Player icon selected: " + iconName);
     }
     

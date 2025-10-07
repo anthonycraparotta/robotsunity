@@ -122,9 +122,9 @@ public class BonusQuestionScreen : MonoBehaviour
     {
         // Check if we moved to next bonus question
         int currentQuestionIndex = GameManager.Instance.currentBonusQuestion;
-        if (currentQuestionIndex != lastBonusQuestionIndex && lastBonusQuestionIndex != -1)
+        if (currentQuestionIndex != lastBonusQuestionIndex && lastBonusQuestionIndex != -1 && currentQuestionIndex < 4)
         {
-            // New bonus question started
+            // New bonus question started (only if still within the 4 questions)
             Debug.Log("Detected new bonus question: " + currentQuestionIndex);
             InitializeBonusQuestion();
         }
@@ -265,7 +265,7 @@ public class BonusQuestionScreen : MonoBehaviour
         }
         spawnedPlayerIcons.Clear();
 
-        // Create icon for each player (initially hidden)
+        // Create icon for each player (visible but greyed out initially)
         foreach (PlayerData player in players)
         {
             if (playerIconBonusPrefab != null)
@@ -286,8 +286,8 @@ public class BonusQuestionScreen : MonoBehaviour
                     iconImage.sprite = PlayerManager.Instance.GetPlayerIcon(player.iconName);
                 }
 
-                // Hide icon initially - only show when player votes
-                iconObj.SetActive(false);
+                // Start greyed out with circle hidden
+                SetIconGreyedOut(iconObj, true);
 
                 spawnedPlayerIcons.Add(iconObj);
             }
@@ -394,7 +394,7 @@ public class BonusQuestionScreen : MonoBehaviour
     
     void UpdateVoteCounts()
     {
-        // Show icons for players who have voted
+        // Update icon appearance for players who have voted
         List<PlayerData> allPlayers = GameManager.Instance.GetAllPlayers();
         var bonusVotes = GameManager.Instance.bonusVotes;
 
@@ -403,10 +403,69 @@ public class BonusQuestionScreen : MonoBehaviour
             PlayerData player = allPlayers[i];
             GameObject iconObj = spawnedPlayerIcons[i];
 
-            // Show icon if player has voted
+            // Check if player has voted
             bool hasVoted = bonusVotes.ContainsKey(player.playerID);
-            iconObj.SetActive(hasVoted);
+
+            // Update visual state (greyed out if not voted, full color if voted)
+            SetIconGreyedOut(iconObj, !hasVoted);
         }
+    }
+
+    void SetIconGreyedOut(GameObject iconObj, bool isGreyedOut)
+    {
+        if (iconObj == null) return;
+
+        // Find all image components and grey them out or restore color
+        Image[] images = iconObj.GetComponentsInChildren<Image>();
+        foreach (Image img in images)
+        {
+            if (isGreyedOut)
+            {
+                img.color = new Color(0.5f, 0.5f, 0.5f, 1f); // Grey
+            }
+            else
+            {
+                img.color = Color.white; // Full color
+            }
+        }
+
+        // Find circle and animate it
+        Transform circleTransform = iconObj.transform.Find("Circle");
+        if (circleTransform != null)
+        {
+            if (isGreyedOut)
+            {
+                // Hide circle when greyed out
+                circleTransform.gameObject.SetActive(false);
+                circleTransform.localScale = Vector3.zero;
+            }
+            else
+            {
+                // Show and animate circle scaling up when activated
+                circleTransform.gameObject.SetActive(true);
+                StartCoroutine(ScaleUpCircle(circleTransform));
+            }
+        }
+    }
+
+    System.Collections.IEnumerator ScaleUpCircle(Transform circleTransform)
+    {
+        float duration = 0.3f;
+        float elapsed = 0f;
+        Vector3 startScale = Vector3.zero;
+        Vector3 targetScale = Vector3.one;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+            // Ease out effect
+            float easedT = 1f - Mathf.Pow(1f - t, 3f);
+            circleTransform.localScale = Vector3.Lerp(startScale, targetScale, easedT);
+            yield return null;
+        }
+
+        circleTransform.localScale = targetScale;
     }
     
     string GetLocalPlayerID()

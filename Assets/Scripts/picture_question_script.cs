@@ -180,21 +180,17 @@ public class PictureQuestionScreen : MonoBehaviour
             }
         }
         
-        // Update status indicators (show if player has submitted)
+        // Update status indicators (show icon when player has submitted)
         for (int i = 0; i < spawnedPlayerIcons.Count && i < players.Count; i++)
         {
             GameObject iconObj = spawnedPlayerIcons[i];
             PlayerData player = players[i];
-            
+
             // Check if this player has submitted an answer
             bool hasSubmitted = GameManager.Instance.currentRoundAnswers.ContainsKey(player.playerID);
-            
-            // Update visual indicator (e.g., circle, checkmark, etc.)
-            Transform indicator = iconObj.transform.Find("Circle");
-            if (indicator != null)
-            {
-                indicator.gameObject.SetActive(hasSubmitted);
-            }
+
+            // Show/hide entire icon based on submission (matching regular Questions behavior)
+            iconObj.SetActive(hasSubmitted);
         }
     }
     

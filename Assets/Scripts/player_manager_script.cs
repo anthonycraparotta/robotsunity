@@ -99,11 +99,56 @@ public class PlayerManager : MonoBehaviour
         int randomIndex = Random.Range(1, totalPlayerIcons + 1);
         return "player icon (" + randomIndex + ")";
     }
-    
+
     public Sprite GetRandomIcon()
     {
         string randomName = GetRandomIconName();
         return GetPlayerIcon(randomName);
+    }
+
+    // Get icons that are not currently selected by any player
+    public List<string> GetAvailableIconNames()
+    {
+        // Get all player icon names
+        List<string> allIcons = GetAllPlayerIconNames();
+
+        // Get icons currently in use
+        HashSet<string> usedIcons = new HashSet<string>();
+        if (GameManager.Instance != null)
+        {
+            foreach (var player in GameManager.Instance.players.Values)
+            {
+                usedIcons.Add(player.iconName);
+            }
+        }
+
+        // Filter out used icons
+        List<string> availableIcons = new List<string>();
+        foreach (string iconName in allIcons)
+        {
+            if (!usedIcons.Contains(iconName))
+            {
+                availableIcons.Add(iconName);
+            }
+        }
+
+        return availableIcons;
+    }
+
+    // Check if an icon is available (not currently selected)
+    public bool IsIconAvailable(string iconName)
+    {
+        if (GameManager.Instance == null) return true;
+
+        foreach (var player in GameManager.Instance.players.Values)
+        {
+            if (player.iconName == iconName)
+            {
+                return false; // Icon is already in use
+            }
+        }
+
+        return true; // Icon is available
     }
     
     // === PLAYER ID GENERATION ===
