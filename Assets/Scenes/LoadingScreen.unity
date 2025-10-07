@@ -788,7 +788,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 94a6f6bac2fea9b4cb59385b32df2f5a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DebugManager
-  debugModeEnabled: 0
+  debugModeEnabled: 1
   debugMenuKey: 282
   showDebugGUI: 0
   skipToRoundKey: 283
