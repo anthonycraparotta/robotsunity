@@ -694,7 +694,7 @@ public class GameManager : MonoBehaviour
         return (gameMode == GameMode.EightQuestions) ? 4 : 3;
     }
     
-    int GetCorrectVotePoints()
+    public int GetCorrectVotePoints()
     {
         if (IsPictureQuestion())
         {
@@ -702,17 +702,17 @@ public class GameManager : MonoBehaviour
         }
         return (gameMode == GameMode.EightQuestions) ? 8 : 6;
     }
-    
-    int GetRobotVotePenalty()
+
+    public int GetRobotVotePenalty()
     {
         // Penalty is NOT doubled for picture questions
         return (gameMode == GameMode.EightQuestions) ? -8 : -6;
     }
-    
-    int GetVoteReceivedPoints()
+
+    public int GetVoteReceivedPoints()
     {
         bool isDoubled = IsPlayerQuestion() || IsPictureQuestion();
-        
+
         if (gameMode == GameMode.EightQuestions)
         {
             return isDoubled ? 8 : 4;

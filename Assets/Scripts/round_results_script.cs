@@ -244,6 +244,13 @@ public class RoundResultsScreen : MonoBehaviour
                 this.robotResponse.text = robotAnswer;
             }
 
+            // Set score difference for voting correctly
+            if (scoreDiffTrue != null)
+            {
+                int correctVotePoints = GameManager.Instance.GetCorrectVotePoints();
+                scoreDiffTrue.text = "+" + correctVotePoints;
+            }
+
             // Populate player icons based on who voted correctly
             PopulatePanel1PlayerIcons(correctAnswer, robotAnswer);
         }
@@ -511,14 +518,18 @@ public class RoundResultsScreen : MonoBehaviour
                 Debug.Log($"Panel2: ScoreDiff container activated (hasImage={scoreDiffBackground != null})");
             }
 
-            // Activate and set ScoreNumber
+            // Activate and set ScoreNumber (points received for this answer)
             if (scoreNumberTransform != null) scoreNumberTransform.gameObject.SetActive(true);
             if (scoreNumberText != null)
             {
-                // Score number would need to be calculated from previous score vs current
-                scoreNumberText.text = "0"; // Placeholder - actual score calculation needed
+                // Calculate score from votes received on this answer
+                int fooledCount = votingResults.ContainsKey(playerAnswer) ? votingResults[playerAnswer] : 0;
+                int pointsPerVote = GameManager.Instance.GetVoteReceivedPoints();
+                int totalScore = fooledCount * pointsPerVote;
+
+                scoreNumberText.text = "+" + totalScore;
                 scoreNumberText.enabled = true;
-                Debug.Log($"Panel2: Set ScoreNumber to '0' (enabled={scoreNumberText.enabled}, gameObject.activeSelf={scoreNumberText.gameObject.activeSelf})");
+                Debug.Log($"Panel2: Set ScoreNumber to '+{totalScore}' (enabled={scoreNumberText.enabled}, gameObject.activeSelf={scoreNumberText.gameObject.activeSelf})");
             }
             else
             {
@@ -530,9 +541,9 @@ public class RoundResultsScreen : MonoBehaviour
             if (fooledCountText != null)
             {
                 int fooledCount = votingResults.ContainsKey(playerAnswer) ? votingResults[playerAnswer] : 0;
-                fooledCountText.text = $"HUMANS FOOLED: {fooledCount}";
+                fooledCountText.text = fooledCount.ToString();
                 fooledCountText.enabled = true;
-                Debug.Log($"Panel2: Set NumberOfFooled to 'HUMANS FOOLED: {fooledCount}' (enabled={fooledCountText.enabled}, gameObject.activeSelf={fooledCountText.gameObject.activeSelf})");
+                Debug.Log($"Panel2: Set NumberOfFooled to '{fooledCount}' (enabled={fooledCountText.enabled}, gameObject.activeSelf={fooledCountText.gameObject.activeSelf})");
             }
             else
             {
