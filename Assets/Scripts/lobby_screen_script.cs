@@ -257,7 +257,7 @@ public class LobbyScreen : MonoBehaviour
         if (PlayerManager.Instance != null && !PlayerManager.Instance.IsIconAvailable(iconName))
         {
             Debug.LogWarning($"Icon {iconName} is already selected by another player!");
-            ShowError("This icon is already taken. Please choose another one.");
+            ShowErrorMessage("This icon is already taken. Please choose another one.");
             return;
         }
 

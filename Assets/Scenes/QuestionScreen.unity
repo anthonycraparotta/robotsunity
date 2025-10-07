@@ -561,7 +561,6 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 602567490}
   - {fileID: 1196745241}
   - {fileID: 1711407588}
   - {fileID: 1313190121}
@@ -1154,7 +1153,7 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 217708810}
+  m_Father: {fileID: 889670784}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -1184,6 +1183,7 @@ MonoBehaviour:
   timerContainer: {fileID: 1385067878}
   tipText: {fileID: 1711407589}
   desktopBackground: {fileID: 0}
+  buttonSlideout: {fileID: 0}
   roundBackgrounds:
   - {fileID: 963491440}
   - {fileID: 1910049828}
@@ -1753,6 +1753,7 @@ RectTransform:
   m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 602567490}
   - {fileID: 217708810}
   - {fileID: 269826799}
   m_Father: {fileID: 0}
