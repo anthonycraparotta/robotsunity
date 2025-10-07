@@ -758,9 +758,8 @@ public class GameManager : MonoBehaviour
     
     public string GetTimerDisplay()
     {
-        int minutes = Mathf.FloorToInt(currentTimerValue / 60);
-        int seconds = Mathf.FloorToInt(currentTimerValue % 60);
-        return string.Format("{0:00}:{1:00}", minutes, seconds);
+        int seconds = Mathf.FloorToInt(currentTimerValue);
+        return seconds.ToString();
     }
     
     // === PLAYER MANAGEMENT ===

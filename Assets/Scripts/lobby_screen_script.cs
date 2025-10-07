@@ -55,6 +55,9 @@ public class LobbyScreen : MonoBehaviour
     {
         isMobile = DeviceDetector.Instance != null && DeviceDetector.Instance.IsMobile();
 
+        // Clear any placeholder player icons from the scene
+        ClearPlayerIconPlaceholders();
+
         // Set game state to Lobby
         if (GameManager.Instance != null)
         {
@@ -354,7 +357,18 @@ public class LobbyScreen : MonoBehaviour
     }
     
     // === PLAYER LIST UPDATES ===
-    
+
+    void ClearPlayerIconPlaceholders()
+    {
+        if (playerIconContainer == null) return;
+
+        // Destroy all children (placeholders from the scene)
+        foreach (Transform child in playerIconContainer)
+        {
+            Destroy(child.gameObject);
+        }
+    }
+
     void UpdatePlayerList()
     {
         if (playerIconContainer == null) return;
