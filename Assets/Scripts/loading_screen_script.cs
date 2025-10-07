@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
+using Unity.Netcode;
 
 public class LoadingScreen : MonoBehaviour
 {
@@ -96,8 +97,14 @@ public class LoadingScreen : MonoBehaviour
         CreateManager<SceneTransitionManager>("SceneTransitionManager");
         CreateManager<DeviceDetector>("DeviceDetector");
         CreateManager<ContentFilterManager>("ContentFilterManager");
-        CreateManager<RWMNetworkManager>("NetworkManager");
-        CreateManager<PlayerAuthSystem>("PlayerAuthSystem");
+
+        // Create Unity Netcode NetworkManager first (required for other NetworkBehaviours)
+        CreateNetworkManager();
+
+        // Create custom network managers with NetworkObject components
+        CreateNetworkBehaviour<RWMNetworkManager>("NetworkManager");
+        CreateNetworkBehaviour<PlayerAuthSystem>("PlayerAuthSystem");
+
         CreateManager<DebugManager>("DebugManager");
 
         Debug.Log("All global managers initialized");
@@ -108,6 +115,32 @@ public class LoadingScreen : MonoBehaviour
         GameObject managerObj = new GameObject(managerName);
         managerObj.AddComponent<T>();
         Debug.Log($"Created {managerName}");
+    }
+
+    void CreateNetworkManager()
+    {
+        // Create Unity Netcode NetworkManager singleton
+        GameObject netManagerObj = new GameObject("Unity_NetworkManager");
+        NetworkManager netManager = netManagerObj.AddComponent<NetworkManager>();
+
+        // Configure with basic transport (UnityTransport is the default)
+        // If UnityTransport isn't already added, Unity Netcode will add it automatically
+        var transport = netManagerObj.GetComponent<Unity.Netcode.Transports.UTP.UnityTransport>();
+        if (transport == null)
+        {
+            transport = netManagerObj.AddComponent<Unity.Netcode.Transports.UTP.UnityTransport>();
+        }
+
+        Debug.Log("Created Unity NetworkManager singleton");
+    }
+
+    void CreateNetworkBehaviour<T>(string managerName) where T : NetworkBehaviour
+    {
+        // NetworkBehaviours MUST have a NetworkObject component to function
+        GameObject managerObj = new GameObject(managerName);
+        managerObj.AddComponent<NetworkObject>();
+        managerObj.AddComponent<T>();
+        Debug.Log($"Created {managerName} with NetworkObject");
     }
     
     void AdvanceToLanding()
