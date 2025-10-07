@@ -210,16 +210,12 @@ public class EliminationScreen : MonoBehaviour
                 elimSubmitButton.interactable = true;
             }
         }
-        else
-        {
-            // Desktop: Auto-submit on click
-            SubmitEliminationVote();
-        }
+        // Desktop is display-only, doesn't submit votes
         
         Debug.Log("Answer selected for elimination: " + answer);
     }
     
-    void OnSubmitVote()
+    public void OnSubmitVote()
     {
         if (string.IsNullOrEmpty(selectedAnswer))
         {

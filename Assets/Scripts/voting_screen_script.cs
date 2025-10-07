@@ -210,16 +210,12 @@ public class VotingScreen : MonoBehaviour
                 votingSubmitButton.interactable = true;
             }
         }
-        else
-        {
-            // Desktop: Auto-submit on click
-            SubmitVotingVote();
-        }
+        // Desktop is display-only, doesn't submit votes
         
         Debug.Log("Answer selected for voting: " + answer);
     }
     
-    void OnSubmitVote()
+    public void OnSubmitVote()
     {
         if (string.IsNullOrEmpty(selectedAnswer))
         {

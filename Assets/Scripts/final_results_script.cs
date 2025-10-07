@@ -264,7 +264,7 @@ public class FinalResultsScreen : MonoBehaviour
         // Implementation depends on your UI design
     }
     
-    void OnCreditsClicked()
+    public void OnCreditsClicked()
     {
         // Go to Credits scene
         if (SceneTransitionManager.Instance != null)
@@ -277,7 +277,7 @@ public class FinalResultsScreen : MonoBehaviour
         }
     }
 
-    void OnNewGameClicked()
+    public void OnNewGameClicked()
     {
         // Reset game and go back to lobby
         GameManager.Instance.currentRound = 0;
@@ -301,7 +301,7 @@ public class FinalResultsScreen : MonoBehaviour
         }
     }
 
-    void OnShareClicked()
+    public void OnShareClicked()
     {
         // Share results functionality
         Debug.Log("Share results clicked");
@@ -310,7 +310,7 @@ public class FinalResultsScreen : MonoBehaviour
         // Example: Take screenshot, share to social media, etc.
     }
 
-    void OnWebsiteClicked()
+    public void OnWebsiteClicked()
     {
         // Open game website
         Debug.Log("Website clicked");

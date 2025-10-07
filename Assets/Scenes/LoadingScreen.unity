@@ -701,6 +701,182 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2108762726
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2108762727}
+  - component: {fileID: 2108762733}
+  - component: {fileID: 2108762732}
+  - component: {fileID: 2108762731}
+  - component: {fileID: 2108762730}
+  - component: {fileID: 2108762729}
+  - component: {fileID: 2108762728}
+  m_Layer: 0
+  m_Name: Managers
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2108762727
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2108762726}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 874.4173, y: 728.5783, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2108762728
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2108762726}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 820af081cc9f5d64b8806d11362f569f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SceneTransitionManager
+  fadeImage: {fileID: 0}
+  fadeDuration: 0.5
+  fadeColor: {r: 0, g: 0, b: 0, a: 1}
+  loadingScreenPrefab: {fileID: 0}
+--- !u!114 &2108762729
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2108762726}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac6cd6c4ee22b434396047fae9b30f5d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeviceDetector
+  currentDevice: 0
+  autoDetectOnStart: 1
+  forceDeviceType: 0
+  forcedDeviceType: 0
+  onDesktopDetected:
+    m_PersistentCalls:
+      m_Calls: []
+  onMobileDetected:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &2108762730
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2108762726}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 94a6f6bac2fea9b4cb59385b32df2f5a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DebugManager
+  debugModeEnabled: 0
+  debugMenuKey: 282
+  showDebugGUI: 0
+  skipToRoundKey: 283
+  addTestPlayersKey: 284
+  simulateAnswersKey: 285
+  toggleTimerKey: 286
+  add100PointsKey: 287
+  numberOfTestPlayers: 4
+  testPlayerNames:
+  - TestPlayer1
+  - TestPlayer2
+  - TestPlayer3
+  - TestPlayer4
+  - TestPlayer5
+  - TestPlayer6
+  - TestPlayer7
+  - TestPlayer8
+--- !u!114 &2108762731
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2108762726}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6514b02e5a98c944492f7c14436f1aa4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AudioManager
+  musicSource: {fileID: 0}
+  sfxSource: {fileID: 0}
+  timerLoopSource: {fileID: 0}
+  musicVolume: 0.7
+  sfxVolume: 1
+--- !u!114 &2108762732
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2108762726}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 65a13789792b8c644a1efd4cd6b1753c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerManager
+  playerIconPath: sprites/icons/
+  totalPlayerIcons: 20
+--- !u!114 &2108762733
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2108762726}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 297b91daa75ac644daf3d3719de7bc75, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameManager
+  gameMode: 0
+  currentRound: 0
+  isHalftimePlayed: 0
+  isBonusRoundPlayed: 0
+  currentQuestion:
+    questionText: 
+    correctAnswer: 
+    robotAnswer: 
+    robotAnecdote: 
+    questionType: 
+    imageURL: 
+  robotAnswer: 
+  correctAnswer: 
+  allAnswers: []
+  remainingAnswers: []
+  eliminatedAnswer: 
+  bonusQuestions:
+    miniQuestions: []
+  currentBonusQuestion: 0
+  questionTimer: 60
+  eliminationTimer: 30
+  votingTimer: 30
+  currentTimerValue: 0
+  timerActive: 0
+  standardQuestions: []
+  playerQuestions: []
+  pictureQuestions: []
+  currentGameState: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -708,3 +884,4 @@ SceneRoots:
   - {fileID: 1361475724}
   - {fileID: 756523228}
   - {fileID: 2098047015}
+  - {fileID: 2108762727}

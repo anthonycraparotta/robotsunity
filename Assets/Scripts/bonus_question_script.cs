@@ -278,23 +278,19 @@ public class BonusQuestionScreen : MonoBehaviour
                 bonusSubmitButton.interactable = true;
             }
         }
-        else
-        {
-            // Desktop: Auto-submit
-            SubmitBonusVote();
-        }
+        // Desktop is display-only, doesn't submit votes
         
         Debug.Log("Player selected: " + votedPlayerID);
     }
     
-    void OnSubmitVote()
+    public void OnSubmitVote()
     {
         if (string.IsNullOrEmpty(selectedPlayerID))
         {
             Debug.LogWarning("No player selected!");
             return;
         }
-        
+
         SubmitBonusVote();
     }
     

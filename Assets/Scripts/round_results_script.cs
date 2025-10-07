@@ -599,12 +599,12 @@ public class RoundResultsScreen : MonoBehaviour
         }
     }
     
-    void OnNextRoundClicked()
+    public void OnNextRoundClicked()
     {
         GameManager.Instance.AdvanceToNextScreen();
     }
-    
-    void OnFinalResultsClicked()
+
+    public void OnFinalResultsClicked()
     {
         // Force to final results even if game logic would go elsewhere
         GameManager.Instance.currentGameState = GameManager.GameState.FinalResults;

@@ -9,7 +9,11 @@
       "Bash(for i in {1..20})",
       "Bash(do if [ -f \"playericon ($i).png\" ])",
       "Bash(then mv \"playericon ($i).png\" \"player icon ($i).png\")",
-      "Bash(tasklist)"
+      "Bash(tasklist)",
+      "Bash(git pull:*)",
+      "Bash(git log:*)",
+      "Bash(git stash:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

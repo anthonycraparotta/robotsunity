@@ -96,7 +96,7 @@ public class RoundArtScreen : MonoBehaviour
         AdvanceToQuestion();
     }
     
-    void OnContinueClicked()
+    public void OnContinueClicked()
     {
         // Stop auto-advance coroutine
         StopAllCoroutines();

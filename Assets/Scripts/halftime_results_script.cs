@@ -234,7 +234,7 @@ public class HalftimeResultsScreen : MonoBehaviour
         return rowObj;
     }
     
-    void OnContinueClicked()
+    public void OnContinueClicked()
     {
         // Continue to Bonus Round
         GameManager.Instance.AdvanceToNextScreen();

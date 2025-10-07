@@ -59,8 +59,8 @@ public class QuestionScreen : MonoBehaviour
         // Show round-specific visuals
         ShowRoundVisuals();
         
-        // Setup submit button
-        if (answerSubmitButton != null)
+        // Setup submit button (mobile only)
+        if (isMobile && answerSubmitButton != null)
         {
             answerSubmitButton.onClick.AddListener(OnSubmitAnswer);
         }
@@ -222,25 +222,21 @@ public class QuestionScreen : MonoBehaviour
             }
         }
         
-        // Update status indicators (show if player has submitted)
+        // Update status indicators (show icon when player has submitted)
         for (int i = 0; i < spawnedPlayerIcons.Count && i < players.Count; i++)
         {
             GameObject iconObj = spawnedPlayerIcons[i];
             PlayerData player = players[i];
-            
+
             // Check if this player has submitted an answer
             bool hasSubmitted = GameManager.Instance.currentRoundAnswers.ContainsKey(player.playerID);
-            
-            // Update circle indicator
-            Image circle = iconObj.transform.Find("Circle")?.GetComponent<Image>();
-            if (circle != null)
-            {
-                circle.enabled = hasSubmitted;
-            }
+
+            // Show/hide entire icon based on submission
+            iconObj.SetActive(hasSubmitted);
         }
     }
     
-    void OnSubmitAnswer()
+    public void OnSubmitAnswer()
     {
         if (answerInput == null || string.IsNullOrEmpty(answerInput.text))
         {

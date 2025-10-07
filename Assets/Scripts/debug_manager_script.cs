@@ -61,7 +61,23 @@ public class DebugManager : MonoBehaviour
         
         if (Input.GetKeyDown(simulateAnswersKey))
         {
-            SimulateAllAnswers();
+            // Simulate appropriate action based on current screen
+            string currentScene = SceneManager.GetActiveScene().name;
+            Debug.Log("F4 pressed on scene: " + currentScene);
+
+            if (currentScene == "QuestionScreen" || currentScene == "PictureQuestionScreen")
+            {
+                SimulateAllAnswers();
+            }
+            else if (currentScene == "EliminationScreen" || currentScene == "VotingScreen")
+            {
+                Debug.Log("Calling SimulateRandomVotes for " + currentScene);
+                SimulateRandomVotes();
+            }
+            else
+            {
+                Debug.LogWarning("F4 (Simulate) not supported on current scene: " + currentScene);
+            }
         }
         
         if (Input.GetKeyDown(toggleTimerKey))
@@ -299,7 +315,18 @@ public class DebugManager : MonoBehaviour
             "Example answer content",
             "Test submission"
         };
-        
+
+        // Set up correct and robot answers if not already set
+        if (string.IsNullOrEmpty(GameManager.Instance.correctAnswer))
+        {
+            GameManager.Instance.correctAnswer = "The Correct Answer (Debug)";
+        }
+
+        if (string.IsNullOrEmpty(GameManager.Instance.robotAnswer))
+        {
+            GameManager.Instance.robotAnswer = "Robot Answer (Debug)";
+        }
+
         int index = 0;
         foreach (var player in GameManager.Instance.players)
         {
@@ -307,23 +334,55 @@ public class DebugManager : MonoBehaviour
             GameManager.Instance.SubmitPlayerAnswer(player.Key, answer);
             index++;
         }
-        
+
         Debug.Log("Simulated answers for all players");
     }
     
     public void SimulateRandomVotes()
     {
-        List<string> answers = GameManager.Instance.GetAllAnswers();
+        List<string> answers;
+
+        // Use appropriate answer list based on current screen
+        if (SceneManager.GetActiveScene().name == "EliminationScreen")
+        {
+            answers = GameManager.Instance.GetAllAnswers();
+        }
+        else if (SceneManager.GetActiveScene().name == "VotingScreen")
+        {
+            answers = GameManager.Instance.GetRemainingAnswers();
+        }
+        else
+        {
+            Debug.LogWarning("SimulateRandomVotes called from unsupported scene");
+            return;
+        }
+
         if (answers.Count == 0)
         {
             Debug.LogWarning("No answers available to vote on");
             return;
         }
-        
+
         foreach (var player in GameManager.Instance.players)
         {
-            string randomAnswer = answers[Random.Range(0, answers.Count)];
-            
+            // Filter out null/empty answers
+            List<string> validAnswers = new List<string>();
+            foreach (var answer in answers)
+            {
+                if (!string.IsNullOrEmpty(answer))
+                {
+                    validAnswers.Add(answer);
+                }
+            }
+
+            if (validAnswers.Count == 0)
+            {
+                Debug.LogWarning("No valid answers to vote on for player " + player.Key);
+                continue;
+            }
+
+            string randomAnswer = validAnswers[Random.Range(0, validAnswers.Count)];
+
             // Simulate elimination or voting depending on current screen
             if (SceneManager.GetActiveScene().name == "EliminationScreen")
             {
@@ -334,7 +393,7 @@ public class DebugManager : MonoBehaviour
                 GameManager.Instance.SubmitVotingVote(player.Key, randomAnswer);
             }
         }
-        
+
         Debug.Log("Simulated random votes for all players");
     }
     

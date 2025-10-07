@@ -97,16 +97,16 @@ public class CreditsScreen : MonoBehaviour
         // For now, just loop the video or stop
     }
     
-    void OnWebsiteClicked()
+    public void OnWebsiteClicked()
     {
         Debug.Log("Website button clicked");
         Application.OpenURL("https://robotswearingmoustaches.com"); // Replace with actual URL
     }
-    
-    void OnNewGameClicked()
+
+    public void OnNewGameClicked()
     {
         Debug.Log("New Game button clicked");
-        
+
         // Reset game and return to landing
         GameManager.Instance.currentRound = 0;
         GameManager.Instance.isHalftimePlayed = false;

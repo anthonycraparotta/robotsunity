@@ -121,20 +121,9 @@ public class LobbyScreen : MonoBehaviour
             PlayerManager.Instance.GetRandomIconName() :
             "player icon (1)";
 
-        // Add host to game
-        if (GameManager.Instance != null)
-        {
-            GameManager.Instance.AddPlayer(hostPlayerID, "Host (Desktop)", hostIconName, 0);
-
-            // Mark as host
-            if (GameManager.Instance.players.ContainsKey(hostPlayerID))
-            {
-                GameManager.Instance.players[hostPlayerID].isHost = true;
-                GameManager.Instance.players[hostPlayerID].deviceType = "desktop";
-            }
-
-            Debug.Log("Desktop host added as player: " + hostPlayerID);
-        }
+        // Desktop host is NOT a player - it's just a display screen
+        // Players join via mobile devices only
+        Debug.Log("Desktop is host - not added as a player");
     }
     
     void Update()
@@ -203,7 +192,17 @@ public class LobbyScreen : MonoBehaviour
         }
     }
     
-    void OnStartGameClicked()
+    public void OnEightQuestionsClicked()
+    {
+        OnGameModeSelected(GameManager.GameMode.EightQuestions);
+    }
+
+    public void OnTwelveQuestionsClicked()
+    {
+        OnGameModeSelected(GameManager.GameMode.TwelveQuestions);
+    }
+
+    public void OnStartGameClicked()
     {
         // Check if we have enough players (minimum 2)
         if (GameManager.Instance.GetAllPlayers().Count < 2)
@@ -217,10 +216,10 @@ public class LobbyScreen : MonoBehaviour
         // Advance to Round Art (which will load Round 1)
         GameManager.Instance.AdvanceToNextScreen();
     }
-    
+
     // === MOBILE JOIN FORM ===
 
-    void OnJoinGameButtonClicked()
+    public void OnJoinGameButtonClicked()
     {
         // User clicked "Join Game" button - show the form
         ShowJoinForm();
@@ -265,7 +264,7 @@ public class LobbyScreen : MonoBehaviour
         Debug.Log("Player icon selected: " + iconName);
     }
     
-    void OnJoinButtonClicked()
+    public void OnJoinButtonClicked()
     {
         if (nameInput == null || string.IsNullOrEmpty(nameInput.text))
         {

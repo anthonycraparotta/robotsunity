@@ -56,7 +56,7 @@ public class LandingScreen : MonoBehaviour
         }
     }
     
-    void OnStartGameClicked()
+    public void OnStartGameClicked()
     {
         // Desktop host starts the game - go to lobby
         Debug.Log("Start Game clicked - transitioning to Lobby");
@@ -69,8 +69,8 @@ public class LandingScreen : MonoBehaviour
 
         GameManager.Instance.AdvanceToNextScreen();
     }
-    
-    void OnJoinGameClicked()
+
+    public void OnJoinGameClicked()
     {
         // Mobile player wants to join - go to lobby/join screen
         Debug.Log("Join Game clicked - transitioning to Lobby");

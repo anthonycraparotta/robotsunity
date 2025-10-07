@@ -54,7 +54,7 @@ public class BonusIntroScreen : MonoBehaviour
         AdvanceToBonusQuestions();
     }
     
-    void OnContinueClicked()
+    public void OnContinueClicked()
     {
         // Stop auto-advance
         StopAllCoroutines();
