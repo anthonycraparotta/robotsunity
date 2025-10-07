@@ -45,20 +45,17 @@ public class BonusQuestionScreen : MonoBehaviour
 
         // Show appropriate display
         ShowAppropriateDisplay();
-        
-        // Display current bonus question
-        DisplayBonusQuestion();
-        
-        // Display player selection options
-        DisplayPlayerOptions();
-        
+
+        // Initialize the bonus round
+        InitializeBonusQuestion();
+
         // Setup mobile submit button
         if (bonusSubmitButton != null)
         {
             bonusSubmitButton.onClick.AddListener(OnSubmitVote);
             bonusSubmitButton.interactable = false;
         }
-        
+
         // Set tip text
         if (tipText != null)
         {
@@ -72,8 +69,67 @@ public class BonusQuestionScreen : MonoBehaviour
         }
     }
 
+    void InitializeBonusQuestion()
+    {
+        Debug.Log("InitializeBonusQuestion called for question index: " + GameManager.Instance.currentBonusQuestion);
+
+        // Display current bonus question
+        DisplayBonusQuestion();
+
+        // Display player selection options (this will recreate icons hidden)
+        DisplayPlayerOptions();
+
+        // Reset selected player
+        selectedPlayerID = "";
+
+        // Re-enable buttons for new question on mobile
+        if (isMobile)
+        {
+            if (bonusSubmitButton != null)
+            {
+                bonusSubmitButton.interactable = false;
+            }
+
+            // Re-enable all player buttons
+            foreach (GameObject btn in spawnedPlayerButtons)
+            {
+                Button button = btn.GetComponent<Button>();
+                if (button != null)
+                {
+                    button.interactable = true;
+                }
+
+                // Reset button colors
+                Image btnImage = btn.GetComponent<Image>();
+                if (btnImage != null)
+                {
+                    btnImage.color = Color.white;
+                }
+
+                // Hide circle indicators
+                Transform circle = btn.transform.Find("Circle");
+                if (circle != null)
+                {
+                    circle.gameObject.SetActive(false);
+                }
+            }
+        }
+    }
+
+    private int lastBonusQuestionIndex = -1;
+
     void Update()
     {
+        // Check if we moved to next bonus question
+        int currentQuestionIndex = GameManager.Instance.currentBonusQuestion;
+        if (currentQuestionIndex != lastBonusQuestionIndex && lastBonusQuestionIndex != -1)
+        {
+            // New bonus question started
+            Debug.Log("Detected new bonus question: " + currentQuestionIndex);
+            InitializeBonusQuestion();
+        }
+        lastBonusQuestionIndex = currentQuestionIndex;
+
         // Update timer display
         UpdateTimerDisplay();
 
@@ -201,35 +257,38 @@ public class BonusQuestionScreen : MonoBehaviour
     void DisplayDesktopPlayerIcons(List<PlayerData> players)
     {
         if (playerIconContainer == null) return;
-        
+
         // Clear existing icons
         foreach (GameObject icon in spawnedPlayerIcons)
         {
             Destroy(icon);
         }
         spawnedPlayerIcons.Clear();
-        
-        // Create icon for each player
+
+        // Create icon for each player (initially hidden)
         foreach (PlayerData player in players)
         {
             if (playerIconBonusPrefab != null)
             {
                 GameObject iconObj = Instantiate(playerIconBonusPrefab, playerIconContainer);
-                
+
                 // Set player name
                 TextMeshProUGUI nameText = iconObj.transform.Find("PlayerName")?.GetComponent<TextMeshProUGUI>();
                 if (nameText != null)
                 {
                     nameText.text = player.playerName;
                 }
-                
+
                 // Set player icon
                 Image iconImage = iconObj.transform.Find("PlayerIcon")?.GetComponent<Image>();
                 if (iconImage != null && PlayerManager.Instance != null)
                 {
                     iconImage.sprite = PlayerManager.Instance.GetPlayerIcon(player.iconName);
                 }
-                
+
+                // Hide icon initially - only show when player votes
+                iconObj.SetActive(false);
+
                 spawnedPlayerIcons.Add(iconObj);
             }
         }
@@ -335,8 +394,19 @@ public class BonusQuestionScreen : MonoBehaviour
     
     void UpdateVoteCounts()
     {
-        // Display live vote counts on desktop player icons
-        // Implementation would show vote counts as they come in
+        // Show icons for players who have voted
+        List<PlayerData> allPlayers = GameManager.Instance.GetAllPlayers();
+        var bonusVotes = GameManager.Instance.bonusVotes;
+
+        for (int i = 0; i < allPlayers.Count && i < spawnedPlayerIcons.Count; i++)
+        {
+            PlayerData player = allPlayers[i];
+            GameObject iconObj = spawnedPlayerIcons[i];
+
+            // Show icon if player has voted
+            bool hasVoted = bonusVotes.ContainsKey(player.playerID);
+            iconObj.SetActive(hasVoted);
+        }
     }
     
     string GetLocalPlayerID()

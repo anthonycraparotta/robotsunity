@@ -21,6 +21,7 @@ public class FinalResultsScreen : MonoBehaviour
     [Header("Loser Section")]
     public GameObject loserSection;
     public TextMeshProUGUI loserHeadline;
+    public TextMeshProUGUI loserName;
     public Transform loserIconContainer;
     public Image loseBackground;
     public TextMeshProUGUI scoreDiffLose;
@@ -44,7 +45,8 @@ public class FinalResultsScreen : MonoBehaviour
     public Image mobileBackground;
     
     [Header("Prefabs")]
-    public GameObject playerRowPrefab;
+    public GameObject finalWinningPrefab; // Desktop winning section prefab
+    public GameObject finalLosingPrefab; // Desktop losing section prefab
 
     [Header("Prefab Component Names")]
     [SerializeField] private string playerNameComponentName = "PlayerName";
@@ -53,6 +55,9 @@ public class FinalResultsScreen : MonoBehaviour
     [Header("State")]
     private bool isMobile = false;
     private string playerID = "";
+    private int currentPanel = 0;
+    private float panelTimer = 0f;
+    private const float PANEL_DISPLAY_DURATION = 5f;
     
     void Start()
     {
@@ -92,6 +97,68 @@ public class FinalResultsScreen : MonoBehaviour
         {
             mobileWebButton.onClick.AddListener(OnWebsiteClicked);
         }
+
+        // Start panel sequence for desktop
+        if (!isMobile)
+        {
+            StartPanelSequence();
+        }
+    }
+
+    void Update()
+    {
+        // Handle panel sequence timing for desktop
+        if (!isMobile && currentPanel > 0 && currentPanel <= 2)
+        {
+            panelTimer += Time.deltaTime;
+
+            if (panelTimer >= PANEL_DISPLAY_DURATION)
+            {
+                AdvanceToNextPanel();
+            }
+        }
+    }
+
+    void StartPanelSequence()
+    {
+        // Hide both sections initially
+        if (loserSection != null) loserSection.SetActive(false);
+        if (winnerSection != null) winnerSection.SetActive(false);
+
+        // Start with loser panel
+        currentPanel = 1;
+        panelTimer = 0f;
+        ShowCurrentPanel();
+    }
+
+    void ShowCurrentPanel()
+    {
+        // Hide both sections
+        if (loserSection != null) loserSection.SetActive(false);
+        if (winnerSection != null) winnerSection.SetActive(false);
+
+        // Show the current panel
+        switch (currentPanel)
+        {
+            case 1:
+                if (loserSection != null) loserSection.SetActive(true);
+                break;
+            case 2:
+                if (winnerSection != null) winnerSection.SetActive(true);
+                break;
+        }
+    }
+
+    void AdvanceToNextPanel()
+    {
+        currentPanel++;
+        panelTimer = 0f;
+
+        if (currentPanel <= 2)
+        {
+            ShowCurrentPanel();
+        }
+        // After both panels shown, stay on screen (no auto-advance for final results)
     }
 
     void PreloadCreditsData()
@@ -172,10 +239,10 @@ public class FinalResultsScreen : MonoBehaviour
             // Display winner icon
             if (winnerIconContainer != null)
             {
-                DisplayPlayerIcon(winner, winnerIconContainer);
+                DisplayPlayerIcon(winner, winnerIconContainer, true);
             }
         }
-        
+
         // Display loser section (bottom player)
         if (loserSection != null)
         {
@@ -183,16 +250,21 @@ public class FinalResultsScreen : MonoBehaviour
             {
                 loserHeadline.text = "PROBABLY A ROBOT";
             }
-            
+
+            if (loserName != null)
+            {
+                loserName.text = loser.playerName;
+            }
+
             if (scoreDiffLose != null)
             {
                 scoreDiffLose.text = loser.scorePercentage + "%";
             }
-            
+
             // Display loser icon
             if (loserIconContainer != null)
             {
-                DisplayPlayerIcon(loser, loserIconContainer);
+                DisplayPlayerIcon(loser, loserIconContainer, false);
             }
         }
         
@@ -232,7 +304,7 @@ public class FinalResultsScreen : MonoBehaviour
         }
     }
     
-    void DisplayPlayerIcon(PlayerData player, Transform container)
+    void DisplayPlayerIcon(PlayerData player, Transform container, bool isWinnerSection)
     {
         // Clear existing
         foreach (Transform child in container)
@@ -240,10 +312,13 @@ public class FinalResultsScreen : MonoBehaviour
             Destroy(child.gameObject);
         }
 
+        // Use appropriate prefab based on winner/loser section
+        GameObject prefabToUse = isWinnerSection ? finalWinningPrefab : finalLosingPrefab;
+
         // Create player icon
-        if (playerRowPrefab != null)
+        if (prefabToUse != null)
         {
-            GameObject iconObj = Instantiate(playerRowPrefab, container);
+            GameObject iconObj = Instantiate(prefabToUse, container);
             iconObj.SetActive(true);
 
             // Find and activate components using configurable names

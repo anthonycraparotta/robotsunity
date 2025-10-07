@@ -12,13 +12,15 @@ public class HalftimeResultsScreen : MonoBehaviour
     [Header("Winner Section")]
     public GameObject winnerSection;
     public TextMeshProUGUI winnerHeadline;
+    public TextMeshProUGUI winnerName;
     public Transform winnerIconContainer;
     public Image winBackground;
     public TextMeshProUGUI scoreDiffWin;
-    
+
     [Header("Loser Section")]
     public GameObject loserSection;
     public TextMeshProUGUI loserHeadline;
+    public TextMeshProUGUI loserName;
     public Transform loserIconContainer;
     public Image loseBackground;
     public TextMeshProUGUI scoreDiffLose;
@@ -36,7 +38,8 @@ public class HalftimeResultsScreen : MonoBehaviour
     public Image mobileBackground;
 
     [Header("Prefabs")]
-    public GameObject playerScoreRowPrefab; // Desktop prefab
+    public GameObject halftimeWinningPrefab; // Desktop winning section prefab
+    public GameObject halftimeLosingPrefab; // Desktop losing section prefab
     public GameObject playerIconHalftimePrefab; // Mobile prefab
 
     [Header("Prefab Component Names")]
@@ -47,37 +50,106 @@ public class HalftimeResultsScreen : MonoBehaviour
     [Header("State")]
     private bool isMobile = false;
     private string playerID = "";
+    private int currentPanel = 0;
+    private float panelTimer = 0f;
+    private const float PANEL_DISPLAY_DURATION = 5f;
     
     void Start()
     {
         isMobile = DeviceDetector.Instance != null && DeviceDetector.Instance.IsMobile();
-        
+
         if (isMobile)
         {
             playerID = GetLocalPlayerID();
         }
-        
+
         // Show appropriate display
         ShowAppropriateDisplay();
-        
+
         // Display halftime results
         DisplayHalftimeResults();
-        
+
         // Setup continue button
         if (nextRoundButton != null)
         {
             nextRoundButton.onClick.AddListener(OnContinueClicked);
         }
-        
+
         // Set headlines
         if (winnerHeadline != null)
         {
             winnerHeadline.text = "LEADING THE PACK";
         }
-        
+
         if (loserHeadline != null)
         {
             loserHeadline.text = "STILL IN THE RUNNING";
+        }
+
+        // Start panel sequence for desktop
+        if (!isMobile)
+        {
+            StartPanelSequence();
+        }
+    }
+
+    void Update()
+    {
+        // Handle panel sequence timing for desktop
+        if (!isMobile && currentPanel > 0 && currentPanel <= 2)
+        {
+            panelTimer += Time.deltaTime;
+
+            if (panelTimer >= PANEL_DISPLAY_DURATION)
+            {
+                AdvanceToNextPanel();
+            }
+        }
+    }
+
+    void StartPanelSequence()
+    {
+        // Hide both sections initially
+        if (loserSection != null) loserSection.SetActive(false);
+        if (winnerSection != null) winnerSection.SetActive(false);
+
+        // Start with loser panel
+        currentPanel = 1;
+        panelTimer = 0f;
+        ShowCurrentPanel();
+    }
+
+    void ShowCurrentPanel()
+    {
+        // Hide both sections
+        if (loserSection != null) loserSection.SetActive(false);
+        if (winnerSection != null) winnerSection.SetActive(false);
+
+        // Show the current panel
+        switch (currentPanel)
+        {
+            case 1:
+                if (loserSection != null) loserSection.SetActive(true);
+                break;
+            case 2:
+                if (winnerSection != null) winnerSection.SetActive(true);
+                break;
+        }
+    }
+
+    void AdvanceToNextPanel()
+    {
+        currentPanel++;
+        panelTimer = 0f;
+
+        if (currentPanel <= 2)
+        {
+            ShowCurrentPanel();
+        }
+        else
+        {
+            // Both panels shown, advance to next screen
+            GameManager.Instance.AdvanceToNextScreen();
         }
     }
     
@@ -119,15 +191,35 @@ public class HalftimeResultsScreen : MonoBehaviour
         List<PlayerData> losers = rankedPlayers.Skip(midpoint).ToList();
 
         // Display winner section
-        if (winnerSection != null && winnerIconContainer != null)
+        if (winnerSection != null)
         {
-            DisplayPlayerGroup(winners, winnerIconContainer, true);
+            // Set winner name (top player)
+            if (winnerName != null && winners.Count > 0)
+            {
+                winnerName.text = winners[0].playerName;
+            }
+
+            // Display winner icons
+            if (winnerIconContainer != null)
+            {
+                DisplayPlayerGroup(winners, winnerIconContainer, true);
+            }
         }
 
         // Display loser section
-        if (loserSection != null && loserIconContainer != null)
+        if (loserSection != null)
         {
-            DisplayPlayerGroup(losers, loserIconContainer, false);
+            // Set loser name (bottom player)
+            if (loserName != null && losers.Count > 0)
+            {
+                loserName.text = losers[losers.Count - 1].playerName;
+            }
+
+            // Display loser icons
+            if (loserIconContainer != null)
+            {
+                DisplayPlayerGroup(losers, loserIconContainer, false);
+            }
         }
     }
 
@@ -188,23 +280,26 @@ public class HalftimeResultsScreen : MonoBehaviour
         {
             Destroy(child.gameObject);
         }
-        
+
         // Display each player
         foreach (PlayerData player in players)
         {
-            GameObject playerRow = CreatePlayerRow(player, container);
-            
+            GameObject playerRow = CreatePlayerRow(player, container, isWinnerSection);
+
             // Additional styling for winner/loser sections could go here
         }
     }
-    
-    GameObject CreatePlayerRow(PlayerData player, Transform parent)
+
+    GameObject CreatePlayerRow(PlayerData player, Transform parent, bool isWinnerSection)
     {
         GameObject rowObj;
 
-        if (playerScoreRowPrefab != null)
+        // Use appropriate prefab based on winner/loser section
+        GameObject prefabToUse = isWinnerSection ? halftimeWinningPrefab : halftimeLosingPrefab;
+
+        if (prefabToUse != null)
         {
-            rowObj = Instantiate(playerScoreRowPrefab, parent);
+            rowObj = Instantiate(prefabToUse, parent);
             rowObj.SetActive(true);
         }
         else

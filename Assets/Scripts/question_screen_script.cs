@@ -112,12 +112,25 @@ public class QuestionScreen : MonoBehaviour
     void DisplayQuestion()
     {
         Question currentQuestion = GameManager.Instance.GetCurrentQuestion();
-        
-        if (currentQuestion != null && questionText != null)
+
+        Debug.Log($"DisplayQuestion - currentQuestion is null: {currentQuestion == null}");
+        Debug.Log($"DisplayQuestion - questionText is null: {questionText == null}");
+
+        if (currentQuestion != null)
         {
-            questionText.text = currentQuestion.questionText;
+            Debug.Log($"DisplayQuestion - questionText content: '{currentQuestion.questionText}'");
+
+            if (questionText != null)
+            {
+                questionText.text = currentQuestion.questionText;
+                Debug.Log($"DisplayQuestion - Set questionText to: '{questionText.text}'");
+            }
         }
-        
+        else
+        {
+            Debug.LogError("DisplayQuestion - currentQuestion is NULL!");
+        }
+
         // Set tip text based on question type
         if (tipText != null)
         {

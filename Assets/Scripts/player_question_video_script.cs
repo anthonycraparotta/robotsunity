@@ -79,8 +79,18 @@ public class PlayerQuestionVideoScreen : MonoBehaviour
 
     void AdvanceToNextScreen()
     {
-        // Continue to next screen (PlayerQuestionScreen)
-        GameManager.Instance.AdvanceToNextScreen();
+        // Load the QuestionScreen for player questions
+        if (SceneTransitionManager.Instance != null)
+        {
+            SceneTransitionManager.Instance.LoadScene("QuestionScreen");
+        }
+        else
+        {
+            UnityEngine.SceneManagement.SceneManager.LoadScene("QuestionScreen");
+        }
+
+        // Start the question timer
+        GameManager.Instance.StartTimer(GameManager.Instance.questionTimer);
     }
 
     void OnDestroy()

@@ -59,16 +59,16 @@ public class QuestionLoader : MonoBehaviour
     void LoadPlayerQuestions()
     {
         TextAsset jsonFile = Resources.Load<TextAsset>(playerQuestionsPath);
-        
+
         if (jsonFile == null)
         {
             Debug.LogError("Could not find playerqs.json at Resources/" + playerQuestionsPath);
             return;
         }
-        
+
         QuestionArrayWrapper wrapper = new QuestionArrayWrapper();
-        wrapper.questions = ParseQuestionArray(jsonFile.text);
-        
+        wrapper.questions = ParsePlayerQuestionArray(jsonFile.text);
+
         if (wrapper.questions != null && wrapper.questions.Count > 0)
         {
             GameManager.Instance.playerQuestions = wrapper.questions;
@@ -177,6 +177,48 @@ public class QuestionLoader : MonoBehaviour
 
         return questions;
     }
+
+    List<Question> ParsePlayerQuestionArray(string json)
+    {
+        // Player questions use different field names: "Question", "Right Answer", "Robot Answer"
+        // Unity's JsonUtility doesn't handle spaces in field names, so we'll replace them
+        List<Question> questions = new List<Question>();
+
+        try
+        {
+            // Replace field names with spaces to use underscores
+            string fixedJson = json.Replace("\"Right Answer\"", "\"Right_Answer\"");
+            fixedJson = fixedJson.Replace("\"Robot Answer\"", "\"Robot_Answer\"");
+
+            // Wrap the array in a JSON object: {"questions": [...]}
+            string wrappedJson = "{\"questions\":" + fixedJson + "}";
+
+            // Parse using player question wrapper class
+            RawPlayerQuestionArrayWrapper wrapper = JsonUtility.FromJson<RawPlayerQuestionArrayWrapper>(wrappedJson);
+
+            if (wrapper != null && wrapper.questions != null)
+            {
+                foreach (RawPlayerQuestionData raw in wrapper.questions)
+                {
+                    Question q = new Question();
+                    q.questionText = raw.Question;
+                    q.correctAnswer = raw.Right_Answer;
+                    q.robotAnswer = raw.Robot_Answer;
+                    q.robotAnecdote = ""; // Not in current data structure
+                    q.questionType = "player";
+                    q.imageURL = "";
+
+                    questions.Add(q);
+                }
+            }
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError("Error parsing player question array: " + e.Message);
+        }
+
+        return questions;
+    }
 }
 
 // === JSON DATA STRUCTURES ===
@@ -193,6 +235,20 @@ public class RawQuestionData
 public class RawQuestionArrayWrapper
 {
     public List<RawQuestionData> questions;
+}
+
+[System.Serializable]
+public class RawPlayerQuestionData
+{
+    public string Question;
+    public string Right_Answer;
+    public string Robot_Answer;
+}
+
+[System.Serializable]
+public class RawPlayerQuestionArrayWrapper
+{
+    public List<RawPlayerQuestionData> questions;
 }
 
 [System.Serializable]

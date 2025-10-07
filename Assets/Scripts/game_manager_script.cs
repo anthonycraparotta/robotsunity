@@ -268,30 +268,41 @@ public class GameManager : MonoBehaviour
     {
         // Determine which question type for this round
         QuestionType questionType = GetQuestionTypeForRound(currentRound);
-        
+
         // Load appropriate question data
         switch (questionType)
         {
             case QuestionType.Standard:
                 currentQuestion = GetStandardQuestion();
+                correctAnswer = currentQuestion.correctAnswer;
+                robotAnswer = currentQuestion.robotAnswer;
                 LoadScene("QuestionScreen");
+                currentGameState = GameState.Question;
+                StartTimer(questionTimer);
                 break;
-                
+
             case QuestionType.Player:
-                // Player questions use the same QuestionScreen but different data
+                // Player questions: Load question data first, then show intro video
+                Debug.Log("LoadQuestionScreen - Loading Player Question");
                 currentQuestion = GetPlayerQuestion();
-                LoadScene("QuestionScreen");
+                Debug.Log($"LoadQuestionScreen - currentQuestion after GetPlayerQuestion: {currentQuestion?.questionText}");
+                correctAnswer = currentQuestion.correctAnswer;
+                robotAnswer = currentQuestion.robotAnswer;
+                Debug.Log($"LoadQuestionScreen - Set correctAnswer: '{correctAnswer}', robotAnswer: '{robotAnswer}'");
+                LoadScene("PlayerQuestionVideoScreen");
+                currentGameState = GameState.Question;
+                // Timer will start after video finishes
                 break;
-                
+
             case QuestionType.Picture:
                 currentQuestion = GetPictureQuestion();
+                correctAnswer = currentQuestion.correctAnswer;
+                robotAnswer = currentQuestion.robotAnswer;
                 LoadScene("PictureQuestionScreen");
+                currentGameState = GameState.Question;
+                StartTimer(questionTimer);
                 break;
         }
-
-        currentGameState = GameState.Question;
-        correctAnswer = currentQuestion.correctAnswer;
-        robotAnswer = currentQuestion.robotAnswer;
 
         // Clear previous round data at start of new question
         currentRoundAnswers.Clear();
@@ -300,8 +311,6 @@ public class GameManager : MonoBehaviour
         allAnswers.Clear();
         remainingAnswers.Clear();
         eliminatedAnswer = "";
-
-        StartTimer(questionTimer);
     }
     
     void CheckForSpecialScreens()
@@ -649,9 +658,11 @@ public class GameManager : MonoBehaviour
     
     void ProcessBonusVotes()
     {
+        Debug.Log($"ProcessBonusVotes called for question {currentBonusQuestion}, total votes: {bonusVotes.Count}");
+
         // Count votes for each player
         Dictionary<string, int> voteCounts = new Dictionary<string, int>();
-        
+
         foreach (var vote in bonusVotes.Values)
         {
             if (!voteCounts.ContainsKey(vote))
@@ -660,7 +671,7 @@ public class GameManager : MonoBehaviour
             }
             voteCounts[vote]++;
         }
-        
+
         // Find max votes
         int maxVotes = 0;
         foreach (var count in voteCounts.Values)
@@ -670,14 +681,18 @@ public class GameManager : MonoBehaviour
                 maxVotes = count;
             }
         }
-        
+
         // Award points to all players with max votes (handles ties)
         int bonusPoints = (gameMode == GameMode.EightQuestions) ? 6 : 4;
-        
+
+        Debug.Log($"Awarding {bonusPoints} points to players with {maxVotes} votes");
+
         foreach (var kvp in voteCounts)
         {
             if (kvp.Value == maxVotes)
             {
+                PlayerData player = GetPlayer(kvp.Key);
+                Debug.Log($"Awarding {bonusPoints} points to player {player?.playerName} (ID: {kvp.Key})");
                 AwardPoints(kvp.Key, bonusPoints);
             }
         }
@@ -732,8 +747,8 @@ public class GameManager : MonoBehaviour
     }
     
     // === TIMER MANAGEMENT ===
-    
-    void StartTimer(float duration)
+
+    public void StartTimer(float duration)
     {
         currentTimerValue = duration;
         timerActive = true;
@@ -881,17 +896,22 @@ public class GameManager : MonoBehaviour
             Debug.LogError("No player questions loaded!");
             return null;
         }
-        
+
+        Debug.Log($"GetPlayerQuestion - playerQuestions.Count: {playerQuestions.Count}, playerQuestionIndex: {playerQuestionIndex}");
+
         // Get next question and increment index
         Question question = playerQuestions[playerQuestionIndex];
+
+        Debug.Log($"GetPlayerQuestion - Retrieved question: '{question?.questionText}'");
+
         playerQuestionIndex++;
-        
+
         // Loop back if we run out
         if (playerQuestionIndex >= playerQuestions.Count)
         {
             playerQuestionIndex = 0;
         }
-        
+
         return question;
     }
     

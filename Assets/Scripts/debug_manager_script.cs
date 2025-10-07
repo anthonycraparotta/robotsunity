@@ -74,6 +74,11 @@ public class DebugManager : MonoBehaviour
                 Debug.Log("Calling SimulateRandomVotes for " + currentScene);
                 SimulateRandomVotes();
             }
+            else if (currentScene == "BonusQuestionScreen")
+            {
+                Debug.Log("Calling SimulateBonusVotes for BonusQuestionScreen");
+                SimulateBonusVotes();
+            }
             else
             {
                 Debug.LogWarning("F4 (Simulate) not supported on current scene: " + currentScene);
@@ -395,6 +400,29 @@ public class DebugManager : MonoBehaviour
         }
 
         Debug.Log("Simulated random votes for all players");
+    }
+
+    public void SimulateBonusVotes()
+    {
+        // Get all players
+        List<PlayerData> allPlayers = GameManager.Instance.GetAllPlayers();
+
+        if (allPlayers.Count == 0)
+        {
+            Debug.LogWarning("No players available to vote for in bonus round");
+            return;
+        }
+
+        // Each player votes for a random player
+        foreach (var voter in GameManager.Instance.players)
+        {
+            // Pick a random player to vote for
+            PlayerData randomPlayer = allPlayers[Random.Range(0, allPlayers.Count)];
+
+            GameManager.Instance.SubmitBonusVote(voter.Key, randomPlayer.playerID);
+        }
+
+        Debug.Log("Simulated bonus votes for all players");
     }
     
     public void AutoCompleteRound()
