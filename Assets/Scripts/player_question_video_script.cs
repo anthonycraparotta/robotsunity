@@ -8,6 +8,11 @@ public class PlayerQuestionVideoScreen : MonoBehaviour
     public VideoPlayer videoPlayer;
     public RawImage videoDisplay;
 
+    [Header("Video Clips")]
+    public VideoClip playerQuestionVideo1; // Round 3 (1st player question)
+    public VideoClip playerQuestionVideo2; // Round 6 (2nd player question)
+    public VideoClip playerQuestionVideo3; // Round 9 (3rd player question)
+
     [Header("Settings")]
     public bool skipOnClick = true;
     public bool autoAdvanceOnVideoEnd = true;
@@ -21,8 +26,50 @@ public class PlayerQuestionVideoScreen : MonoBehaviour
             videoPlayer.loopPointReached += OnVideoFinished;
             videoPlayer.errorReceived += OnVideoError;
 
+            // Set the appropriate video clip based on current round
+            SetVideoClipForCurrentRound();
+
             // Start preparing the video
             videoPlayer.Prepare();
+        }
+    }
+
+    void SetVideoClipForCurrentRound()
+    {
+        if (videoPlayer == null || GameManager.Instance == null) return;
+
+        int currentRound = GameManager.Instance.GetCurrentRound();
+
+        // Player questions are at rounds 3, 6, and 9
+        VideoClip selectedClip = null;
+
+        switch (currentRound)
+        {
+            case 3: // 1st player question
+                selectedClip = playerQuestionVideo1;
+                Debug.Log("Loading player question video 1 for round 3");
+                break;
+            case 6: // 2nd player question
+                selectedClip = playerQuestionVideo2;
+                Debug.Log("Loading player question video 2 for round 6");
+                break;
+            case 9: // 3rd player question
+                selectedClip = playerQuestionVideo3;
+                Debug.Log("Loading player question video 3 for round 9");
+                break;
+            default:
+                Debug.LogWarning("Unexpected round for player question video: " + currentRound);
+                selectedClip = playerQuestionVideo1; // Fallback
+                break;
+        }
+
+        if (selectedClip != null)
+        {
+            videoPlayer.clip = selectedClip;
+        }
+        else
+        {
+            Debug.LogError("No video clip assigned for round " + currentRound);
         }
     }
 
