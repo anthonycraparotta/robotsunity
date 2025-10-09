@@ -64,13 +64,12 @@ public class PlayerAuthSystem : NetworkBehaviour
     
     string GeneratePlayerID()
     {
-        // Use device unique identifier combined with timestamp for uniqueness
-        string deviceID = SystemInfo.deviceUniqueIdentifier;
-        string timestamp = System.DateTime.UtcNow.Ticks.ToString();
-        
-        // Create a hash to make it shorter and more readable
-        int hash = (deviceID + timestamp).GetHashCode();
-        return "player_" + Mathf.Abs(hash).ToString();
+        // Use a GUID so we avoid relying on GetHashCode (which is not stable between sessions)
+        // and guarantee a high entropy identifier for the player.
+        string guid = System.Guid.NewGuid().ToString("N");
+
+        // Keep the prefix for readability but trim the guid to a manageable length.
+        return "player_" + guid.Substring(0, 12);
     }
     
     // === PLAYER REGISTRATION ===
