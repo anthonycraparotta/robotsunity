@@ -89,42 +89,66 @@ public class LoadingScreen : MonoBehaviour
     void InitializeGlobalManagers()
     {
         // Initialize each manager as a root GameObject (they handle DontDestroyOnLoad themselves)
-        CreateManager<GameManager>("GameManager");
-        CreateManager<QuestionLoader>("QuestionLoader");
-        CreateManager<PictureQuestionLoader>("PictureQuestionLoader");
-        CreateManager<AudioManager>("AudioManager");
-        CreateManager<PlayerManager>("PlayerManager");
-        CreateManager<SceneTransitionManager>("SceneTransitionManager");
-        CreateManager<DeviceDetector>("DeviceDetector");
-        CreateManager<ContentFilterManager>("ContentFilterManager");
+        EnsureManagerExists<GameManager>("GameManager");
+        EnsureManagerExists<QuestionLoader>("QuestionLoader");
+        EnsureManagerExists<PictureQuestionLoader>("PictureQuestionLoader");
+        EnsureManagerExists<AudioManager>("AudioManager");
+        EnsureManagerExists<PlayerManager>("PlayerManager");
+        EnsureManagerExists<SceneTransitionManager>("SceneTransitionManager");
+        EnsureManagerExists<DeviceDetector>("DeviceDetector");
+        EnsureManagerExists<ContentFilterManager>("ContentFilterManager");
 
         // Create Unity Netcode NetworkManager first (required for other NetworkBehaviours)
-        CreateNetworkManager();
+        EnsureNetworkManager();
 
         // Create custom network managers with NetworkObject components
-        CreateNetworkBehaviour<RWMNetworkManager>("NetworkManager");
-        CreateNetworkBehaviour<PlayerAuthSystem>("PlayerAuthSystem");
+        EnsureNetworkBehaviourExists<RWMNetworkManager>("NetworkManager");
+        EnsureNetworkBehaviourExists<PlayerAuthSystem>("PlayerAuthSystem");
 
-        CreateManager<DebugManager>("DebugManager");
+        EnsureManagerExists<DebugManager>("DebugManager");
 
         Debug.Log("All global managers initialized");
     }
 
-    void CreateManager<T>(string managerName) where T : MonoBehaviour
+    T EnsureManagerExists<T>(string managerName) where T : MonoBehaviour
     {
+        T existing = FindExistingComponent<T>();
+        if (existing != null)
+        {
+            Debug.Log($"Found existing {typeof(T).Name} on {existing.gameObject.name}");
+            return existing;
+        }
+
         GameObject managerObj = new GameObject(managerName);
-        managerObj.AddComponent<T>();
+        T created = managerObj.AddComponent<T>();
         Debug.Log($"Created {managerName}");
+        return created;
     }
 
-    void CreateNetworkManager()
+    void EnsureNetworkManager()
     {
-        // Create Unity Netcode NetworkManager singleton
+        if (NetworkManager.Singleton != null)
+        {
+            Debug.Log("Found existing Unity Netcode NetworkManager singleton");
+            return;
+        }
+
+        NetworkManager existing = FindExistingComponent<NetworkManager>();
+        if (existing != null)
+        {
+            if (!existing.gameObject.activeSelf)
+            {
+                existing.gameObject.SetActive(true);
+            }
+
+            Debug.Log("Using scene-configured NetworkManager");
+            return;
+        }
+
         GameObject netManagerObj = new GameObject("Unity_NetworkManager");
-        NetworkManager netManager = netManagerObj.AddComponent<NetworkManager>();
+        netManagerObj.AddComponent<NetworkManager>();
 
         // Configure with basic transport (UnityTransport is the default)
-        // If UnityTransport isn't already added, Unity Netcode will add it automatically
         var transport = netManagerObj.GetComponent<Unity.Netcode.Transports.UTP.UnityTransport>();
         if (transport == null)
         {
@@ -134,13 +158,42 @@ public class LoadingScreen : MonoBehaviour
         Debug.Log("Created Unity NetworkManager singleton");
     }
 
-    void CreateNetworkBehaviour<T>(string managerName) where T : NetworkBehaviour
+    void EnsureNetworkBehaviourExists<T>(string managerName) where T : NetworkBehaviour
     {
+        T existing = FindExistingComponent<T>();
+        if (existing != null)
+        {
+            if (!existing.gameObject.activeSelf)
+            {
+                existing.gameObject.SetActive(true);
+            }
+
+            NetworkObject existingNetworkObject = existing.GetComponent<NetworkObject>();
+            if (existingNetworkObject == null)
+            {
+                existingNetworkObject = existing.gameObject.AddComponent<NetworkObject>();
+                Debug.LogWarning($"Added missing NetworkObject to existing {typeof(T).Name}");
+            }
+
+            Debug.Log($"Found existing {typeof(T).Name} on {existing.gameObject.name}");
+            return;
+        }
+
         // NetworkBehaviours MUST have a NetworkObject component to function
         GameObject managerObj = new GameObject(managerName);
         managerObj.AddComponent<NetworkObject>();
         managerObj.AddComponent<T>();
         Debug.Log($"Created {managerName} with NetworkObject");
+    }
+
+    static U FindExistingComponent<U>() where U : Component
+    {
+#if UNITY_2023_1_OR_NEWER
+        return Object.FindAnyObjectByType<U>(FindObjectsInactive.Include);
+#else
+        U[] existing = Object.FindObjectsOfType<U>(true);
+        return existing.Length > 0 ? existing[0] : null;
+#endif
     }
     
     void AdvanceToLanding()
