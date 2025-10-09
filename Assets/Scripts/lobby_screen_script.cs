@@ -52,6 +52,9 @@ public class LobbyScreen : MonoBehaviour
     private bool isMobile = false;
     private List<GameObject> spawnedPlayerIcons = new List<GameObject>();
     private Coroutine errorCoroutine;
+    private bool awaitingNetworkConnection = false;
+    private bool hasConnectedToHost = false;
+    private bool networkCallbacksRegistered = false;
     
     void Start()
     {
@@ -91,6 +94,8 @@ public class LobbyScreen : MonoBehaviour
         {
             joinButton.onClick.AddListener(OnJoinButtonClicked);
         }
+
+        RegisterNetworkCallbacks();
 
         // Show appropriate display
         ShowAppropriateDisplay();
@@ -145,14 +150,91 @@ public class LobbyScreen : MonoBehaviour
         {
             mobileDisplay.SetActive(isMobile);
         }
-        
+
         // Mobile starts on join form
         if (isMobile)
         {
             ShowJoinForm();
         }
     }
-    
+
+    void RegisterNetworkCallbacks()
+    {
+        if (!isMobile || networkCallbacksRegistered)
+        {
+            return;
+        }
+
+        if (NetworkManager.Singleton == null)
+        {
+            return;
+        }
+
+        NetworkManager.Singleton.OnClientConnectedCallback += HandleClientConnected;
+        NetworkManager.Singleton.OnClientDisconnectCallback += HandleClientDisconnected;
+        networkCallbacksRegistered = true;
+    }
+
+    void UnregisterNetworkCallbacks()
+    {
+        if (!networkCallbacksRegistered)
+        {
+            return;
+        }
+
+        if (NetworkManager.Singleton != null)
+        {
+            NetworkManager.Singleton.OnClientConnectedCallback -= HandleClientConnected;
+            NetworkManager.Singleton.OnClientDisconnectCallback -= HandleClientDisconnected;
+        }
+
+        networkCallbacksRegistered = false;
+    }
+
+    void HandleClientConnected(ulong clientId)
+    {
+        if (!isMobile || NetworkManager.Singleton == null)
+        {
+            return;
+        }
+
+        if (clientId != NetworkManager.Singleton.LocalClientId)
+        {
+            return;
+        }
+
+        awaitingNetworkConnection = false;
+        hasConnectedToHost = true;
+    }
+
+    void HandleClientDisconnected(ulong clientId)
+    {
+        if (!isMobile || NetworkManager.Singleton == null)
+        {
+            return;
+        }
+
+        if (clientId != NetworkManager.Singleton.LocalClientId)
+        {
+            return;
+        }
+
+        bool wasConnected = hasConnectedToHost;
+        hasConnectedToHost = false;
+
+        if (awaitingNetworkConnection)
+        {
+            awaitingNetworkConnection = false;
+            ShowJoinForm();
+            ShowErrorMessage("Unable to connect to the host. Please check the room code and try again.", false);
+        }
+        else if (wasConnected)
+        {
+            ShowJoinForm();
+            ShowErrorMessage("Connection to the host was lost. Please try joining again.", false);
+        }
+    }
+
     void SetupDesktopHost()
     {
         if (RWMNetworkManager.Instance != null && NetworkManager.Singleton != null)
@@ -246,6 +328,9 @@ public class LobbyScreen : MonoBehaviour
 
     void ShowJoinForm()
     {
+        awaitingNetworkConnection = false;
+        hasConnectedToHost = false;
+
         if (joinForm != null)
         {
             joinForm.SetActive(true);
@@ -401,6 +486,8 @@ public class LobbyScreen : MonoBehaviour
 
     void ConnectToHostIfNeeded()
     {
+        RegisterNetworkCallbacks();
+
         if (RWMNetworkManager.Instance == null || NetworkManager.Singleton == null)
         {
             return;
@@ -411,10 +498,29 @@ public class LobbyScreen : MonoBehaviour
             return;
         }
 
-        if (!NetworkManager.Singleton.IsClient && !NetworkManager.Singleton.IsHost)
+        if (NetworkManager.Singleton.IsHost)
         {
-            RWMNetworkManager.Instance.JoinGame(roomCode);
+            return;
         }
+
+        if (NetworkManager.Singleton.IsClient)
+        {
+            awaitingNetworkConnection = false;
+            hasConnectedToHost = true;
+            return;
+        }
+
+        bool started = RWMNetworkManager.Instance.JoinGame(roomCode);
+
+        if (!started)
+        {
+            ShowJoinForm();
+            ShowErrorMessage("Unable to start the network client. Please try again.", false);
+            return;
+        }
+
+        awaitingNetworkConnection = true;
+        hasConnectedToHost = false;
     }
 
     void UpdateWaitingScreenUI(string playerName)
@@ -430,9 +536,16 @@ public class LobbyScreen : MonoBehaviour
         }
     }
 
-    void ShowErrorMessage(string message)
+    void ShowErrorMessage(string message, bool logAsError = true)
     {
-        Debug.LogError("INPUT ERROR: " + message);
+        if (logAsError)
+        {
+            Debug.LogError("INPUT ERROR: " + message);
+        }
+        else
+        {
+            Debug.LogWarning("INPUT WARNING: " + message);
+        }
 
         // Display error message in UI
         if (errorMessageText != null)
@@ -542,6 +655,8 @@ public class LobbyScreen : MonoBehaviour
     
     void OnDestroy()
     {
+        UnregisterNetworkCallbacks();
+
         // Clean up listeners
         if (startTestButton != null)
         {
