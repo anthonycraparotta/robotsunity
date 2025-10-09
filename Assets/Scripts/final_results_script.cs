@@ -1,8 +1,11 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
-using System.Collections.Generic;
-using System.Linq;
 
 public class FinalResultsScreen : MonoBehaviour
 {
@@ -43,7 +46,24 @@ public class FinalResultsScreen : MonoBehaviour
     public Button mobileWebButton;
     public Image mobileHero;
     public Image mobileBackground;
-    
+
+    [Header("Share Configuration")]
+    [SerializeField] private Sprite winnerShareTemplate;
+    [SerializeField] private Sprite participantShareTemplate;
+    [SerializeField] private TMP_FontAsset havoksFont;
+    [SerializeField] private Vector2Int shareImageResolution = new Vector2Int(1080, 1920);
+    [SerializeField] private float shareNameFontSize = 120f;
+    [SerializeField] private float shareScoreFontSize = 90f;
+    [SerializeField] private Color shareNameColor = Color.white;
+    [SerializeField] private Color shareScoreColor = Color.white;
+    [SerializeField] private Vector2 shareNameAnchor = new Vector2(0.5f, 0.2f);
+    [SerializeField] private Vector2 shareScoreAnchor = new Vector2(0.5f, 0.08f);
+    [SerializeField] private Vector2 shareNameOffset = Vector2.zero;
+    [SerializeField] private Vector2 shareScoreOffset = Vector2.zero;
+    [SerializeField] private Vector2 shareTextBounds = new Vector2(960f, 240f);
+    [SerializeField] private string winnerShareMessage = "{0} just won Robots Wearing Moustaches with {1}% human!";
+    [SerializeField] private string participantShareMessage = "{0} scored {1}% human in Robots Wearing Moustaches!";
+
     [Header("Prefabs")]
     public GameObject finalWinningPrefab; // Desktop winning section prefab
     public GameObject finalLosingPrefab; // Desktop losing section prefab
@@ -58,6 +78,7 @@ public class FinalResultsScreen : MonoBehaviour
     private int currentPanel = 0;
     private float panelTimer = 0f;
     private const float PANEL_DISPLAY_DURATION = 5f;
+    private bool isSharing = false;
     
     void Start()
     {
@@ -394,11 +415,238 @@ public class FinalResultsScreen : MonoBehaviour
 
     public void OnShareClicked()
     {
-        // Share results functionality
-        Debug.Log("Share results clicked");
+        if (!isMobile)
+        {
+            Debug.LogWarning("Share button is intended for mobile devices only.");
+            return;
+        }
 
-        // Implementation would generate shareable image or text
-        // Example: Take screenshot, share to social media, etc.
+        if (isSharing)
+        {
+            Debug.Log("Share already in progress, ignoring additional tap.");
+            return;
+        }
+
+        StartCoroutine(ShareResultsRoutine());
+    }
+
+    IEnumerator ShareResultsRoutine()
+    {
+        isSharing = true;
+
+        if (GameManager.Instance == null)
+        {
+            Debug.LogWarning("Unable to share results - GameManager missing.");
+            isSharing = false;
+            yield break;
+        }
+
+        PlayerData localPlayer = GameManager.Instance.GetPlayer(playerID);
+        if (localPlayer == null)
+        {
+            Debug.LogWarning("Unable to share results - Local player not found.");
+            isSharing = false;
+            yield break;
+        }
+
+        List<PlayerData> rankedPlayers = GameManager.Instance.GetPlayersByRank();
+        bool isWinner = rankedPlayers.Count > 0 && rankedPlayers[0].playerID == localPlayer.playerID;
+
+        Sprite template = isWinner ? winnerShareTemplate : participantShareTemplate;
+        if (template == null)
+        {
+            Debug.LogWarning("Unable to share results - Share template not assigned.");
+            isSharing = false;
+            yield break;
+        }
+
+        if (havoksFont == null)
+        {
+            Debug.LogWarning("Unable to share results - Havoks font asset not assigned.");
+            isSharing = false;
+            yield break;
+        }
+
+        string shareDisplayName = string.IsNullOrWhiteSpace(localPlayer.playerName) ? "Player" : localPlayer.playerName;
+        int shareScore = localPlayer.scorePercentage;
+
+        Texture2D shareTexture = null;
+        yield return StartCoroutine(BuildShareTexture(template, localPlayer, shareNameAnchor, shareScoreAnchor, tex => shareTexture = tex));
+
+        if (shareTexture == null)
+        {
+            Debug.LogWarning("Share generation failed.");
+            isSharing = false;
+            yield break;
+        }
+
+        string cacheDirectory = Application.temporaryCachePath;
+        if (!Directory.Exists(cacheDirectory))
+        {
+            Directory.CreateDirectory(cacheDirectory);
+        }
+
+        string fileName = $"final-results-{localPlayer.playerID}-{DateTime.Now:yyyyMMddHHmmss}.png";
+        string filePath = Path.Combine(cacheDirectory, fileName);
+
+        try
+        {
+            File.WriteAllBytes(filePath, shareTexture.EncodeToPNG());
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Failed to save share image: {ex.Message}");
+            isSharing = false;
+            yield break;
+        }
+
+        string messageTemplate = isWinner ? winnerShareMessage : participantShareMessage;
+        if (string.IsNullOrWhiteSpace(messageTemplate))
+        {
+            messageTemplate = isWinner
+                ? "{0} just won Robots Wearing Moustaches with {1}% human!"
+                : "{0} scored {1}% human in Robots Wearing Moustaches!";
+        }
+        string shareMessage = string.Format(messageTemplate, shareDisplayName, shareScore);
+
+        yield return StartCoroutine(ShareImage(filePath, shareMessage));
+
+        Destroy(shareTexture);
+
+        isSharing = false;
+    }
+
+    IEnumerator BuildShareTexture(Sprite template, PlayerData player, Vector2 nameAnchor, Vector2 scoreAnchor, Action<Texture2D> onComplete)
+    {
+        if (shareImageResolution.x <= 0 || shareImageResolution.y <= 0)
+        {
+            Debug.LogWarning("Invalid share resolution specified.");
+            onComplete?.Invoke(null);
+            yield break;
+        }
+
+        RenderTexture renderTexture = new RenderTexture(shareImageResolution.x, shareImageResolution.y, 24, RenderTextureFormat.ARGB32);
+        GameObject cameraGO = new GameObject("ShareRenderCamera");
+        Camera renderCamera = cameraGO.AddComponent<Camera>();
+        renderCamera.clearFlags = CameraClearFlags.SolidColor;
+        renderCamera.backgroundColor = new Color(0, 0, 0, 0);
+        renderCamera.orthographic = true;
+        renderCamera.orthographicSize = shareImageResolution.y * 0.5f;
+        renderCamera.nearClipPlane = -10f;
+        renderCamera.farClipPlane = 10f;
+        renderCamera.targetTexture = renderTexture;
+
+        GameObject canvasGO = new GameObject("ShareRenderCanvas");
+        Canvas canvas = canvasGO.AddComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceCamera;
+        canvas.worldCamera = renderCamera;
+        canvas.pixelPerfect = true;
+
+        CanvasScaler scaler = canvasGO.AddComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = shareImageResolution;
+        scaler.matchWidthOrHeight = 0.5f;
+        canvasGO.AddComponent<GraphicRaycaster>();
+
+        Image backgroundImage = new GameObject("ShareBackground", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image)).GetComponent<Image>();
+        backgroundImage.transform.SetParent(canvas.transform, false);
+        backgroundImage.sprite = template;
+        backgroundImage.preserveAspect = false;
+        RectTransform bgRect = backgroundImage.rectTransform;
+        bgRect.anchorMin = Vector2.zero;
+        bgRect.anchorMax = Vector2.one;
+        bgRect.offsetMin = Vector2.zero;
+        bgRect.offsetMax = Vector2.zero;
+
+        string displayName = string.IsNullOrWhiteSpace(player.playerName) ? "PLAYER" : player.playerName.ToUpperInvariant();
+        string scoreValue = player.scorePercentage + "% HUMAN";
+
+        TextMeshProUGUI nameText = CreateShareText(canvas.transform, "SharePlayerName", displayName, shareNameFontSize, shareNameColor, nameAnchor, shareNameOffset);
+        nameText.characterSpacing = 4f;
+        TextMeshProUGUI scoreText = CreateShareText(canvas.transform, "SharePlayerScore", scoreValue, shareScoreFontSize, shareScoreColor, scoreAnchor, shareScoreOffset);
+        scoreText.characterSpacing = 2f;
+
+        yield return new WaitForEndOfFrame();
+
+        renderCamera.Render();
+
+        RenderTexture previous = RenderTexture.active;
+        RenderTexture.active = renderTexture;
+        Texture2D result = new Texture2D(renderTexture.width, renderTexture.height, TextureFormat.RGBA32, false);
+        result.ReadPixels(new Rect(0, 0, renderTexture.width, renderTexture.height), 0, 0, false);
+        result.Apply(false, false);
+        RenderTexture.active = previous;
+
+        renderCamera.targetTexture = null;
+        renderTexture.Release();
+        Destroy(renderTexture);
+
+        Destroy(canvasGO);
+        Destroy(cameraGO);
+
+        onComplete?.Invoke(result);
+    }
+
+    TextMeshProUGUI CreateShareText(Transform parent, string objectName, string value, float fontSize, Color color, Vector2 anchor, Vector2 offset)
+    {
+        GameObject textGO = new GameObject(objectName, typeof(RectTransform));
+        textGO.transform.SetParent(parent, false);
+        TextMeshProUGUI tmp = textGO.AddComponent<TextMeshProUGUI>();
+        tmp.font = havoksFont;
+        tmp.fontSize = fontSize;
+        tmp.color = color;
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.text = value;
+        tmp.enableWordWrapping = true;
+        tmp.richText = false;
+
+        RectTransform rect = tmp.rectTransform;
+        rect.anchorMin = anchor;
+        rect.anchorMax = anchor;
+        rect.sizeDelta = shareTextBounds;
+        rect.anchoredPosition = offset;
+
+        return tmp;
+    }
+
+    IEnumerator ShareImage(string filePath, string message)
+    {
+#if UNITY_ANDROID && !UNITY_EDITOR
+        yield return null;
+        try
+        {
+            using (AndroidJavaClass intentClass = new AndroidJavaClass("android.content.Intent"))
+            using (AndroidJavaObject intentObject = new AndroidJavaObject("android.content.Intent"))
+            {
+                intentObject.Call<AndroidJavaObject>("setAction", intentClass.GetStatic<string>("ACTION_SEND"));
+                using (AndroidJavaClass uriClass = new AndroidJavaClass("android.net.Uri"))
+                using (AndroidJavaObject fileObject = new AndroidJavaObject("java.io.File", filePath))
+                {
+                    AndroidJavaObject uri = uriClass.CallStatic<AndroidJavaObject>("fromFile", fileObject);
+                    intentObject.Call<AndroidJavaObject>("putExtra", intentClass.GetStatic<string>("EXTRA_STREAM"), uri);
+                }
+                intentObject.Call<AndroidJavaObject>("putExtra", intentClass.GetStatic<string>("EXTRA_TEXT"), message);
+                intentObject.Call<AndroidJavaObject>("setType", "image/png");
+
+                using (AndroidJavaClass unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
+                {
+                    AndroidJavaObject currentActivity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
+                    AndroidJavaObject chooser = intentClass.CallStatic<AndroidJavaObject>("createChooser", intentObject, "Share Results");
+                    currentActivity.Call("startActivity", chooser);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Android share failed: {ex.Message}");
+        }
+#elif UNITY_IOS && !UNITY_EDITOR
+        Debug.Log("Share image saved for iOS. Integrate with native share sheet to complete sharing. File: " + filePath);
+        yield return null;
+#else
+        Debug.Log("Share image generated: " + filePath);
+        yield return null;
+#endif
     }
 
     public void OnWebsiteClicked()
