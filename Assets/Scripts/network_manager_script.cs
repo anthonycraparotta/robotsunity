@@ -239,7 +239,7 @@ public class RWMNetworkManager : NetworkBehaviour
         Debug.Log("Player " + playerID + " submitted their answer");
 
         // Notify QuestionScreen to update buzz-in feedback
-        QuestionScreen questionScreen = FindObjectOfType<QuestionScreen>();
+        QuestionScreen questionScreen = FindFirstObjectByType<QuestionScreen>();
         if (questionScreen != null)
         {
             questionScreen.OnPlayerSubmittedAnswer(playerID);

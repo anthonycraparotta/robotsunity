@@ -603,7 +603,7 @@ public class FinalResultsScreen : MonoBehaviour
         tmp.color = color;
         tmp.alignment = TextAlignmentOptions.Center;
         tmp.text = value;
-        tmp.enableWordWrapping = true;
+        tmp.textWrappingMode = TMPro.TextWrappingModes.Normal;
         tmp.richText = false;
 
         RectTransform rect = tmp.rectTransform;
