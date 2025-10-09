@@ -136,6 +136,12 @@ public class GameManager : MonoBehaviour
         {
             player.scorePercentage = 0;
         }
+
+        // Broadcast score resets to all clients
+        foreach (var playerID in players.Keys)
+        {
+            RWMNetworkManager.Instance.UpdateScoresClientRpc(playerID, 0);
+        }
         
         LoadScene("IntroVideoScreen");
         currentGameState = GameState.IntroVideo;
