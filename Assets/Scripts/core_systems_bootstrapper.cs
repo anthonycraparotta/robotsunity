@@ -10,6 +10,9 @@ using Unity.Netcode.Transports.UTP;
 /// </summary>
 public static class CoreSystemsBootstrapper
 {
+    // === DEBUG FLAG - SET TO FALSE TO REMOVE ALL DEBUG LOGS ===
+    private const bool ENABLE_DEBUG_LOGS = true;
+
     private static bool _isEnsuring;
 
     /// <summary>
@@ -21,10 +24,16 @@ public static class CoreSystemsBootstrapper
     {
         if (_isEnsuring)
         {
+            if (ENABLE_DEBUG_LOGS)
+                Debug.Log("[CoreSystemsBootstrapper] Already ensuring initialization, skipping");
+
             return;
         }
 
         _isEnsuring = true;
+
+        if (ENABLE_DEBUG_LOGS)
+            Debug.Log("[CoreSystemsBootstrapper] ===== Starting Core Systems Initialization =====");
 
         EnsureManagerExists<GameManager>("GameManager");
         EnsureManagerExists<QuestionLoader>("QuestionLoader");
@@ -40,18 +49,32 @@ public static class CoreSystemsBootstrapper
         EnsureNetworkBehaviourExists<RWMNetworkManager>("NetworkManager");
         EnsureNetworkBehaviourExists<PlayerAuthSystem>("PlayerAuthSystem");
 
+        if (ENABLE_DEBUG_LOGS)
+            Debug.Log("[CoreSystemsBootstrapper] ===== Core Systems Initialization Complete =====");
+
         _isEnsuring = false;
     }
 
     private static void EnsureManagerExists<T>(string managerName) where T : MonoBehaviour
     {
-        if (FindExistingComponent<T>() != null)
+        var existing = FindExistingComponent<T>();
+
+        if (existing != null)
         {
+            if (ENABLE_DEBUG_LOGS)
+                Debug.Log($"[CoreSystemsBootstrapper] ✓ {managerName} already exists");
+
             return;
         }
 
+        if (ENABLE_DEBUG_LOGS)
+            Debug.Log($"[CoreSystemsBootstrapper] Creating {managerName}...");
+
         var managerObj = new GameObject(managerName);
         managerObj.AddComponent<T>();
+
+        if (ENABLE_DEBUG_LOGS)
+            Debug.Log($"[CoreSystemsBootstrapper] ✓ {managerName} created");
     }
 
     private static void EnsureNetworkManagerExists()

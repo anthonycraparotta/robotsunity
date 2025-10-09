@@ -6,6 +6,8 @@ using Unity.Netcode;
 
 public class LobbyScreen : MonoBehaviour
 {
+    // === DEBUG FLAG - SET TO FALSE TO REMOVE ALL DEBUG LOGS ===
+    private const bool ENABLE_DEBUG_LOGS = true;
     [Header("Desktop UI Elements")]
     public GameObject desktopDisplay;
     public TextMeshProUGUI roomCodeDisplay; // "Data" in JoinWait
@@ -60,11 +62,18 @@ public class LobbyScreen : MonoBehaviour
     {
         isMobile = DeviceDetector.Instance != null && DeviceDetector.Instance.IsMobile();
 
+        if (ENABLE_DEBUG_LOGS)
+        {
+            Debug.Log($"[LobbyScreen] Start - isMobile: {isMobile}");
+            Debug.Log($"[LobbyScreen] Screen size: {Screen.width}x{Screen.height}");
+        }
+
         // Set game state to Lobby
         if (GameManager.Instance != null)
         {
             GameManager.Instance.currentGameState = GameManager.GameState.Lobby;
-            Debug.Log("LobbyScreen loaded - set currentGameState to Lobby");
+            if (ENABLE_DEBUG_LOGS)
+                Debug.Log("[LobbyScreen] Set currentGameState to Lobby");
         }
 
         // Setup desktop buttons
@@ -141,20 +150,52 @@ public class LobbyScreen : MonoBehaviour
     
     void ShowAppropriateDisplay()
     {
+        if (ENABLE_DEBUG_LOGS)
+            Debug.Log($"[LobbyScreen] ShowAppropriateDisplay - isMobile: {isMobile}");
+
         if (desktopDisplay != null)
         {
             desktopDisplay.SetActive(!isMobile);
+            if (ENABLE_DEBUG_LOGS)
+                Debug.Log($"[LobbyScreen] desktopDisplay set to: {!isMobile}");
         }
-        
+
         if (mobileDisplay != null)
         {
             mobileDisplay.SetActive(isMobile);
+            if (ENABLE_DEBUG_LOGS)
+                Debug.Log($"[LobbyScreen] mobileDisplay set to: {isMobile}");
         }
 
-        // Mobile starts on join form
+        // Mobile starts with joinScreen visible, then shows JoinForm when button clicked
         if (isMobile)
         {
-            ShowJoinForm();
+            if (ENABLE_DEBUG_LOGS)
+                Debug.Log($"[LobbyScreen] Mobile detected - showing JoinScreen");
+
+            // Show JoinScreen (initial screen with "Join Game" button)
+            if (joinScreen != null)
+            {
+                joinScreen.SetActive(true);
+                if (ENABLE_DEBUG_LOGS)
+                    Debug.Log($"[LobbyScreen] joinScreen set to: true");
+            }
+
+            // Hide JoinForm initially
+            if (joinForm != null)
+            {
+                joinForm.SetActive(false);
+                if (ENABLE_DEBUG_LOGS)
+                    Debug.Log($"[LobbyScreen] joinForm set to: false");
+            }
+
+            // Hide JoinWait initially
+            if (joinWait != null)
+            {
+                joinWait.SetActive(false);
+                if (ENABLE_DEBUG_LOGS)
+                    Debug.Log($"[LobbyScreen] joinWait set to: false");
+            }
         }
     }
 
@@ -328,36 +369,73 @@ public class LobbyScreen : MonoBehaviour
     {
         MobileHaptics.LightImpact();
 
+        if (ENABLE_DEBUG_LOGS)
+            Debug.Log("[LobbyScreen] OnJoinGameButtonClicked - transitioning from JoinScreen to JoinForm");
+
         // User clicked "Join Game" button - show the form
         ShowJoinForm();
     }
 
     void ShowJoinForm()
     {
+        if (ENABLE_DEBUG_LOGS)
+            Debug.Log("[LobbyScreen] ShowJoinForm called");
+
         awaitingNetworkConnection = false;
         hasConnectedToHost = false;
 
+        // Hide JoinScreen
+        if (joinScreen != null)
+        {
+            joinScreen.SetActive(false);
+            if (ENABLE_DEBUG_LOGS)
+                Debug.Log("[LobbyScreen] joinScreen hidden");
+        }
+
+        // Show JoinForm
         if (joinForm != null)
         {
             joinForm.SetActive(true);
+            if (ENABLE_DEBUG_LOGS)
+                Debug.Log("[LobbyScreen] joinForm shown");
         }
 
+        // Hide JoinWait
         if (joinWait != null)
         {
             joinWait.SetActive(false);
+            if (ENABLE_DEBUG_LOGS)
+                Debug.Log("[LobbyScreen] joinWait hidden");
         }
     }
-    
+
     void ShowJoinWait()
     {
+        if (ENABLE_DEBUG_LOGS)
+            Debug.Log("[LobbyScreen] ShowJoinWait called");
+
+        // Hide JoinScreen
+        if (joinScreen != null)
+        {
+            joinScreen.SetActive(false);
+            if (ENABLE_DEBUG_LOGS)
+                Debug.Log("[LobbyScreen] joinScreen hidden");
+        }
+
+        // Hide JoinForm
         if (joinForm != null)
         {
             joinForm.SetActive(false);
+            if (ENABLE_DEBUG_LOGS)
+                Debug.Log("[LobbyScreen] joinForm hidden");
         }
-        
+
+        // Show JoinWait
         if (joinWait != null)
         {
             joinWait.SetActive(true);
+            if (ENABLE_DEBUG_LOGS)
+                Debug.Log("[LobbyScreen] joinWait shown");
         }
     }
     

@@ -8,6 +8,9 @@ using UnityEngine.UI;
 [RequireComponent(typeof(CanvasScaler))]
 public class ResponsiveCanvasScaler : MonoBehaviour
 {
+    // === DEBUG FLAG - SET TO FALSE TO REMOVE ALL DEBUG LOGS ===
+    private const bool ENABLE_DEBUG_LOGS = true;
+
     [Header("Desktop Settings")]
     [Tooltip("Reference resolution for desktop displays")]
     public Vector2 desktopReferenceResolution = new Vector2(1920, 1080);
@@ -28,12 +31,25 @@ public class ResponsiveCanvasScaler : MonoBehaviour
 
     void Awake()
     {
+        if (ENABLE_DEBUG_LOGS)
+            Debug.Log($"[ResponsiveCanvasScaler] Awake on GameObject: {gameObject.name}");
+
         canvasScaler = GetComponent<CanvasScaler>();
 
         if (canvasScaler == null)
         {
-            Debug.LogError("ResponsiveCanvasScaler requires a CanvasScaler component!");
+            Debug.LogError($"[ResponsiveCanvasScaler] MISSING CanvasScaler component on {gameObject.name}!");
             return;
+        }
+
+        if (ENABLE_DEBUG_LOGS)
+        {
+            Debug.Log($"[ResponsiveCanvasScaler] Current Screen: {Screen.width}x{Screen.height}");
+            Debug.Log($"[ResponsiveCanvasScaler] DeviceDetector.Instance exists: {DeviceDetector.Instance != null}");
+            if (DeviceDetector.Instance != null)
+            {
+                Debug.Log($"[ResponsiveCanvasScaler] DeviceDetector.IsMobile(): {DeviceDetector.Instance.IsMobile()}");
+            }
         }
 
         ApplyCanvasScalerSettings();
@@ -43,6 +59,13 @@ public class ResponsiveCanvasScaler : MonoBehaviour
     {
         bool isMobile = DeviceDetector.Instance != null && DeviceDetector.Instance.IsMobile();
 
+        if (ENABLE_DEBUG_LOGS)
+        {
+            Debug.Log($"[ResponsiveCanvasScaler] Applying settings - isMobile: {isMobile}");
+            Debug.Log($"[ResponsiveCanvasScaler] Current canvasScaler.referenceResolution BEFORE: {canvasScaler.referenceResolution}");
+            Debug.Log($"[ResponsiveCanvasScaler] Current canvasScaler.matchWidthOrHeight BEFORE: {canvasScaler.matchWidthOrHeight}");
+        }
+
         // Set UI Scale Mode
         canvasScaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
 
@@ -51,16 +74,36 @@ public class ResponsiveCanvasScaler : MonoBehaviour
         {
             canvasScaler.referenceResolution = mobileReferenceResolution;
             canvasScaler.matchWidthOrHeight = mobileMatchWidthOrHeight;
-            Debug.Log($"Canvas Scaler configured for MOBILE: {mobileReferenceResolution.x}x{mobileReferenceResolution.y}");
+
+            if (ENABLE_DEBUG_LOGS)
+            {
+                Debug.Log($"[ResponsiveCanvasScaler] ✓ MOBILE configuration applied on {gameObject.name}");
+                Debug.Log($"[ResponsiveCanvasScaler]   Reference Resolution: {mobileReferenceResolution.x}x{mobileReferenceResolution.y}");
+                Debug.Log($"[ResponsiveCanvasScaler]   Match W/H: {mobileMatchWidthOrHeight}");
+            }
         }
         else
         {
             canvasScaler.referenceResolution = desktopReferenceResolution;
             canvasScaler.matchWidthOrHeight = desktopMatchWidthOrHeight;
-            Debug.Log($"Canvas Scaler configured for DESKTOP: {desktopReferenceResolution.x}x{desktopReferenceResolution.y}");
+
+            if (ENABLE_DEBUG_LOGS)
+            {
+                Debug.Log($"[ResponsiveCanvasScaler] ✓ DESKTOP configuration applied on {gameObject.name}");
+                Debug.Log($"[ResponsiveCanvasScaler]   Reference Resolution: {desktopReferenceResolution.x}x{desktopReferenceResolution.y}");
+                Debug.Log($"[ResponsiveCanvasScaler]   Match W/H: {desktopMatchWidthOrHeight}");
+            }
         }
 
         // Set screen match mode
         canvasScaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+
+        if (ENABLE_DEBUG_LOGS)
+        {
+            Debug.Log($"[ResponsiveCanvasScaler] Final canvasScaler.referenceResolution: {canvasScaler.referenceResolution}");
+            Debug.Log($"[ResponsiveCanvasScaler] Final canvasScaler.matchWidthOrHeight: {canvasScaler.matchWidthOrHeight}");
+            Debug.Log($"[ResponsiveCanvasScaler] Final canvasScaler.uiScaleMode: {canvasScaler.uiScaleMode}");
+            Debug.Log($"[ResponsiveCanvasScaler] Final canvasScaler.screenMatchMode: {canvasScaler.screenMatchMode}");
+        }
     }
 }

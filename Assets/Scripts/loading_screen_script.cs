@@ -4,6 +4,8 @@ using System.Collections;
 
 public class LoadingScreen : MonoBehaviour
 {
+    // === DEBUG FLAG - SET TO FALSE TO REMOVE ALL DEBUG LOGS ===
+    private const bool ENABLE_DEBUG_LOGS = true;
     [Header("Desktop UI Elements")]
     public GameObject desktopDisplay;
     public Image gameLogo;
@@ -23,9 +25,15 @@ public class LoadingScreen : MonoBehaviour
     
     void Start()
     {
+        if (ENABLE_DEBUG_LOGS)
+        {
+            Debug.Log("[LoadingScreen] Start called");
+            Debug.Log($"[LoadingScreen] Screen size: {Screen.width}x{Screen.height}");
+        }
+
         // Show appropriate display
         ShowAppropriateDisplay();
-        
+
         // Start loading process
         StartCoroutine(LoadGame());
     }
@@ -46,23 +54,45 @@ public class LoadingScreen : MonoBehaviour
     
     void ShowAppropriateDisplay()
     {
+        if (ENABLE_DEBUG_LOGS)
+            Debug.Log($"[LoadingScreen] ShowAppropriateDisplay called");
+
         bool isMobile = DeviceDetector.Instance != null && DeviceDetector.Instance.IsMobile();
+
+        if (ENABLE_DEBUG_LOGS)
+        {
+            Debug.Log($"[LoadingScreen] DeviceDetector.Instance exists: {DeviceDetector.Instance != null}");
+            if (DeviceDetector.Instance != null)
+            {
+                Debug.Log($"[LoadingScreen] isMobile: {isMobile}");
+            }
+        }
 
         if (desktopDisplay != null)
         {
             desktopDisplay.SetActive(!isMobile);
+            if (ENABLE_DEBUG_LOGS)
+                Debug.Log($"[LoadingScreen] desktopDisplay set to: {!isMobile}");
         }
 
         if (mobileDisplay != null)
         {
             mobileDisplay.SetActive(isMobile);
+            if (ENABLE_DEBUG_LOGS)
+                Debug.Log($"[LoadingScreen] mobileDisplay set to: {isMobile}");
         }
     }
-    
+
     IEnumerator LoadGame()
     {
+        if (ENABLE_DEBUG_LOGS)
+            Debug.Log("[LoadingScreen] LoadGame coroutine started - calling CoreSystemsBootstrapper.EnsureInitialized()");
+
         // Initialize all global managers
         CoreSystemsBootstrapper.EnsureInitialized();
+
+        if (ENABLE_DEBUG_LOGS)
+            Debug.Log("[LoadingScreen] CoreSystemsBootstrapper.EnsureInitialized() completed");
 
         // Simulate loading or perform actual loading tasks
         yield return new WaitForSeconds(0.5f);
@@ -71,6 +101,9 @@ public class LoadingScreen : MonoBehaviour
         // yield return StartCoroutine(LoadAssets());
 
         isLoaded = true;
+
+        if (ENABLE_DEBUG_LOGS)
+            Debug.Log("[LoadingScreen] Loading complete, waiting for minimum load time");
 
         // Wait for minimum load time
         while (loadTimer < minimumLoadTime)
@@ -87,8 +120,11 @@ public class LoadingScreen : MonoBehaviour
     
     void AdvanceToLanding()
     {
-        Debug.Log("Loading complete - advancing to Landing Screen");
-        GameManager.Instance.AdvanceToNextScreen();
+        if (ENABLE_DEBUG_LOGS)
+            Debug.Log("[LoadingScreen] Advancing to IntroVideoScreen");
+
+        UnityEngine.SceneManagement.SceneManager.LoadScene("IntroVideoScreen");
+        GameManager.Instance.currentGameState = GameManager.GameState.IntroVideo;
     }
     
     // Optional: Add actual asset loading here
