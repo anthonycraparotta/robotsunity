@@ -155,29 +155,68 @@ public class VotingScreen : MonoBehaviour
             buttonObj.AddComponent<RectTransform>();
             buttonObj.AddComponent<Image>();
             buttonObj.AddComponent<Button>();
-            
+
             // Add text child
             GameObject textObj = new GameObject("Text");
             textObj.transform.SetParent(buttonObj.transform);
             textObj.AddComponent<RectTransform>();
             textObj.AddComponent<TextMeshProUGUI>();
         }
-        
+
         // Set button text
         TextMeshProUGUI buttonText = buttonObj.GetComponentInChildren<TextMeshProUGUI>();
         if (buttonText != null)
         {
             buttonText.text = answerText;
         }
-        
+
         // Add click listener
         Button button = buttonObj.GetComponent<Button>();
         if (button != null)
         {
             button.onClick.AddListener(() => OnAnswerSelected(answerText, buttonObj));
         }
-        
+
         spawnedAnswerButtons.Add(buttonObj);
+
+        // Animate slide-in from left (Desktop only)
+        if (!isMobile && buttonObj.GetComponent<RectTransform>() != null)
+        {
+            float delay = spawnedAnswerButtons.Count * 0.1f; // Stagger animations
+            StartCoroutine(SlideInFromLeft(buttonObj.GetComponent<RectTransform>(), delay));
+        }
+    }
+
+    System.Collections.IEnumerator SlideInFromLeft(RectTransform rectTransform, float delay)
+    {
+        if (rectTransform == null) yield break;
+
+        // Wait for stagger delay
+        yield return new WaitForSeconds(delay);
+
+        float duration = 0.6f;
+        float elapsed = 0f;
+
+        // Store original position
+        Vector2 targetPosition = rectTransform.anchoredPosition;
+
+        // Start position (off screen to the left)
+        Vector2 startPosition = new Vector2(targetPosition.x - Screen.width, targetPosition.y);
+        rectTransform.anchoredPosition = startPosition;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+
+            // Ease out cubic
+            float easedT = 1f - Mathf.Pow(1f - t, 3f);
+
+            rectTransform.anchoredPosition = Vector2.Lerp(startPosition, targetPosition, easedT);
+            yield return null;
+        }
+
+        rectTransform.anchoredPosition = targetPosition;
     }
     
     void OnAnswerSelected(string answer, GameObject buttonObj)

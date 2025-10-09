@@ -588,6 +588,22 @@ public class LobbyScreen : MonoBehaviour
 
         List<PlayerData> players = GameManager.Instance.GetAllPlayers();
 
+        // Detect new players by comparing counts
+        int previousCount = spawnedPlayerIcons.Count;
+        int newCount = 0;
+
+        // Count non-host players
+        foreach (PlayerData player in players)
+        {
+            if (!player.isHost)
+            {
+                newCount++;
+            }
+        }
+
+        // Only update if player count changed
+        if (previousCount == newCount) return;
+
         // Clear existing icons
         foreach (GameObject icon in spawnedPlayerIcons)
         {
@@ -595,7 +611,6 @@ public class LobbyScreen : MonoBehaviour
         }
         spawnedPlayerIcons.Clear();
 
-        // Count non-host players
         int nonHostPlayerCount = 0;
 
         // Spawn new icons for each player (excluding host)
@@ -628,6 +643,12 @@ public class LobbyScreen : MonoBehaviour
                 }
 
                 spawnedPlayerIcons.Add(iconObj);
+
+                // Animate bounce scale-up for new player (only for newly added player)
+                if (nonHostPlayerCount > previousCount)
+                {
+                    StartCoroutine(BounceScaleUp(iconObj.transform));
+                }
             }
         }
 
@@ -651,6 +672,46 @@ public class LobbyScreen : MonoBehaviour
                 roomCodeDisplay.text = roomCode;
             }
         }
+    }
+
+    System.Collections.IEnumerator BounceScaleUp(Transform transform)
+    {
+        if (transform == null) yield break;
+
+        float duration = 0.6f;
+        float elapsed = 0f;
+
+        // Start from scale 0
+        Vector3 startScale = Vector3.zero;
+        Vector3 targetScale = Vector3.one;
+        Vector3 overshootScale = targetScale * 1.2f; // Overshoot by 20%
+
+        transform.localScale = startScale;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+
+            // Elastic ease out with bounce
+            float easedT;
+            if (t < 0.5f)
+            {
+                // First half: scale up to overshoot
+                easedT = 1f - Mathf.Pow(1f - (t * 2f), 3f);
+                transform.localScale = Vector3.Lerp(startScale, overshootScale, easedT);
+            }
+            else
+            {
+                // Second half: bounce back to target
+                easedT = 1f - Mathf.Pow(1f - ((t - 0.5f) * 2f), 2f);
+                transform.localScale = Vector3.Lerp(overshootScale, targetScale, easedT);
+            }
+
+            yield return null;
+        }
+
+        transform.localScale = targetScale;
     }
     
     void OnDestroy()

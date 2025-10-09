@@ -158,6 +158,41 @@ public class QuestionScreen : MonoBehaviour
                 tipText.text = "Type your answer below";
             }
         }
+
+        // Animate question card sliding down (Desktop only)
+        if (!isMobile && questionCard != null)
+        {
+            StartCoroutine(SlideDownQuestionCard(questionCard.GetComponent<RectTransform>()));
+        }
+    }
+
+    System.Collections.IEnumerator SlideDownQuestionCard(RectTransform rectTransform)
+    {
+        if (rectTransform == null) yield break;
+
+        float duration = 0.8f;
+        float elapsed = 0f;
+
+        // Store original position
+        Vector2 targetPosition = rectTransform.anchoredPosition;
+
+        // Start position (off screen above)
+        Vector2 startPosition = new Vector2(targetPosition.x, targetPosition.y + Screen.height);
+        rectTransform.anchoredPosition = startPosition;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+
+            // Ease out cubic
+            float easedT = 1f - Mathf.Pow(1f - t, 3f);
+
+            rectTransform.anchoredPosition = Vector2.Lerp(startPosition, targetPosition, easedT);
+            yield return null;
+        }
+
+        rectTransform.anchoredPosition = targetPosition;
     }
     
     void ShowRoundVisuals()
@@ -246,9 +281,9 @@ public class QuestionScreen : MonoBehaviour
     void UpdatePlayerStatusIndicators()
     {
         if (playerIconContainer == null) return;
-        
+
         List<PlayerData> players = GameManager.Instance.GetAllPlayers();
-        
+
         // Clear existing icons if count changed
         if (spawnedPlayerIcons.Count != players.Count)
         {
@@ -257,33 +292,33 @@ public class QuestionScreen : MonoBehaviour
                 Destroy(icon);
             }
             spawnedPlayerIcons.Clear();
-            
+
             // Spawn new icons
             foreach (PlayerData player in players)
             {
                 if (playerIconQuestionPrefab != null)
                 {
                     GameObject iconObj = Instantiate(playerIconQuestionPrefab, playerIconContainer);
-                    
+
                     // Set player name
                     TextMeshProUGUI nameText = iconObj.transform.Find("PlayerName")?.GetComponent<TextMeshProUGUI>();
                     if (nameText != null)
                     {
                         nameText.text = player.playerName;
                     }
-                    
+
                     // Set player icon
                     Image iconImage = iconObj.transform.Find("PlayerIcon")?.GetComponent<Image>();
                     if (iconImage != null && PlayerManager.Instance != null)
                     {
                         iconImage.sprite = PlayerManager.Instance.GetPlayerIcon(player.iconName);
                     }
-                    
+
                     spawnedPlayerIcons.Add(iconObj);
                 }
             }
         }
-        
+
         // Update status indicators (show icon when player has submitted)
         for (int i = 0; i < spawnedPlayerIcons.Count && i < players.Count; i++)
         {
@@ -293,9 +328,58 @@ public class QuestionScreen : MonoBehaviour
             // Check if this player has submitted an answer
             bool hasSubmitted = GameManager.Instance.currentRoundAnswers.ContainsKey(player.playerID);
 
+            // Check previous state
+            bool wasActive = iconObj.activeSelf;
+
             // Show/hide entire icon based on submission
             iconObj.SetActive(hasSubmitted);
+
+            // Animate bounce when player just buzzed in
+            if (hasSubmitted && !wasActive)
+            {
+                StartCoroutine(BounceScaleUp(iconObj.transform));
+            }
         }
+    }
+
+    System.Collections.IEnumerator BounceScaleUp(Transform transform)
+    {
+        if (transform == null) yield break;
+
+        float duration = 0.6f;
+        float elapsed = 0f;
+
+        // Start from scale 0
+        Vector3 startScale = Vector3.zero;
+        Vector3 targetScale = Vector3.one;
+        Vector3 overshootScale = targetScale * 1.2f; // Overshoot by 20%
+
+        transform.localScale = startScale;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+
+            // Elastic ease out with bounce
+            float easedT;
+            if (t < 0.5f)
+            {
+                // First half: scale up to overshoot
+                easedT = 1f - Mathf.Pow(1f - (t * 2f), 3f);
+                transform.localScale = Vector3.Lerp(startScale, overshootScale, easedT);
+            }
+            else
+            {
+                // Second half: bounce back to target
+                easedT = 1f - Mathf.Pow(1f - ((t - 0.5f) * 2f), 2f);
+                transform.localScale = Vector3.Lerp(overshootScale, targetScale, easedT);
+            }
+
+            yield return null;
+        }
+
+        transform.localScale = targetScale;
     }
     
     public void OnSubmitAnswer()
