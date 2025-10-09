@@ -107,7 +107,7 @@ public class BonusQuestionScreen : MonoBehaviour
                 }
 
                 // Hide circle indicators
-                Transform circle = btn.transform.Find("Circle");
+                Transform circle = FindCircleTransform(btn);
                 if (circle != null)
                 {
                     circle.gameObject.SetActive(false);
@@ -229,7 +229,14 @@ public class BonusQuestionScreen : MonoBehaviour
             textObj.AddComponent<RectTransform>();
             textObj.AddComponent<TextMeshProUGUI>();
         }
-        
+
+        // Ensure circle indicator starts hidden on new buttons
+        Transform circle = FindCircleTransform(buttonObj);
+        if (circle != null)
+        {
+            circle.gameObject.SetActive(false);
+        }
+
         // Set button text
         TextMeshProUGUI buttonText = buttonObj.GetComponentInChildren<TextMeshProUGUI>();
         if (buttonText != null)
@@ -238,10 +245,14 @@ public class BonusQuestionScreen : MonoBehaviour
         }
         
         // Set player icon
-        Image iconImage = buttonObj.transform.Find("PlayerIcon")?.GetComponent<Image>();
-        if (iconImage != null && PlayerManager.Instance != null)
+        Transform iconTransform = FindPlayerIconTransform(buttonObj);
+        if (iconTransform != null && PlayerManager.Instance != null)
         {
-            iconImage.sprite = PlayerManager.Instance.GetPlayerIcon(player.iconName);
+            Image iconImage = iconTransform.GetComponent<Image>();
+            if (iconImage != null)
+            {
+                iconImage.sprite = PlayerManager.Instance.GetPlayerIcon(player.iconName);
+            }
         }
         
         // Add click listener
@@ -273,17 +284,25 @@ public class BonusQuestionScreen : MonoBehaviour
                 GameObject iconObj = Instantiate(playerIconBonusPrefab, playerIconContainer);
 
                 // Set player name
-                TextMeshProUGUI nameText = iconObj.transform.Find("PlayerName")?.GetComponent<TextMeshProUGUI>();
-                if (nameText != null)
+                Transform nameTransform = FindPlayerNameTransform(iconObj);
+                if (nameTransform != null)
                 {
-                    nameText.text = player.playerName;
+                    TextMeshProUGUI nameText = nameTransform.GetComponent<TextMeshProUGUI>();
+                    if (nameText != null)
+                    {
+                        nameText.text = player.playerName;
+                    }
                 }
 
                 // Set player icon
-                Image iconImage = iconObj.transform.Find("PlayerIcon")?.GetComponent<Image>();
-                if (iconImage != null && PlayerManager.Instance != null)
+                Transform iconTransform = FindPlayerIconTransform(iconObj);
+                if (iconTransform != null && PlayerManager.Instance != null)
                 {
-                    iconImage.sprite = PlayerManager.Instance.GetPlayerIcon(player.iconName);
+                    Image iconImage = iconTransform.GetComponent<Image>();
+                    if (iconImage != null)
+                    {
+                        iconImage.sprite = PlayerManager.Instance.GetPlayerIcon(player.iconName);
+                    }
                 }
 
                 // Start greyed out with circle hidden
@@ -306,24 +325,24 @@ public class BonusQuestionScreen : MonoBehaviour
             {
                 btnImage.color = Color.white;
             }
-            
+
             // Hide circle indicators
-            Transform circle = btn.transform.Find("Circle");
+            Transform circle = FindCircleTransform(btn);
             if (circle != null)
             {
                 circle.gameObject.SetActive(false);
             }
         }
-        
+
         // Highlight selected
         Image selectedImage = buttonObj.GetComponent<Image>();
         if (selectedImage != null)
         {
             selectedImage.color = Color.yellow;
         }
-        
+
         // Show circle on selected
-        Transform selectedCircle = buttonObj.transform.Find("Circle");
+        Transform selectedCircle = FindCircleTransform(buttonObj);
         if (selectedCircle != null)
         {
             selectedCircle.gameObject.SetActive(true);
@@ -430,7 +449,7 @@ public class BonusQuestionScreen : MonoBehaviour
         }
 
         // Find circle and animate it
-        Transform circleTransform = iconObj.transform.Find("Circle");
+        Transform circleTransform = FindCircleTransform(iconObj);
         if (circleTransform != null)
         {
             if (isGreyedOut)
@@ -467,7 +486,65 @@ public class BonusQuestionScreen : MonoBehaviour
 
         circleTransform.localScale = targetScale;
     }
-    
+
+    Transform FindCircleTransform(GameObject buttonObj)
+    {
+        if (buttonObj == null)
+        {
+            return null;
+        }
+
+        Transform circle = buttonObj.transform.Find("Circle");
+        if (circle != null)
+        {
+            return circle;
+        }
+
+        Transform icon = buttonObj.transform.Find("PlayerIcon");
+        if (icon != null)
+        {
+            circle = icon.Find("Circle");
+        }
+
+        return circle;
+    }
+
+    Transform FindPlayerIconTransform(GameObject obj)
+    {
+        if (obj == null)
+        {
+            return null;
+        }
+
+        // Direct child search
+        Transform icon = obj.transform.Find("PlayerIcon");
+        if (icon != null)
+        {
+            return icon;
+        }
+
+        // Could add additional fallback logic here if needed
+        return null;
+    }
+
+    Transform FindPlayerNameTransform(GameObject obj)
+    {
+        if (obj == null)
+        {
+            return null;
+        }
+
+        // Direct child search
+        Transform nameTransform = obj.transform.Find("PlayerName");
+        if (nameTransform != null)
+        {
+            return nameTransform;
+        }
+
+        // Could add additional fallback logic here if needed
+        return null;
+    }
+
     string GetLocalPlayerID()
     {
         return "player_" + SystemInfo.deviceUniqueIdentifier;
