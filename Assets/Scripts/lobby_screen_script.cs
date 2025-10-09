@@ -427,61 +427,75 @@ public class LobbyScreen : MonoBehaviour
 
     void CompleteJoinFlow(string playerName, string enteredRoomCode)
     {
+        // Validate network prerequisites BEFORE proceeding
+        if (RWMNetworkManager.Instance == null || NetworkManager.Singleton == null)
+        {
+            ShowErrorMessage("Network system is not available. Please restart the app and try again.", false);
+            return;
+        }
+
         if (!string.IsNullOrEmpty(enteredRoomCode))
         {
             roomCode = enteredRoomCode;
         }
 
-        ConnectToHostIfNeeded();
+        if (string.IsNullOrEmpty(roomCode))
+        {
+            ShowErrorMessage("Room code is required to join a game.", false);
+            return;
+        }
 
+        // Store player info for registration after connection
         string playerID = System.Guid.NewGuid().ToString();
-
         if (PlayerAuthSystem.Instance != null)
         {
             playerID = PlayerAuthSystem.Instance.GetLocalPlayerID();
-            PlayerAuthSystem.Instance.RegisterPlayer(playerName, selectedPlayerIconName);
-        }
-        else if (GameManager.Instance != null)
-        {
-            GameManager.Instance.AddPlayer(playerID, playerName, selectedPlayerIconName);
         }
 
-        if (RWMNetworkManager.Instance != null && NetworkManager.Singleton != null)
+        // Setup callback to register player AFTER successful connection
+        void SendRegistrationWhenConnected(ulong clientId)
         {
-            if (NetworkManager.Singleton.IsClient)
+            if (NetworkManager.Singleton == null)
+            {
+                return;
+            }
+
+            if (clientId != NetworkManager.Singleton.LocalClientId)
+            {
+                return;
+            }
+
+            NetworkManager.Singleton.OnClientConnectedCallback -= SendRegistrationWhenConnected;
+
+            // NOW register the player locally
+            if (PlayerAuthSystem.Instance != null)
+            {
+                PlayerAuthSystem.Instance.RegisterPlayer(playerName, selectedPlayerIconName);
+            }
+            else if (GameManager.Instance != null)
+            {
+                GameManager.Instance.AddPlayer(playerID, playerName, selectedPlayerIconName);
+            }
+
+            // Send to host
+            if (RWMNetworkManager.Instance != null)
             {
                 RWMNetworkManager.Instance.AddPlayerServerRpc(playerID, playerName, selectedPlayerIconName);
             }
-            else
-            {
-                void SendRegistrationWhenConnected(ulong clientId)
-                {
-                    if (NetworkManager.Singleton == null)
-                    {
-                        return;
-                    }
 
-                    if (clientId != NetworkManager.Singleton.LocalClientId)
-                    {
-                        return;
-                    }
-
-                    NetworkManager.Singleton.OnClientConnectedCallback -= SendRegistrationWhenConnected;
-
-                    if (RWMNetworkManager.Instance != null)
-                    {
-                        RWMNetworkManager.Instance.AddPlayerServerRpc(playerID, playerName, selectedPlayerIconName);
-                    }
-                }
-
-                NetworkManager.Singleton.OnClientConnectedCallback += SendRegistrationWhenConnected;
-            }
+            UpdateWaitingScreenUI(playerName);
+            Debug.Log("Player successfully joined and registered: " + playerName);
         }
 
+        // Register callback BEFORE attempting connection
+        NetworkManager.Singleton.OnClientConnectedCallback += SendRegistrationWhenConnected;
+
+        // Attempt connection
+        ConnectToHostIfNeeded();
+
+        // Show waiting screen (connection in progress)
         UpdateWaitingScreenUI(playerName);
         ShowJoinWait();
-
-        Debug.Log("Player joined: " + playerName);
     }
 
     void ConnectToHostIfNeeded()
