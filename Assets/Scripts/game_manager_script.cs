@@ -827,6 +827,15 @@ public class GameManager : MonoBehaviour
         if (players.ContainsKey(playerID))
         {
             players.Remove(playerID);
+
+            // Clean up all stale votes and answers from disconnected player
+            // to prevent premature auto-advance when count checks trigger
+            currentRoundAnswers.Remove(playerID);
+            eliminationVotes.Remove(playerID);
+            votingVotes.Remove(playerID);
+            bonusVotes.Remove(playerID);
+
+            Debug.Log($"Removed player {playerID} and cleaned up their votes/answers");
         }
     }
     
