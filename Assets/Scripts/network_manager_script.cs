@@ -276,10 +276,14 @@ public class RWMNetworkManager : NetworkBehaviour
     // === SCORE UPDATES ===
     
     [ClientRpc]
-    public void UpdateScoresClientRpc(ClientRpcParams clientRpcParams = default)
+    public void UpdateScoresClientRpc(string playerID, int newScore, ClientRpcParams clientRpcParams = default)
     {
-        // Tell all clients to refresh score displays
-        Debug.Log("Scores updated");
+        // Sync score update to all clients
+        if (GameManager.Instance != null && GameManager.Instance.players.ContainsKey(playerID))
+        {
+            GameManager.Instance.players[playerID].scorePercentage = newScore;
+            Debug.Log($"Score updated for player {playerID}: {newScore}");
+        }
     }
     
     // === SCENE TRANSITIONS ===

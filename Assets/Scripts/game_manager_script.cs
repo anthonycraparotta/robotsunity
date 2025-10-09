@@ -763,6 +763,12 @@ public class GameManager : MonoBehaviour
         if (players.ContainsKey(playerID))
         {
             players[playerID].scorePercentage += points;
+
+            // Sync score changes to all clients
+            if (RWMNetworkManager.Instance != null)
+            {
+                RWMNetworkManager.Instance.UpdateScoresClientRpc(playerID, players[playerID].scorePercentage);
+            }
         }
     }
     
