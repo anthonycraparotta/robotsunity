@@ -3,14 +3,28 @@ using System.Collections.Generic;
 
 public class QuestionLoader : MonoBehaviour
 {
+    private GameManager gameManager;
     [Header("Question File Paths")]
     public string standardQuestionsPath = "questions";
     public string playerQuestionsPath = "playerqs";
     public string pictureQuestionsPath = "picqs";
     public string bonusQuestionsPath = "bonusquestions";
-    
+
     void Awake()
     {
+        gameManager = GameManager.Instance;
+
+        if (gameManager == null)
+        {
+            gameManager = FindObjectOfType<GameManager>();
+        }
+
+        if (gameManager == null)
+        {
+            Debug.LogError("QuestionLoader could not find an active GameManager. Questions will not be loaded.");
+            return;
+        }
+
         LoadAllQuestions();
     }
     
@@ -47,7 +61,7 @@ public class QuestionLoader : MonoBehaviour
         
         if (wrapper.questions != null && wrapper.questions.Count > 0)
         {
-            GameManager.Instance.standardQuestions = wrapper.questions;
+            gameManager.standardQuestions = wrapper.questions;
             Debug.Log("Loaded " + wrapper.questions.Count + " standard questions");
         }
         else
@@ -71,7 +85,7 @@ public class QuestionLoader : MonoBehaviour
 
         if (wrapper.questions != null && wrapper.questions.Count > 0)
         {
-            GameManager.Instance.playerQuestions = wrapper.questions;
+            gameManager.playerQuestions = wrapper.questions;
             Debug.Log("Loaded " + wrapper.questions.Count + " player questions");
         }
         else
@@ -95,7 +109,7 @@ public class QuestionLoader : MonoBehaviour
         
         if (wrapper.questions != null && wrapper.questions.Count > 0)
         {
-            GameManager.Instance.pictureQuestions = wrapper.questions;
+            gameManager.pictureQuestions = wrapper.questions;
             Debug.Log("Loaded " + wrapper.questions.Count + " picture questions");
         }
         else
@@ -130,7 +144,7 @@ public class QuestionLoader : MonoBehaviour
                 bonusData.miniQuestions.Add(raw.question);
             }
 
-            GameManager.Instance.bonusQuestions = bonusData;
+            gameManager.bonusQuestions = bonusData;
             Debug.Log("Loaded " + bonusData.miniQuestions.Count + " bonus questions");
         }
         else
