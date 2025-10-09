@@ -39,11 +39,19 @@ public class ResponsiveCanvasScaler : MonoBehaviour
         if (canvasScaler == null)
         {
             Debug.LogError($"[ResponsiveCanvasScaler] MISSING CanvasScaler component on {gameObject.name}!");
+        }
+    }
+
+    void Start()
+    {
+        if (canvasScaler == null)
+        {
             return;
         }
 
         if (ENABLE_DEBUG_LOGS)
         {
+            Debug.Log($"[ResponsiveCanvasScaler] Start on GameObject: {gameObject.name}");
             Debug.Log($"[ResponsiveCanvasScaler] Current Screen: {Screen.width}x{Screen.height}");
             Debug.Log($"[ResponsiveCanvasScaler] DeviceDetector.Instance exists: {DeviceDetector.Instance != null}");
             if (DeviceDetector.Instance != null)
