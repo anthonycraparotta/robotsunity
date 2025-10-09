@@ -29,6 +29,7 @@ public class QuestionScreen : MonoBehaviour
     public TMP_InputField answerInput;
     public Button answerSubmitButton;
     public Image mobileBackground;
+    public TextMeshProUGUI submissionConfirmationText; // Optional: Shows "Answer Submitted!" message
 
     [Header("Error Display")]
     public TextMeshProUGUI errorMessageText; // Connect in Unity - shows validation errors
@@ -83,7 +84,7 @@ public class QuestionScreen : MonoBehaviour
         // Update timer display
         UpdateTimerDisplay();
 
-        // Update player status indicators (desktop only)
+        // Update player status indicators (desktop only - mobile gets updates via ClientRpc)
         if (!isMobile)
         {
             UpdatePlayerStatusIndicators();
@@ -94,6 +95,57 @@ public class QuestionScreen : MonoBehaviour
         {
             AudioManager.Instance.CheckTimerWarning(GameManager.Instance.GetTimeRemaining());
         }
+    }
+
+    // Called by network ClientRpc or locally to update buzz-in feedback
+    public void OnPlayerSubmittedAnswer(string playerID)
+    {
+        if (isMobile)
+        {
+            // Mobile: Show visual feedback that answer was submitted
+            UpdateMobileBuzzInFeedback(playerID);
+        }
+        else
+        {
+            // Desktop: Update will be handled by UpdatePlayerStatusIndicators in Update loop
+            // No action needed here - desktop polls the state
+        }
+    }
+
+    void UpdateMobileBuzzInFeedback(string playerID)
+    {
+        // If this is the local player, show confirmation
+        if (playerID == this.playerID)
+        {
+            // Disable input and button to show submission is complete
+            if (answerInput != null)
+            {
+                answerInput.interactable = false;
+            }
+
+            if (answerSubmitButton != null)
+            {
+                answerSubmitButton.interactable = false;
+            }
+
+            // Show confirmation message if available
+            if (submissionConfirmationText != null)
+            {
+                submissionConfirmationText.text = "Answer Submitted!";
+                submissionConfirmationText.gameObject.SetActive(true);
+            }
+
+            // Play confirmation sound if available
+            if (AudioManager.Instance != null)
+            {
+                // Could add: AudioManager.Instance.PlaySubmitSFX();
+            }
+
+            Debug.Log("Your answer has been submitted!");
+        }
+
+        // Future: Could show other players' buzz-in status on mobile if desired
+        // For example, display a list of player icons who have buzzed in
     }
     
     void ShowAppropriateDisplay()

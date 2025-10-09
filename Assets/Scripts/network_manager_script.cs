@@ -237,6 +237,13 @@ public class RWMNetworkManager : NetworkBehaviour
     {
         // Update UI to show player has submitted
         Debug.Log("Player " + playerID + " submitted their answer");
+
+        // Notify QuestionScreen to update buzz-in feedback
+        QuestionScreen questionScreen = FindObjectOfType<QuestionScreen>();
+        if (questionScreen != null)
+        {
+            questionScreen.OnPlayerSubmittedAnswer(playerID);
+        }
     }
     
     // === ELIMINATION VOTING ===
