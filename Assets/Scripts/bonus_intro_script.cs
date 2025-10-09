@@ -56,6 +56,8 @@ public class BonusIntroScreen : MonoBehaviour
     
     public void OnContinueClicked()
     {
+        MobileHaptics.MediumImpact();
+
         // Stop auto-advance
         StopAllCoroutines();
         AdvanceToBonusQuestions();

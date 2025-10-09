@@ -296,6 +296,8 @@ public class BonusQuestionScreen : MonoBehaviour
     
     void OnPlayerSelected(string votedPlayerID, GameObject buttonObj)
     {
+        MobileHaptics.SelectionChanged();
+
         selectedPlayerID = votedPlayerID;
         
         // Visual feedback
@@ -344,9 +346,12 @@ public class BonusQuestionScreen : MonoBehaviour
     
     public void OnSubmitVote()
     {
+        MobileHaptics.MediumImpact();
+
         if (string.IsNullOrEmpty(selectedPlayerID))
         {
             Debug.LogWarning("No player selected!");
+            MobileHaptics.Failure();
             return;
         }
 

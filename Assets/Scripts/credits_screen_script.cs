@@ -99,12 +99,16 @@ public class CreditsScreen : MonoBehaviour
     
     public void OnWebsiteClicked()
     {
+        MobileHaptics.LightImpact();
+
         Debug.Log("Website button clicked");
         Application.OpenURL("https://robotswearingmoustaches.com"); // Replace with actual URL
     }
 
     public void OnNewGameClicked()
     {
+        MobileHaptics.HeavyImpact();
+
         Debug.Log("New Game button clicked");
 
         // Reset game and return to landing

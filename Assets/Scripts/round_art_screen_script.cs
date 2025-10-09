@@ -98,6 +98,8 @@ public class RoundArtScreen : MonoBehaviour
     
     public void OnContinueClicked()
     {
+        MobileHaptics.MediumImpact();
+
         // Stop auto-advance coroutine
         StopAllCoroutines();
         AdvanceToQuestion();

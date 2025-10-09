@@ -300,6 +300,8 @@ public class QuestionScreen : MonoBehaviour
     
     public void OnSubmitAnswer()
     {
+        MobileHaptics.MediumImpact();
+
         if (answerInput == null || string.IsNullOrEmpty(answerInput.text))
         {
             Debug.LogWarning("Please enter an answer!");
@@ -365,6 +367,8 @@ public class QuestionScreen : MonoBehaviour
 
     void ShowAnswerError(string message)
     {
+        MobileHaptics.Failure();
+
         Debug.LogError("ANSWER ERROR: " + message);
 
         // Display error message in UI

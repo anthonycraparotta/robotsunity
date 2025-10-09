@@ -193,6 +193,8 @@ public class LobbyScreen : MonoBehaviour
     
     void OnGameModeSelected(GameManager.GameMode mode)
     {
+        MobileHaptics.SelectionChanged();
+
         GameManager.Instance.gameMode = mode;
         Debug.Log("Game mode selected: " + mode);
         
@@ -223,6 +225,8 @@ public class LobbyScreen : MonoBehaviour
 
     public void OnStartGameClicked()
     {
+        MobileHaptics.MediumImpact();
+
         // Check if we have enough players (minimum 2)
         if (GameManager.Instance.GetAllPlayers().Count < 2)
         {
@@ -240,6 +244,8 @@ public class LobbyScreen : MonoBehaviour
 
     public void OnJoinGameButtonClicked()
     {
+        MobileHaptics.LightImpact();
+
         // User clicked "Join Game" button - show the form
         ShowJoinForm();
     }
@@ -272,6 +278,8 @@ public class LobbyScreen : MonoBehaviour
     
     public void OnPlayerIconSelected(string iconName)
     {
+        MobileHaptics.SelectionChanged();
+
         // Check if icon is available (not already selected by another player)
         if (PlayerManager.Instance != null && !PlayerManager.Instance.IsIconAvailable(iconName))
         {
@@ -293,6 +301,8 @@ public class LobbyScreen : MonoBehaviour
     
     public void OnJoinButtonClicked()
     {
+        MobileHaptics.MediumImpact();
+
         if (nameInput == null || string.IsNullOrEmpty(nameInput.text))
         {
             Debug.LogWarning("Please enter a name!");
@@ -432,6 +442,8 @@ public class LobbyScreen : MonoBehaviour
 
     void ShowErrorMessage(string message)
     {
+        MobileHaptics.Failure();
+
         Debug.LogError("INPUT ERROR: " + message);
 
         // Display error message in UI

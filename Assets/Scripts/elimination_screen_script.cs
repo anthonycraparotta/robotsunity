@@ -182,6 +182,8 @@ public class EliminationScreen : MonoBehaviour
     
     void OnAnswerSelected(string answer, GameObject buttonObj)
     {
+        MobileHaptics.SelectionChanged();
+
         selectedAnswer = answer;
         
         // Visual feedback - highlight selected button
@@ -217,9 +219,12 @@ public class EliminationScreen : MonoBehaviour
     
     public void OnSubmitVote()
     {
+        MobileHaptics.MediumImpact();
+
         if (string.IsNullOrEmpty(selectedAnswer))
         {
             Debug.LogWarning("No answer selected!");
+            MobileHaptics.Failure();
             return;
         }
         
