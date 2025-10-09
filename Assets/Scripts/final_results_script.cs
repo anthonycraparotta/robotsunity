@@ -619,12 +619,20 @@ public class FinalResultsScreen : MonoBehaviour
             using (AndroidJavaObject intentObject = new AndroidJavaObject("android.content.Intent"))
             {
                 intentObject.Call<AndroidJavaObject>("setAction", intentClass.GetStatic<string>("ACTION_SEND"));
-                using (AndroidJavaClass uriClass = new AndroidJavaClass("android.net.Uri"))
+
+                // Use FileProvider for Android 7.0+ compatibility
+                using (AndroidJavaClass unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
+                using (AndroidJavaClass fileProviderClass = new AndroidJavaClass("androidx.core.content.FileProvider"))
                 using (AndroidJavaObject fileObject = new AndroidJavaObject("java.io.File", filePath))
                 {
-                    AndroidJavaObject uri = uriClass.CallStatic<AndroidJavaObject>("fromFile", fileObject);
+                    AndroidJavaObject currentActivity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
+                    string authority = Application.identifier + ".fileprovider";
+                    AndroidJavaObject uri = fileProviderClass.CallStatic<AndroidJavaObject>("getUriForFile", currentActivity, authority, fileObject);
+
                     intentObject.Call<AndroidJavaObject>("putExtra", intentClass.GetStatic<string>("EXTRA_STREAM"), uri);
+                    intentObject.Call<AndroidJavaObject>("addFlags", intentClass.GetStatic<int>("FLAG_GRANT_READ_URI_PERMISSION"));
                 }
+
                 intentObject.Call<AndroidJavaObject>("putExtra", intentClass.GetStatic<string>("EXTRA_TEXT"), message);
                 intentObject.Call<AndroidJavaObject>("setType", "image/png");
 
@@ -641,13 +649,29 @@ public class FinalResultsScreen : MonoBehaviour
             Debug.LogError($"Android share failed: {ex.Message}");
         }
 #elif UNITY_IOS && !UNITY_EDITOR
-        Debug.Log("Share image saved for iOS. Integrate with native share sheet to complete sharing. File: " + filePath);
         yield return null;
+        ShareImageIOS(filePath, message);
 #else
         Debug.Log("Share image generated: " + filePath);
         yield return null;
 #endif
     }
+
+#if UNITY_IOS && !UNITY_EDITOR
+    [System.Runtime.InteropServices.DllImport("__Internal")]
+    private static extern void _ShareImage(string imagePath, string message);
+
+    private void ShareImageIOS(string filePath, string message)
+    {
+        if (!File.Exists(filePath))
+        {
+            Debug.LogError($"iOS share failed: File not found at {filePath}");
+            return;
+        }
+
+        _ShareImage(filePath, message);
+    }
+#endif
 
     public void OnWebsiteClicked()
     {
