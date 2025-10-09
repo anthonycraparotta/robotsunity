@@ -161,18 +161,26 @@ public class PictureQuestionScreen : MonoBehaviour
                     GameObject iconObj = Instantiate(playerIconPictureQuestionPrefab, playerIconContainer);
                     
                     // Set player name
-                    TextMeshProUGUI nameText = iconObj.transform.Find("PlayerName")?.GetComponent<TextMeshProUGUI>();
-                    if (nameText != null)
+                    Transform nameTransform = FindPlayerNameTransform(iconObj);
+                    if (nameTransform != null)
                     {
-                        nameText.text = player.playerName;
+                        TextMeshProUGUI nameText = nameTransform.GetComponent<TextMeshProUGUI>();
+                        if (nameText != null)
+                        {
+                            nameText.text = player.playerName;
+                        }
                     }
-                    
+
                     // Set player icon
-                    Image iconImage = iconObj.transform.Find("PlayerIcon")?.GetComponent<Image>();
-                    if (iconImage != null)
+                    Transform iconTransform = FindPlayerIconTransform(iconObj);
+                    if (iconTransform != null)
                     {
-                        // Load the icon sprite
-                        // iconImage.sprite = Resources.Load<Sprite>("PlayerIcons/" + player.iconName);
+                        Image iconImage = iconTransform.GetComponent<Image>();
+                        if (iconImage != null)
+                        {
+                            // Load the icon sprite
+                            // iconImage.sprite = Resources.Load<Sprite>("PlayerIcons/" + player.iconName);
+                        }
                     }
                     
                     spawnedPlayerIcons.Add(iconObj);
@@ -216,7 +224,43 @@ public class PictureQuestionScreen : MonoBehaviour
     {
         return "player_" + SystemInfo.deviceUniqueIdentifier;
     }
-    
+
+    Transform FindPlayerIconTransform(GameObject obj)
+    {
+        if (obj == null)
+        {
+            return null;
+        }
+
+        // Direct child search
+        Transform icon = obj.transform.Find("PlayerIcon");
+        if (icon != null)
+        {
+            return icon;
+        }
+
+        // Could add additional fallback logic here if needed
+        return null;
+    }
+
+    Transform FindPlayerNameTransform(GameObject obj)
+    {
+        if (obj == null)
+        {
+            return null;
+        }
+
+        // Direct child search
+        Transform nameTransform = obj.transform.Find("PlayerName");
+        if (nameTransform != null)
+        {
+            return nameTransform;
+        }
+
+        // Could add additional fallback logic here if needed
+        return null;
+    }
+
     void OnDestroy()
     {
         if (answerSubmitButton != null)
