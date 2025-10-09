@@ -109,8 +109,17 @@ public class IntroVideoScreen : MonoBehaviour
     
     void AdvanceToGame()
     {
-        // Go to first round
-        GameManager.Instance.AdvanceToNextScreen();
+        // Check device type - mobile goes to LobbyScreen
+        if (DeviceDetector.Instance != null && DeviceDetector.Instance.IsMobile())
+        {
+            UnityEngine.SceneManagement.SceneManager.LoadScene("LobbyScreen");
+            GameManager.Instance.currentGameState = GameManager.GameState.Lobby;
+        }
+        else
+        {
+            // Desktop goes to LandingScreen
+            GameManager.Instance.AdvanceToNextScreen();
+        }
     }
     
     void OnDestroy()
