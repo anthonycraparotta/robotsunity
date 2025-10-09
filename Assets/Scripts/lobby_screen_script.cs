@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
+using Unity.Netcode;
 
 public class LobbyScreen : MonoBehaviour
 {
@@ -23,6 +24,7 @@ public class LobbyScreen : MonoBehaviour
     public Button joinGameButton; // Button on JoinScreen to show JoinForm
     public GameObject joinForm;
     public TMP_InputField nameInput;
+    public TMP_InputField roomCodeInput;
     public Button joinButton; // Button on JoinForm to submit name/icon
     public Transform scrollingPlayerIconContainer;
     public Image selectedIcon;
@@ -93,10 +95,10 @@ public class LobbyScreen : MonoBehaviour
         // Show appropriate display
         ShowAppropriateDisplay();
 
-        // Generate room code if desktop
+        // Initialize networking flow based on device type
         if (!isMobile)
         {
-            GenerateRoomCode();
+            SetupDesktopHost();
 
             // Add desktop host as a player
             AddDesktopHostPlayer();
@@ -151,25 +153,42 @@ public class LobbyScreen : MonoBehaviour
         }
     }
     
-    void GenerateRoomCode()
+    void SetupDesktopHost()
     {
-        // Generate a random 5-character room code
-        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        System.Text.StringBuilder code = new System.Text.StringBuilder();
-
-        for (int i = 0; i < 5; i++)
+        if (RWMNetworkManager.Instance != null && NetworkManager.Singleton != null)
         {
-            code.Append(chars[Random.Range(0, chars.Length)]);
-        }
+            if (!NetworkManager.Singleton.IsListening)
+            {
+                RWMNetworkManager.Instance.StartHost();
+            }
 
-        roomCode = code.ToString();
-        
-        if (roomCodeDisplay != null)
-        {
-            roomCodeDisplay.text = roomCode;
+            roomCode = RWMNetworkManager.Instance.GetRoomCode();
+
+            if (roomCodeDisplay != null)
+            {
+                roomCodeDisplay.text = roomCode;
+            }
         }
-        
-        Debug.Log("Room Code: " + roomCode);
+        else
+        {
+            // Fallback: generate a local code so the UI isn't empty when networking is unavailable
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            System.Text.StringBuilder code = new System.Text.StringBuilder();
+
+            for (int i = 0; i < 5; i++)
+            {
+                code.Append(chars[Random.Range(0, chars.Length)]);
+            }
+
+            roomCode = code.ToString();
+
+            if (roomCodeDisplay != null)
+            {
+                roomCodeDisplay.text = roomCode;
+            }
+
+            Debug.LogWarning("Networking not available - using locally generated room code");
+        }
     }
     
     void OnGameModeSelected(GameManager.GameMode mode)
@@ -288,6 +307,15 @@ public class LobbyScreen : MonoBehaviour
             return;
         }
 
+        string enteredRoomCode = roomCodeInput != null ? roomCodeInput.text.Trim().ToUpper() : "";
+
+        if (isMobile && string.IsNullOrEmpty(enteredRoomCode))
+        {
+            Debug.LogWarning("Please enter the room code!");
+            ShowErrorMessage("Please enter the room code!");
+            return;
+        }
+
         // Validate name using ContentFilterManager
         if (ContentFilterManager.Instance != null)
         {
@@ -303,24 +331,102 @@ public class LobbyScreen : MonoBehaviour
             // Use sanitized name
             string sanitizedName = validation.sanitizedText;
 
-            // Create player ID
-            string playerID = System.Guid.NewGuid().ToString();
-
-            // Add player to game manager
-            GameManager.Instance.AddPlayer(playerID, sanitizedName, selectedPlayerIconName);
-
-            // Switch to waiting screen
-            ShowJoinWait();
-
-            Debug.Log("Player joined: " + sanitizedName);
+            CompleteJoinFlow(sanitizedName, enteredRoomCode);
         }
         else
         {
             // Fallback if ContentFilterManager not available
-            string playerID = System.Guid.NewGuid().ToString();
-            GameManager.Instance.AddPlayer(playerID, nameInput.text.Trim(), selectedPlayerIconName);
-            ShowJoinWait();
-            Debug.Log("Player joined: " + nameInput.text);
+            CompleteJoinFlow(nameInput.text.Trim(), enteredRoomCode);
+        }
+    }
+
+    void CompleteJoinFlow(string playerName, string enteredRoomCode)
+    {
+        if (!string.IsNullOrEmpty(enteredRoomCode))
+        {
+            roomCode = enteredRoomCode;
+        }
+
+        ConnectToHostIfNeeded();
+
+        string playerID = System.Guid.NewGuid().ToString();
+
+        if (PlayerAuthSystem.Instance != null)
+        {
+            playerID = PlayerAuthSystem.Instance.GetLocalPlayerID();
+            PlayerAuthSystem.Instance.RegisterPlayer(playerName, selectedPlayerIconName);
+        }
+        else if (GameManager.Instance != null)
+        {
+            GameManager.Instance.AddPlayer(playerID, playerName, selectedPlayerIconName);
+        }
+
+        if (RWMNetworkManager.Instance != null && NetworkManager.Singleton != null)
+        {
+            if (NetworkManager.Singleton.IsClient)
+            {
+                RWMNetworkManager.Instance.AddPlayerServerRpc(playerID, playerName, selectedPlayerIconName);
+            }
+            else
+            {
+                void SendRegistrationWhenConnected(ulong clientId)
+                {
+                    if (NetworkManager.Singleton == null)
+                    {
+                        return;
+                    }
+
+                    if (clientId != NetworkManager.Singleton.LocalClientId)
+                    {
+                        return;
+                    }
+
+                    NetworkManager.Singleton.OnClientConnectedCallback -= SendRegistrationWhenConnected;
+
+                    if (RWMNetworkManager.Instance != null)
+                    {
+                        RWMNetworkManager.Instance.AddPlayerServerRpc(playerID, playerName, selectedPlayerIconName);
+                    }
+                }
+
+                NetworkManager.Singleton.OnClientConnectedCallback += SendRegistrationWhenConnected;
+            }
+        }
+
+        UpdateWaitingScreenUI(playerName);
+        ShowJoinWait();
+
+        Debug.Log("Player joined: " + playerName);
+    }
+
+    void ConnectToHostIfNeeded()
+    {
+        if (RWMNetworkManager.Instance == null || NetworkManager.Singleton == null)
+        {
+            return;
+        }
+
+        if (string.IsNullOrEmpty(roomCode))
+        {
+            return;
+        }
+
+        if (!NetworkManager.Singleton.IsClient && !NetworkManager.Singleton.IsHost)
+        {
+            RWMNetworkManager.Instance.JoinGame(roomCode);
+        }
+    }
+
+    void UpdateWaitingScreenUI(string playerName)
+    {
+        if (playerNameDisplay != null)
+        {
+            playerNameDisplay.text = playerName;
+        }
+
+        if (waitPlayerIcon != null && PlayerManager.Instance != null)
+        {
+            waitPlayerIcon.sprite = PlayerManager.Instance.GetPlayerIcon(selectedPlayerIconName);
         }
     }
 
@@ -415,9 +521,22 @@ public class LobbyScreen : MonoBehaviour
         // Update player count on mobile wait screen (excluding host)
         if (isMobile && waitData != null)
         {
+            string displayRoomCode = !string.IsNullOrEmpty(roomCode) ? roomCode :
+                (RWMNetworkManager.Instance != null ? RWMNetworkManager.Instance.GetRoomCode() : "");
+
             waitData.text = nonHostPlayerCount + " Players\n" +
                            (GameManager.Instance.gameMode == GameManager.GameMode.EightQuestions ? "8" : "12") + " Questions\n" +
-                           roomCode;
+                           displayRoomCode;
+        }
+
+        if (!isMobile && roomCodeDisplay != null && string.IsNullOrEmpty(roomCode))
+        {
+            string hostRoomCode = RWMNetworkManager.Instance != null ? RWMNetworkManager.Instance.GetRoomCode() : "";
+            if (!string.IsNullOrEmpty(hostRoomCode))
+            {
+                roomCode = hostRoomCode;
+                roomCodeDisplay.text = roomCode;
+            }
         }
     }
     
