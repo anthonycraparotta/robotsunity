@@ -3,6 +3,7 @@ using UnityEngine.SceneManagement;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Netcode;
 
 public class GameManager : MonoBehaviour
 {
@@ -993,15 +994,33 @@ public class GameManager : MonoBehaviour
     
     void LoadScene(string sceneName)
     {
-        // Use SceneTransitionManager if available for smooth transitions
+        // HOST AUTHORITY: Only host can initiate scene changes
+        // Mobile clients will receive ChangeSceneClientRpc and load scenes that way
+        bool isHost = NetworkManager.Singleton != null && NetworkManager.Singleton.IsHost;
+        bool isMobile = DeviceDetector.Instance != null && DeviceDetector.Instance.IsMobile();
+
+        // If mobile client, ignore - wait for host's RPC
+        if (isMobile && !isHost)
+        {
+            Debug.LogWarning($"Mobile client attempted to load scene '{sceneName}' - ignoring. Waiting for host command.");
+            return;
+        }
+
+        // Host loads scene locally
         if (SceneTransitionManager.Instance != null)
         {
             SceneTransitionManager.Instance.LoadScene(sceneName);
         }
         else
         {
-            // Fallback to direct loading
             SceneManager.LoadScene(sceneName);
+        }
+
+        // Host broadcasts to all clients
+        if (isHost && RWMNetworkManager.Instance != null)
+        {
+            RWMNetworkManager.Instance.ChangeSceneClientRpc(sceneName);
+            Debug.Log($"Host broadcasting scene change to clients: {sceneName}");
         }
     }
     
