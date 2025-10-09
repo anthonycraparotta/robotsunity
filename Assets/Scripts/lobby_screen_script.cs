@@ -611,6 +611,7 @@ public class LobbyScreen : MonoBehaviour
     void UpdatePlayerList()
     {
         if (playerIconContainer == null) return;
+        if (GameManager.Instance == null) return;
 
         List<PlayerData> players = GameManager.Instance.GetAllPlayers();
 
