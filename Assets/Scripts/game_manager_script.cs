@@ -100,7 +100,7 @@ public class GameManager : MonoBehaviour
             Destroy(gameObject);
         }
     }
-    
+
     void Start()
     {
         LoadQuestions();
@@ -146,8 +146,17 @@ public class GameManager : MonoBehaviour
         switch (currentGameState)
         {
             case GameState.Loading:
-                LoadScene("IntroVideoScreen");
-                currentGameState = GameState.IntroVideo;
+                // Check device type - mobile skips IntroVideo and Landing, goes directly to join flow
+                if (DeviceDetector.Instance != null && DeviceDetector.Instance.IsMobile())
+                {
+                    LoadScene("JoinRoomScreen");
+                    currentGameState = GameState.Lobby; // Using Lobby state for join flow
+                }
+                else
+                {
+                    LoadScene("IntroVideoScreen");
+                    currentGameState = GameState.IntroVideo;
+                }
                 break;
 
             case GameState.IntroVideo:
