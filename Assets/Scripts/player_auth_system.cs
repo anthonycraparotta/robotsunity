@@ -79,51 +79,56 @@ public class PlayerAuthSystem : NetworkBehaviour
     {
         localPlayerName = playerName;
         localPlayerIcon = playerIcon;
-        
+
         // Save to PlayerPrefs for persistence
         PlayerPrefs.SetString("PlayerName", playerName);
         PlayerPrefs.SetString("PlayerIcon", playerIcon);
         PlayerPrefs.Save();
         
         Debug.Log($"Player registered: {playerName} ({localPlayerID})");
-        
+
         // If connected to network, send to server
         if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsClient)
         {
             RegisterPlayerServerRpc(localPlayerID, playerName, playerIcon);
         }
+        else if (GameManager.Instance != null)
+        {
+            // Offline fallback so local sessions still work
+            GameManager.Instance.AddPlayer(localPlayerID, playerName, playerIcon);
+        }
     }
-    
+
     [ServerRpc(RequireOwnership = false)]
     void RegisterPlayerServerRpc(string playerID, string playerName, string playerIcon, ServerRpcParams rpcParams = default)
     {
         ulong clientId = rpcParams.Receive.SenderClientId;
-        
+
         // Map network client ID to game player ID
         if (!clientToPlayerMap.ContainsKey(clientId))
         {
             clientToPlayerMap.Add(clientId, playerID);
         }
-        
+
         // Add player to GameManager
         if (GameManager.Instance != null)
         {
-            GameManager.Instance.AddPlayer(playerID, playerName, playerIcon);
+            GameManager.Instance.AddPlayer(playerID, playerName, playerIcon, clientId);
         }
-        
+
         // Broadcast to all clients
-        SyncPlayerToClientsClientRpc(playerID, playerName, playerIcon);
-        
+        SyncPlayerToClientsClientRpc(playerID, playerName, playerIcon, clientId);
+
         Debug.Log($"Server registered player: {playerName} (Client: {clientId}, Player: {playerID})");
     }
-    
+
     [ClientRpc]
-    void SyncPlayerToClientsClientRpc(string playerID, string playerName, string playerIcon)
+    void SyncPlayerToClientsClientRpc(string playerID, string playerName, string playerIcon, ulong clientId)
     {
         // Update local GameManager on all clients
         if (GameManager.Instance != null && !IsServer)
         {
-            GameManager.Instance.AddPlayer(playerID, playerName, playerIcon);
+            GameManager.Instance.AddPlayer(playerID, playerName, playerIcon, clientId);
         }
     }
     
