@@ -17,15 +17,17 @@ public class QuestionScreen : MonoBehaviour
     public GameObject timerContainer;
     public TextMeshProUGUI tipText;
     public Image desktopBackground;
-    
+
     [Header("Round Backgrounds (Round1BG - Round12BG)")]
     public Image[] roundBackgrounds = new Image[12];
-    
+
     [Header("Robot Foregrounds (Robot1 - Robot12)")]
     public Image[] robotImages = new Image[12];
-    
+
     [Header("Mobile UI Elements")]
     public GameObject mobileDisplay;
+    public GameObject mobileQuestionContainer;
+    public TextMeshProUGUI mobileQuestionText;
     public TMP_InputField answerInput;
     public Button answerSubmitButton;
     public Image mobileBackground;
@@ -172,25 +174,33 @@ public class QuestionScreen : MonoBehaviour
         {
             Debug.Log($"DisplayQuestion - questionText content: '{currentQuestion.questionText}'");
 
+            string displayText = currentQuestion.questionText;
+
+            // Replace [player.name] placeholder with random player name for Player Questions
+            if (GameManager.Instance.IsPlayerQuestion() && displayText.Contains("[player.name]"))
+            {
+                List<PlayerData> allPlayers = GameManager.Instance.GetAllPlayers();
+                if (allPlayers.Count > 0)
+                {
+                    // Pick a random player
+                    PlayerData randomPlayer = allPlayers[Random.Range(0, allPlayers.Count)];
+                    displayText = displayText.Replace("[player.name]", randomPlayer.playerName);
+                    Debug.Log($"Replaced [player.name] with: {randomPlayer.playerName}");
+                }
+            }
+
+            // Set desktop question text
             if (questionText != null)
             {
-                string displayText = currentQuestion.questionText;
-
-                // Replace [player.name] placeholder with random player name for Player Questions
-                if (GameManager.Instance.IsPlayerQuestion() && displayText.Contains("[player.name]"))
-                {
-                    List<PlayerData> allPlayers = GameManager.Instance.GetAllPlayers();
-                    if (allPlayers.Count > 0)
-                    {
-                        // Pick a random player
-                        PlayerData randomPlayer = allPlayers[Random.Range(0, allPlayers.Count)];
-                        displayText = displayText.Replace("[player.name]", randomPlayer.playerName);
-                        Debug.Log($"Replaced [player.name] with: {randomPlayer.playerName}");
-                    }
-                }
-
                 questionText.text = displayText;
                 Debug.Log($"DisplayQuestion - Set questionText to: '{questionText.text}'");
+            }
+
+            // Set mobile question text
+            if (mobileQuestionText != null)
+            {
+                mobileQuestionText.text = displayText;
+                Debug.Log($"DisplayQuestion - Set mobileQuestionText to: '{mobileQuestionText.text}'");
             }
         }
         else
