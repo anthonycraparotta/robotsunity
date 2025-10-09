@@ -83,12 +83,12 @@ public class RWMNetworkManager : NetworkBehaviour
     
     // === CLIENT METHODS ===
     
-    public void JoinGame(string code)
+    public bool JoinGame(string code)
     {
         if (NetworkManager.Singleton == null)
         {
             Debug.LogError("Cannot join game - NetworkManager.Singleton is null");
-            return;
+            return false;
         }
 
         isHost = false;
@@ -96,9 +96,16 @@ public class RWMNetworkManager : NetworkBehaviour
 
         // In a real implementation, this would connect to a relay/matchmaking service
         // For local testing, just start as client
-        NetworkManager.Singleton.StartClient();
+        bool started = NetworkManager.Singleton.StartClient();
+
+        if (!started)
+        {
+            Debug.LogError("Failed to start Unity Netcode client - join aborted");
+            return false;
+        }
 
         Debug.Log("Attempting to join room: " + code);
+        return true;
     }
     
     // === PLAYER MANAGEMENT ===
