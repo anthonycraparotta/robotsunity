@@ -9,7 +9,9 @@ public class BootstrapChecker : MonoBehaviour
 {
     void Awake()
     {
-        // Check if GameManager exists (it's created in LoadingScreen)
+        CoreSystemsBootstrapper.EnsureInitialized();
+
+        // If something prevented initialization we still fall back to loading the bootstrap scene.
         if (GameManager.Instance == null)
         {
             Debug.LogWarning("GameManager not found! Loading LoadingScreen first...");
