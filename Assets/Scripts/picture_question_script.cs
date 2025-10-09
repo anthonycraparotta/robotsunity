@@ -204,9 +204,12 @@ public class PictureQuestionScreen : MonoBehaviour
     
     void OnSubmitAnswer()
     {
+        MobileHaptics.MediumImpact();
+
         if (answerInput == null || string.IsNullOrEmpty(answerInput.text))
         {
             Debug.LogWarning("Please enter an answer!");
+            MobileHaptics.Failure();
             return;
         }
         

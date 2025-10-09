@@ -58,6 +58,8 @@ public class LandingScreen : MonoBehaviour
     
     public void OnStartGameClicked()
     {
+        MobileHaptics.MediumImpact();
+
         // Desktop host starts the game - go to lobby
         Debug.Log("Start Game clicked - transitioning to Lobby");
 
@@ -72,6 +74,8 @@ public class LandingScreen : MonoBehaviour
 
     public void OnJoinGameClicked()
     {
+        MobileHaptics.MediumImpact();
+
         // Mobile player wants to join - go to lobby/join screen
         Debug.Log("Join Game clicked - transitioning to Lobby");
 

@@ -65,7 +65,11 @@ public class AnswerButtonController : MonoBehaviour, IPointerEnterHandler, IPoin
         if (button != null)
         {
             button.onClick.RemoveAllListeners();
-            button.onClick.AddListener(() => onClickCallback?.Invoke(answerContent));
+            button.onClick.AddListener(() =>
+            {
+                MobileHaptics.SelectionChanged();
+                onClickCallback?.Invoke(answerContent);
+            });
         }
         
         UpdateVisuals();

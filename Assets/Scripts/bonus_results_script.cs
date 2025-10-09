@@ -190,6 +190,8 @@ public class BonusResultsScreen : MonoBehaviour
     
     public void OnContinueClicked()
     {
+        MobileHaptics.MediumImpact();
+
         // Continue to next round (Round 5 for 8Q, Round 7 for 12Q)
         GameManager.Instance.AdvanceToNextScreen();
     }

@@ -378,6 +378,8 @@ public class FinalResultsScreen : MonoBehaviour
     
     public void OnCreditsClicked()
     {
+        MobileHaptics.MediumImpact();
+
         // Go to Credits scene
         if (SceneTransitionManager.Instance != null)
         {
@@ -391,6 +393,8 @@ public class FinalResultsScreen : MonoBehaviour
 
     public void OnNewGameClicked()
     {
+        MobileHaptics.HeavyImpact();
+
         // Reset game and go back to lobby
         GameManager.Instance.currentRound = 0;
         GameManager.Instance.isHalftimePlayed = false;
@@ -415,6 +419,8 @@ public class FinalResultsScreen : MonoBehaviour
 
     public void OnShareClicked()
     {
+        MobileHaptics.LightImpact();
+
         if (!isMobile)
         {
             Debug.LogWarning("Share button is intended for mobile devices only.");
@@ -675,6 +681,8 @@ public class FinalResultsScreen : MonoBehaviour
 
     public void OnWebsiteClicked()
     {
+        MobileHaptics.LightImpact();
+
         // Open game website
         Debug.Log("Website clicked");
         Application.OpenURL("https://robotswearingmoustaches.com"); // Replace with actual URL

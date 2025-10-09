@@ -733,11 +733,15 @@ public class RoundResultsScreen : MonoBehaviour
     
     public void OnNextRoundClicked()
     {
+        MobileHaptics.MediumImpact();
+
         GameManager.Instance.AdvanceToNextScreen();
     }
 
     public void OnFinalResultsClicked()
     {
+        MobileHaptics.HeavyImpact();
+
         // Load final results screen
         if (SceneTransitionManager.Instance != null)
         {

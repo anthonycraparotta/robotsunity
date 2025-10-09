@@ -32,8 +32,10 @@ public class ButtonAudioComponent : MonoBehaviour
     
     void PlayButtonSound()
     {
+        MobileHaptics.LightImpact();
+
         if (AudioManager.Instance == null) return;
-        
+
         switch (buttonType)
         {
             case ButtonType.Standard:

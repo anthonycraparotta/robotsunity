@@ -351,6 +351,8 @@ public class HalftimeResultsScreen : MonoBehaviour
     
     public void OnContinueClicked()
     {
+        MobileHaptics.MediumImpact();
+
         // Continue to Bonus Round
         GameManager.Instance.AdvanceToNextScreen();
     }
