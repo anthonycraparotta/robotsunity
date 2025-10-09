@@ -125,12 +125,14 @@ public static class MobileHaptics
         catch (System.Exception ex)
         {
             Debug.LogWarning($"MobileHaptics vibrate failed: {ex.Message}");
+#if !UNITY_WEBGL
             Handheld.Vibrate();
+#endif
         }
 #elif (UNITY_IOS || UNITY_TVOS) && !UNITY_EDITOR
         // iOS/tvOS do not expose fine-grained control without plugins, fall back to default vibration
         Handheld.Vibrate();
-#else
+#elif (UNITY_IOS || UNITY_ANDROID) && !UNITY_WEBGL && !UNITY_EDITOR
         Handheld.Vibrate();
 #endif
     }
