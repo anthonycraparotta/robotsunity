@@ -229,7 +229,8 @@ public class GameManager : MonoBehaviour
                 currentBonusQuestion++;
                 Debug.Log($"After increment: currentBonusQuestion = {currentBonusQuestion}");
 
-                if (currentBonusQuestion < 4)
+                int totalBonusQuestions = GetBonusQuestionCount();
+                if (currentBonusQuestion < totalBonusQuestions)
                 {
                     // Next bonus question
                     Debug.Log($"Continuing to bonus question {currentBonusQuestion}");
@@ -239,7 +240,7 @@ public class GameManager : MonoBehaviour
                 else
                 {
                     // Bonus round complete
-                    Debug.Log("All 4 bonus questions complete, going to BonusResults");
+                    Debug.Log($"All {totalBonusQuestions} bonus questions complete, going to BonusResults");
                     isBonusRoundPlayed = true;
                     LoadScene("BonusResultsScreen");
                     currentGameState = GameState.BonusResults;
@@ -1049,7 +1050,16 @@ public class GameManager : MonoBehaviour
         }
         return "";
     }
-    
+
+    public int GetBonusQuestionCount()
+    {
+        if (bonusQuestions != null && bonusQuestions.miniQuestions != null)
+        {
+            return bonusQuestions.miniQuestions.Count;
+        }
+        return 0;
+    }
+
     public Dictionary<string, int> GetVotingResults()
     {
         Dictionary<string, int> results = new Dictionary<string, int>();

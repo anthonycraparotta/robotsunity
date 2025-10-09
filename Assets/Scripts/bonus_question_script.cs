@@ -122,9 +122,10 @@ public class BonusQuestionScreen : MonoBehaviour
     {
         // Check if we moved to next bonus question
         int currentQuestionIndex = GameManager.Instance.currentBonusQuestion;
-        if (currentQuestionIndex != lastBonusQuestionIndex && lastBonusQuestionIndex != -1 && currentQuestionIndex < 4)
+        int totalBonusQuestions = GameManager.Instance.GetBonusQuestionCount();
+        if (currentQuestionIndex != lastBonusQuestionIndex && lastBonusQuestionIndex != -1 && currentQuestionIndex < totalBonusQuestions)
         {
-            // New bonus question started (only if still within the 4 questions)
+            // New bonus question started (only if still within the total questions)
             Debug.Log("Detected new bonus question: " + currentQuestionIndex);
             InitializeBonusQuestion();
         }
@@ -162,15 +163,16 @@ public class BonusQuestionScreen : MonoBehaviour
     void DisplayBonusQuestion()
     {
         string currentQuestion = GameManager.Instance.GetCurrentBonusQuestion();
-        
+
         if (questionText != null)
         {
             questionText.text = currentQuestion;
         }
-        
+
         // Show question number (1/4, 2/4, etc.)
         int questionNum = GameManager.Instance.currentBonusQuestion + 1;
-        Debug.Log("Bonus Question " + questionNum + "/4");
+        int totalQuestions = GameManager.Instance.GetBonusQuestionCount();
+        Debug.Log("Bonus Question " + questionNum + "/" + totalQuestions);
     }
     
     void DisplayPlayerOptions()
