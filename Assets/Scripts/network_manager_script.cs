@@ -40,6 +40,7 @@ public class RWMNetworkManager : NetworkBehaviour
     public event Action<string> OnSceneChanged; // sceneName
     public event Action<float, bool> OnTimerSync; // timerValue, isActive
     public event Action OnConnectionError;
+    public event Action OnTransitionToElimination;
 
     private NetworkManager networkManager;
     private NetworkObject networkObject;
@@ -489,6 +490,42 @@ public class RWMNetworkManager : NetworkBehaviour
         {
             GameManager.Instance.SetPlayerScore(playerIdToUpdate, newScore);
         }
+    }
+
+    public void BroadcastTransitionToElimination()
+    {
+        if (!IsServer)
+        {
+            Debug.LogWarning("[RWMNetworkManager] Only the host server may broadcast elimination transitions.");
+            return;
+        }
+
+        Debug.Log("[RWMNetworkManager] Broadcasting transition-to-elimination signal.");
+        OnTransitionToElimination?.Invoke();
+
+        if (networkManager == null || !networkManager.IsListening)
+        {
+            return;
+        }
+
+        if (networkManager.ConnectedClientsIds.Count <= 1)
+        {
+            return;
+        }
+
+        TransitionToEliminationClientRpc();
+    }
+
+    [ClientRpc]
+    void TransitionToEliminationClientRpc()
+    {
+        if (isHost)
+        {
+            return;
+        }
+
+        Debug.Log("[RWMNetworkManager] Received transition-to-elimination signal from host.");
+        OnTransitionToElimination?.Invoke();
     }
 
     // === SCENE TRANSITIONS ===
