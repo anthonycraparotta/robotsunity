@@ -152,7 +152,8 @@ public class RWMNetworkManager : NetworkBehaviour
 
         // Start as Host (Server + Client)
         var transport = networkManager.GetComponent<UnityTransport>();
-        transport.SetConnectionData("127.0.0.1", port);
+        // Bind to all interfaces so remote clients can connect while the local host still loops back
+        transport.SetConnectionData("127.0.0.1", port, "0.0.0.0");
 
         bool success = networkManager.StartHost();
 
