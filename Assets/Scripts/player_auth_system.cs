@@ -7,7 +7,7 @@ using System.Collections.Generic;
 /// </summary>
 public class PlayerAuthSystem : MonoBehaviour
 {
-    public static PlayerAuthSystem Instance;
+    public static PlayerAuthSystem Instance { get; private set; }
     
     [Header("Local Player Info")]
     public string localPlayerID = "";
@@ -20,14 +20,21 @@ public class PlayerAuthSystem : MonoBehaviour
     
     void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+    }
+
+    void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
         }
     }
     

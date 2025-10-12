@@ -5,7 +5,7 @@ using System.Collections;
 
 public class SceneTransitionManager : MonoBehaviour
 {
-    public static SceneTransitionManager Instance;
+    public static SceneTransitionManager Instance { get; private set; }
     
     [Header("Fade Settings")]
     public Image fadeImage;
@@ -21,20 +21,27 @@ public class SceneTransitionManager : MonoBehaviour
     
     void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-            
-            // Create fade canvas if not exists
-            if (fadeImage == null)
-            {
-                CreateFadeCanvas();
-            }
-        }
-        else
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+
+        // Create fade canvas if not exists
+        if (fadeImage == null)
+        {
+            CreateFadeCanvas();
+        }
+    }
+
+    void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
         }
     }
     

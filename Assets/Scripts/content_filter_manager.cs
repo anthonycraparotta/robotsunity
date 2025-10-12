@@ -8,7 +8,7 @@ using System.Linq;
 /// </summary>
 public class ContentFilterManager : MonoBehaviour
 {
-    public static ContentFilterManager Instance;
+    public static ContentFilterManager Instance { get; private set; }
 
     [Header("Banned Words Settings")]
     public string bannedWordsFilePath = "bannedwords"; // In Resources folder
@@ -21,15 +21,22 @@ public class ContentFilterManager : MonoBehaviour
 
     void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-            LoadBannedWords();
-        }
-        else
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+        LoadBannedWords();
+    }
+
+    void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
         }
     }
 

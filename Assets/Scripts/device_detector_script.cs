@@ -6,7 +6,7 @@ public class DeviceDetector : MonoBehaviour
     // === DEBUG FLAG - SET TO FALSE TO REMOVE ALL DEBUG LOGS ===
     private const bool ENABLE_DEBUG_LOGS = true;
 
-    public static DeviceDetector Instance;
+    public static DeviceDetector Instance { get; private set; }
     
     [Header("Device Type")]
     public DeviceType currentDevice = DeviceType.Desktop;
@@ -31,22 +31,17 @@ public class DeviceDetector : MonoBehaviour
         if (ENABLE_DEBUG_LOGS)
             Debug.Log($"[DeviceDetector] Awake called");
 
-        if (Instance == null)
+        if (Instance != null && Instance != this)
         {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-
-            if (ENABLE_DEBUG_LOGS)
-                Debug.Log($"[DeviceDetector] Instance set, DontDestroyOnLoad applied");
-        }
-        else
-        {
-            if (ENABLE_DEBUG_LOGS)
-                Debug.Log($"[DeviceDetector] Duplicate instance found, destroying");
-
             Destroy(gameObject);
             return;
         }
+
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+
+        if (ENABLE_DEBUG_LOGS)
+            Debug.Log($"[DeviceDetector] Instance set, DontDestroyOnLoad applied");
 
         if (autoDetectOnStart)
         {
@@ -54,6 +49,14 @@ public class DeviceDetector : MonoBehaviour
                 Debug.Log($"[DeviceDetector] Auto-detecting device type...");
 
             DetectDevice();
+        }
+    }
+
+    void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
         }
     }
     

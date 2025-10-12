@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 public class PlayerManager : MonoBehaviour
 {
-    public static PlayerManager Instance;
+    public static PlayerManager Instance { get; private set; }
     
     [Header("Player Icon Settings")]
     public string playerIconPath = "sprites/icons/";
@@ -14,17 +14,24 @@ public class PlayerManager : MonoBehaviour
     
     void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
+            return;
         }
-        
+
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+
         LoadPlayerIcons();
+    }
+
+    void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
+        }
     }
     
     void LoadPlayerIcons()
