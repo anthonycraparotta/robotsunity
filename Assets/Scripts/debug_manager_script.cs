@@ -17,6 +17,7 @@ public class DebugManager : MonoBehaviour
     public KeyCode simulateAnswersKey = KeyCode.F4;
     public KeyCode toggleTimerKey = KeyCode.F5;
     public KeyCode add100PointsKey = KeyCode.F6;
+    public KeyCode testShuffleKey = KeyCode.F7;
     
     [Header("Test Players")]
     public int numberOfTestPlayers = 4;
@@ -93,6 +94,11 @@ public class DebugManager : MonoBehaviour
         if (Input.GetKeyDown(add100PointsKey))
         {
             AddPointsToAllPlayers(100);
+        }
+
+        if (Input.GetKeyDown(testShuffleKey))
+        {
+            ShuffleUtility.TestShuffle();
         }
     }
     

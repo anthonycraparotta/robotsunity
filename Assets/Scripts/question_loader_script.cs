@@ -30,19 +30,22 @@ public class QuestionLoader : MonoBehaviour
     
     void LoadAllQuestions()
     {
+        // Seed the random number generator with current time to ensure varied shuffles across sessions
+        ShuffleUtility.SeedRandomWithTime();
+
         // Load standard questions
         LoadStandardQuestions();
-        
+
         // Load player questions
         LoadPlayerQuestions();
-        
+
         // Load picture questions
         LoadPictureQuestions();
-        
+
         // Load bonus questions
         LoadBonusQuestions();
-        
-        Debug.Log("All questions loaded successfully");
+
+        Debug.Log("All questions loaded and shuffled successfully");
     }
     
     void LoadStandardQuestions()
@@ -61,8 +64,18 @@ public class QuestionLoader : MonoBehaviour
         
         if (wrapper.questions != null && wrapper.questions.Count > 0)
         {
+            // Shuffle the questions to ensure varied playthrough order
+            ShuffleUtility.Shuffle(wrapper.questions);
             gameManager.standardQuestions = wrapper.questions;
-            Debug.Log("Loaded " + wrapper.questions.Count + " standard questions");
+            Debug.Log("Loaded and shuffled " + wrapper.questions.Count + " standard questions");
+
+            // Log first 3 questions for verification (helps confirm shuffle is working)
+            if (wrapper.questions.Count >= 3)
+            {
+                Debug.Log($"  First 3 questions: 1) {wrapper.questions[0].questionText.Substring(0, System.Math.Min(50, wrapper.questions[0].questionText.Length))}... " +
+                         $"2) {wrapper.questions[1].questionText.Substring(0, System.Math.Min(50, wrapper.questions[1].questionText.Length))}... " +
+                         $"3) {wrapper.questions[2].questionText.Substring(0, System.Math.Min(50, wrapper.questions[2].questionText.Length))}...");
+            }
         }
         else
         {
@@ -85,8 +98,10 @@ public class QuestionLoader : MonoBehaviour
 
         if (wrapper.questions != null && wrapper.questions.Count > 0)
         {
+            // Shuffle the questions to ensure varied playthrough order
+            ShuffleUtility.Shuffle(wrapper.questions);
             gameManager.playerQuestions = wrapper.questions;
-            Debug.Log("Loaded " + wrapper.questions.Count + " player questions");
+            Debug.Log("Loaded and shuffled " + wrapper.questions.Count + " player questions");
         }
         else
         {
@@ -109,8 +124,10 @@ public class QuestionLoader : MonoBehaviour
         
         if (wrapper.questions != null && wrapper.questions.Count > 0)
         {
+            // Shuffle the questions to ensure varied playthrough order
+            ShuffleUtility.Shuffle(wrapper.questions);
             gameManager.pictureQuestions = wrapper.questions;
-            Debug.Log("Loaded " + wrapper.questions.Count + " picture questions");
+            Debug.Log("Loaded and shuffled " + wrapper.questions.Count + " picture questions");
         }
         else
         {
@@ -144,8 +161,11 @@ public class QuestionLoader : MonoBehaviour
                 bonusData.miniQuestions.Add(raw.question);
             }
 
+            // Shuffle the bonus questions to ensure varied playthrough order
+            ShuffleUtility.Shuffle(bonusData.miniQuestions);
+
             gameManager.bonusQuestions = bonusData;
-            Debug.Log("Loaded " + bonusData.miniQuestions.Count + " bonus questions");
+            Debug.Log("Loaded and shuffled " + bonusData.miniQuestions.Count + " bonus questions");
         }
         else
         {
