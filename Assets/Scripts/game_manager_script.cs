@@ -1308,6 +1308,21 @@ public class GameManager : NetworkBehaviour
         return null;
     }
 
+    public bool TryGetPlayerIdByClientId(ulong clientId, out string playerID)
+    {
+        for (int i = 0; i < networkPlayers.Count; i++)
+        {
+            if (networkPlayers[i].clientId == clientId)
+            {
+                playerID = networkPlayers[i].playerID.ToString();
+                return true;
+            }
+        }
+
+        playerID = null;
+        return false;
+    }
+
     public List<PlayerData> GetAllPlayers()
     {
         List<PlayerData> result = new List<PlayerData>();
