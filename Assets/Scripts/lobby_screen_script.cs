@@ -45,6 +45,7 @@ public class LobbyScreen : MonoBehaviour
 
     [Header("Error Display")]
     public TextMeshProUGUI errorMessageText; // Connect in Unity - shows validation errors
+    public TextMeshProUGUI submitMessageText; // Connect in Unity - shows submit confirmation messages
     public float errorDisplayDuration = 3f; // How long to show error messages
 
     [Header("State")]
@@ -333,7 +334,7 @@ public class LobbyScreen : MonoBehaviour
         const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         System.Text.StringBuilder code = new System.Text.StringBuilder();
 
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < 5; i++)
         {
             code.Append(chars[Random.Range(0, chars.Length)]);
         }

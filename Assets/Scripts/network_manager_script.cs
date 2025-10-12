@@ -162,7 +162,7 @@ public class RWMNetworkManager : MonoBehaviour
         const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         System.Text.StringBuilder code = new System.Text.StringBuilder();
 
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < 5; i++)
         {
             code.Append(chars[UnityEngine.Random.Range(0, chars.Length)]);
         }
