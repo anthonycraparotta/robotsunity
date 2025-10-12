@@ -456,7 +456,17 @@ public class QuestionScreen : MonoBehaviour
     {
         MobileHaptics.MediumImpact();
 
-        if (answerInput == null || string.IsNullOrEmpty(answerInput.text))
+        if (answerInput == null)
+        {
+            Debug.LogWarning("Answer input field is not assigned!");
+            ShowAnswerError("Please enter an answer!");
+            return;
+        }
+
+        string rawAnswer = answerInput.text ?? string.Empty;
+        string trimmedAnswer = rawAnswer.Trim();
+
+        if (string.IsNullOrEmpty(trimmedAnswer))
         {
             Debug.LogWarning("Please enter an answer!");
             ShowAnswerError("Please enter an answer!");
@@ -469,7 +479,7 @@ public class QuestionScreen : MonoBehaviour
             // Get existing answers for duplicate checking
             List<string> existingAnswers = GameManager.Instance.GetAllExistingAnswers();
 
-            ValidationResult validation = ContentFilterManager.Instance.ValidateAnswer(answerInput.text, existingAnswers);
+            ValidationResult validation = ContentFilterManager.Instance.ValidateAnswer(trimmedAnswer, existingAnswers);
 
             if (!validation.isValid)
             {
@@ -479,7 +489,14 @@ public class QuestionScreen : MonoBehaviour
             }
 
             // Use sanitized answer
-            string sanitizedAnswer = validation.sanitizedText;
+            string sanitizedAnswer = (validation.sanitizedText ?? string.Empty).Trim();
+
+            if (string.IsNullOrEmpty(sanitizedAnswer))
+            {
+                Debug.LogWarning("Sanitized answer is empty after validation.");
+                ShowAnswerError("Please enter an answer!");
+                return;
+            }
 
             // Submit answer via NetworkManager
             if (RWMNetworkManager.Instance != null && RWMNetworkManager.Instance.isConnected)
@@ -501,7 +518,14 @@ public class QuestionScreen : MonoBehaviour
         else
         {
             // Fallback if ContentFilterManager not available
-            string answer = answerInput.text.Trim();
+            string answer = trimmedAnswer;
+
+            if (string.IsNullOrEmpty(answer))
+            {
+                Debug.LogWarning("Please enter an answer!");
+                ShowAnswerError("Please enter an answer!");
+                return;
+            }
 
             if (RWMNetworkManager.Instance != null && RWMNetworkManager.Instance.isConnected)
             {
