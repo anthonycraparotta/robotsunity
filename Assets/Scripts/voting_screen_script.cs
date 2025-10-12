@@ -2,6 +2,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
+using Unity.Collections;
+using Unity.Netcode;
 
 public class VotingScreen : MonoBehaviour
 {
@@ -30,6 +32,13 @@ public class VotingScreen : MonoBehaviour
     private string playerID = "";
     private string selectedAnswer = "";
     private List<GameObject> spawnedAnswerButtons = new List<GameObject>();
+    private Coroutine subscriptionCoroutine;
+    private bool isSubscribedToAnswerUpdates = false;
+
+    void OnEnable()
+    {
+        BeginSubscriptionRoutine();
+    }
     
     void Start()
     {
@@ -70,6 +79,9 @@ public class VotingScreen : MonoBehaviour
         {
             AudioManager.Instance.PlayVotingMusic();
         }
+
+        // Ensure we refresh once data is available
+        BeginSubscriptionRoutine();
     }
 
     void Update()
@@ -96,7 +108,7 @@ public class VotingScreen : MonoBehaviour
             mobileDisplay.SetActive(isMobile);
         }
     }
-    
+
     void DisplayAnswers()
     {
         List<string> answers;
@@ -141,7 +153,65 @@ public class VotingScreen : MonoBehaviour
             CreateAnswerButton(answer, container);
         }
     }
-    
+
+    void BeginSubscriptionRoutine()
+    {
+        if (subscriptionCoroutine == null)
+        {
+            subscriptionCoroutine = StartCoroutine(EnsureAnswerSubscription());
+        }
+    }
+
+    System.Collections.IEnumerator EnsureAnswerSubscription()
+    {
+        while (GameManager.Instance == null)
+        {
+            yield return null;
+        }
+
+        SubscribeToAnswerUpdates();
+        DisplayAnswers();
+        subscriptionCoroutine = null;
+    }
+
+    void SubscribeToAnswerUpdates()
+    {
+        if (isSubscribedToAnswerUpdates)
+        {
+            return;
+        }
+
+        var gameManager = GameManager.Instance;
+        if (gameManager == null)
+        {
+            return;
+        }
+
+        gameManager.remainingAnswers.OnListChanged += HandleRemainingAnswersChanged;
+        isSubscribedToAnswerUpdates = true;
+    }
+
+    void HandleRemainingAnswersChanged(NetworkListEvent<FixedString128Bytes> changeEvent)
+    {
+        DisplayAnswers();
+    }
+
+    void UnsubscribeFromAnswerUpdates()
+    {
+        if (!isSubscribedToAnswerUpdates)
+        {
+            return;
+        }
+
+        var gameManager = GameManager.Instance;
+        if (gameManager != null)
+        {
+            gameManager.remainingAnswers.OnListChanged -= HandleRemainingAnswersChanged;
+        }
+
+        isSubscribedToAnswerUpdates = false;
+    }
+
     void CreateAnswerButton(string answerText, Transform parent)
     {
         GameObject buttonObj;
@@ -321,14 +391,27 @@ public class VotingScreen : MonoBehaviour
     {
         return "player_" + SystemInfo.deviceUniqueIdentifier;
     }
-    
+
+    void OnDisable()
+    {
+        UnsubscribeFromAnswerUpdates();
+
+        if (subscriptionCoroutine != null)
+        {
+            StopCoroutine(subscriptionCoroutine);
+            subscriptionCoroutine = null;
+        }
+    }
+
     void OnDestroy()
     {
+        OnDisable();
+
         if (votingSubmitButton != null)
         {
             votingSubmitButton.onClick.RemoveListener(OnSubmitVote);
         }
-        
+
         // Clean up button listeners
         foreach (GameObject btn in spawnedAnswerButtons)
         {

@@ -2,6 +2,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
+using Unity.Collections;
+using Unity.Netcode;
 
 public class EliminationScreen : MonoBehaviour
 {
@@ -30,6 +32,24 @@ public class EliminationScreen : MonoBehaviour
     private string playerID = "";
     private string selectedAnswer = "";
     private List<GameObject> spawnedAnswerButtons = new List<GameObject>();
+    private Coroutine subscriptionCoroutine;
+    private bool isSubscribedToAnswerUpdates = false;
+
+    void OnEnable()
+    {
+        BeginSubscriptionRoutine();
+    }
+
+    void OnDisable()
+    {
+        UnsubscribeFromAnswerUpdates();
+
+        if (subscriptionCoroutine != null)
+        {
+            StopCoroutine(subscriptionCoroutine);
+            subscriptionCoroutine = null;
+        }
+    }
     
     void Start()
     {
@@ -70,6 +90,9 @@ public class EliminationScreen : MonoBehaviour
         {
             AudioManager.Instance.PlayEliminationMusic();
         }
+
+        // Ensure we refresh once data is available
+        BeginSubscriptionRoutine();
     }
 
     void Update()
@@ -96,7 +119,7 @@ public class EliminationScreen : MonoBehaviour
             mobileDisplay.SetActive(isMobile);
         }
     }
-    
+
     void DisplayAnswers()
     {
         List<string> answers;
@@ -141,7 +164,65 @@ public class EliminationScreen : MonoBehaviour
             CreateAnswerButton(answer, container);
         }
     }
-    
+
+    void BeginSubscriptionRoutine()
+    {
+        if (subscriptionCoroutine == null)
+        {
+            subscriptionCoroutine = StartCoroutine(EnsureAnswerSubscription());
+        }
+    }
+
+    System.Collections.IEnumerator EnsureAnswerSubscription()
+    {
+        while (GameManager.Instance == null)
+        {
+            yield return null;
+        }
+
+        SubscribeToAnswerUpdates();
+        DisplayAnswers();
+        subscriptionCoroutine = null;
+    }
+
+    void SubscribeToAnswerUpdates()
+    {
+        if (isSubscribedToAnswerUpdates)
+        {
+            return;
+        }
+
+        var gameManager = GameManager.Instance;
+        if (gameManager == null)
+        {
+            return;
+        }
+
+        gameManager.allAnswers.OnListChanged += HandleAllAnswersChanged;
+        isSubscribedToAnswerUpdates = true;
+    }
+
+    void HandleAllAnswersChanged(NetworkListEvent<FixedString128Bytes> changeEvent)
+    {
+        DisplayAnswers();
+    }
+
+    void UnsubscribeFromAnswerUpdates()
+    {
+        if (!isSubscribedToAnswerUpdates)
+        {
+            return;
+        }
+
+        var gameManager = GameManager.Instance;
+        if (gameManager != null)
+        {
+            gameManager.allAnswers.OnListChanged -= HandleAllAnswersChanged;
+        }
+
+        isSubscribedToAnswerUpdates = false;
+    }
+
     void CreateAnswerButton(string answerText, Transform parent)
     {
         GameObject buttonObj;
@@ -324,11 +405,13 @@ public class EliminationScreen : MonoBehaviour
     
     void OnDestroy()
     {
+        OnDisable();
+
         if (elimSubmitButton != null)
         {
             elimSubmitButton.onClick.RemoveListener(OnSubmitVote);
         }
-        
+
         // Clean up button listeners
         foreach (GameObject btn in spawnedAnswerButtons)
         {
