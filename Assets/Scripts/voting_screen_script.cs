@@ -113,7 +113,9 @@ public class VotingScreen : MonoBehaviour
     {
         List<string> answers;
         Transform container;
-        
+
+        ResetSelectionState();
+
         var gameManager = GameManager.Instance;
         if (gameManager == null)
         {
@@ -151,6 +153,16 @@ public class VotingScreen : MonoBehaviour
         foreach (string answer in answers)
         {
             CreateAnswerButton(answer, container);
+        }
+    }
+
+    void ResetSelectionState()
+    {
+        selectedAnswer = string.Empty;
+
+        if (votingSubmitButton != null)
+        {
+            votingSubmitButton.interactable = false;
         }
     }
 
@@ -394,6 +406,7 @@ public class VotingScreen : MonoBehaviour
 
     void OnDisable()
     {
+        ResetSelectionState();
         UnsubscribeFromAnswerUpdates();
 
         if (subscriptionCoroutine != null)
