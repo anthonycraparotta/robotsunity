@@ -1,11 +1,12 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Unity.Netcode;
 using Unity.Collections;
+using UnityEngine.SceneManagement;
+using Unity.Netcode.SceneManagement;
 
 /// <summary>
 /// Unity Netcode-based GameManager using NetworkVariables and NetworkLists
@@ -1337,7 +1338,7 @@ public class GameManager : NetworkBehaviour
     /// Server-only: Load a scene using NetworkSceneManager for synchronized transitions
     /// This method ensures all clients load the same scene at the same time
     /// </summary>
-    public void LoadScene(string sceneName)
+    public void LoadScene(string sceneName, LoadSceneMode loadMode = LoadSceneMode.Single)
     {
         // Only server can initiate scene changes in Netcode
         if (!IsServer)
@@ -1346,16 +1347,35 @@ public class GameManager : NetworkBehaviour
             return;
         }
 
-        // Use Netcode's NetworkSceneManager for proper synchronization
-        if (NetworkManager.Singleton != null && NetworkManager.Singleton.SceneManager != null)
+        var networkManager = NetworkManager.Singleton;
+        if (networkManager == null)
         {
-            NetworkManager.Singleton.SceneManager.LoadScene(sceneName, LoadSceneMode.Single);
-            Debug.Log($"[GameManager] Server loading scene via NetworkSceneManager: {sceneName}");
+            Debug.LogError("[GameManager] Cannot load scene - NetworkManager singleton is missing.");
+            return;
         }
-        else
+
+        var sceneManager = networkManager.SceneManager;
+        if (sceneManager == null)
         {
-            Debug.LogError("[GameManager] NetworkManager.SceneManager is not available!");
+            Debug.LogError("[GameManager] Cannot load scene - NetworkSceneManager is not available.");
+            return;
         }
+
+        if (!networkManager.IsListening)
+        {
+            Debug.LogWarning($"[GameManager] NetworkManager is not listening. Falling back to local SceneManager.LoadScene for {sceneName}.");
+            SceneManager.LoadScene(sceneName, loadMode);
+            return;
+        }
+
+        var status = sceneManager.LoadScene(sceneName, loadMode);
+        if (status != SceneEventProgressStatus.Started)
+        {
+            Debug.LogError($"[GameManager] Failed to start network scene load for {sceneName}. Status: {status}");
+            return;
+        }
+
+        Debug.Log($"[GameManager] Server loading scene via NetworkSceneManager: {sceneName} (Mode: {loadMode})");
     }
 
     // === PUBLIC GETTERS ===
