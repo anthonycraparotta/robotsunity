@@ -385,41 +385,38 @@ public class FinalResultsScreen : MonoBehaviour
     {
         MobileHaptics.MediumImpact();
 
-        // Go to Credits scene
-        if (SceneTransitionManager.Instance != null)
+        if (GameManager.Instance == null)
         {
-            SceneTransitionManager.Instance.LoadScene("CreditsScreen");
+            Debug.LogWarning("[FinalResultsScreen] GameManager not available - cannot open credits");
+            return;
         }
-        else
+
+        if (!GameManager.Instance.HasHostAuthority())
         {
-            UnityEngine.SceneManagement.SceneManager.LoadScene("CreditsScreen");
+            Debug.LogWarning("[FinalResultsScreen] Only the host can advance to the credits screen");
+            return;
         }
+
+        GameManager.Instance.AdvanceToNextScreen();
     }
 
     public void OnNewGameClicked()
     {
         MobileHaptics.HeavyImpact();
 
-        // Reset game and go back to lobby
-        GameManager.Instance.currentRound.Value = 0;
-        GameManager.Instance.isHalftimePlayed.Value = false;
-        GameManager.Instance.isBonusRoundPlayed.Value = false;
-
-        // Reset all scores
-        foreach (var player in GameManager.Instance.players.Values)
+        if (GameManager.Instance == null)
         {
-            player.scorePercentage = 0;
+            Debug.LogWarning("[FinalResultsScreen] GameManager not available - cannot start a new game");
+            return;
         }
 
-        // Go back to lobby
-        if (SceneTransitionManager.Instance != null)
+        if (!GameManager.Instance.HasHostAuthority())
         {
-            SceneTransitionManager.Instance.LoadScene("LobbyScreen");
+            Debug.LogWarning("[FinalResultsScreen] Only the host can start a new game");
+            return;
         }
-        else
-        {
-            UnityEngine.SceneManagement.SceneManager.LoadScene("LobbyScreen");
-        }
+
+        GameManager.Instance.HostReturnToLobby();
     }
 
     public void OnShareClicked()
