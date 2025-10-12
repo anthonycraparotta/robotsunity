@@ -3,7 +3,6 @@ using UnityEngine.SceneManagement;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.Netcode;
 
 public class GameManager : MonoBehaviour
 {
@@ -139,9 +138,12 @@ public class GameManager : MonoBehaviour
         }
 
         // Broadcast score resets to all clients
-        foreach (var playerID in players.Keys)
+        if (RWMNetworkManager.Instance != null && RWMNetworkManager.Instance.isHost)
         {
-            RWMNetworkManager.Instance.UpdateScoresClientRpc(playerID, 0);
+            foreach (var playerID in players.Keys)
+            {
+                RWMNetworkManager.Instance.UpdateScore(playerID, 0);
+            }
         }
         
         LoadScene("IntroVideoScreen");
@@ -773,9 +775,9 @@ public class GameManager : MonoBehaviour
             players[playerID].scorePercentage += points;
 
             // Sync score changes to all clients
-            if (RWMNetworkManager.Instance != null)
+            if (RWMNetworkManager.Instance != null && RWMNetworkManager.Instance.isHost)
             {
-                RWMNetworkManager.Instance.UpdateScoresClientRpc(playerID, players[playerID].scorePercentage);
+                RWMNetworkManager.Instance.UpdateScore(playerID, players[playerID].scorePercentage);
             }
         }
     }
@@ -995,8 +997,8 @@ public class GameManager : MonoBehaviour
     void LoadScene(string sceneName)
     {
         // HOST AUTHORITY: Only host can initiate scene changes
-        // Mobile clients will receive ChangeSceneClientRpc and load scenes that way
-        bool isHost = NetworkManager.Singleton != null && NetworkManager.Singleton.IsHost;
+        // Mobile clients will receive ChangeScene message via WebSocket and load scenes that way
+        bool isHost = RWMNetworkManager.Instance != null && RWMNetworkManager.Instance.isHost;
         bool isMobile = DeviceDetector.Instance != null && DeviceDetector.Instance.IsMobile();
 
         // If mobile client, ignore - wait for host's RPC
@@ -1019,7 +1021,7 @@ public class GameManager : MonoBehaviour
         // Host broadcasts to all clients
         if (isHost && RWMNetworkManager.Instance != null)
         {
-            RWMNetworkManager.Instance.ChangeSceneClientRpc(sceneName);
+            RWMNetworkManager.Instance.ChangeScene(sceneName);
             Debug.Log($"Host broadcasting scene change to clients: {sceneName}");
         }
     }

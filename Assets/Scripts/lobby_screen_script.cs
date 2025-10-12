@@ -2,7 +2,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
-using Unity.Netcode;
 
 public class LobbyScreen : MonoBehaviour
 {
@@ -206,13 +205,13 @@ public class LobbyScreen : MonoBehaviour
             return;
         }
 
-        if (NetworkManager.Singleton == null)
+        if (RWMNetworkManager.Instance == null)
         {
             return;
         }
 
-        NetworkManager.Singleton.OnClientConnectedCallback += HandleClientConnected;
-        NetworkManager.Singleton.OnClientDisconnectCallback += HandleClientDisconnected;
+        RWMNetworkManager.Instance.OnRoomJoined += HandleRoomJoined;
+        RWMNetworkManager.Instance.OnConnectionError += HandleConnectionError;
         networkCallbacksRegistered = true;
     }
 
@@ -223,39 +222,32 @@ public class LobbyScreen : MonoBehaviour
             return;
         }
 
-        if (NetworkManager.Singleton != null)
+        if (RWMNetworkManager.Instance != null)
         {
-            NetworkManager.Singleton.OnClientConnectedCallback -= HandleClientConnected;
-            NetworkManager.Singleton.OnClientDisconnectCallback -= HandleClientDisconnected;
+            RWMNetworkManager.Instance.OnRoomJoined -= HandleRoomJoined;
+            RWMNetworkManager.Instance.OnConnectionError -= HandleConnectionError;
         }
 
         networkCallbacksRegistered = false;
     }
 
-    void HandleClientConnected(ulong clientId)
+    void HandleRoomJoined(string joinedRoomCode)
     {
-        if (!isMobile || NetworkManager.Singleton == null)
-        {
-            return;
-        }
-
-        if (clientId != NetworkManager.Singleton.LocalClientId)
+        if (!isMobile)
         {
             return;
         }
 
         awaitingNetworkConnection = false;
         hasConnectedToHost = true;
+
+        if (ENABLE_DEBUG_LOGS)
+            Debug.Log($"[LobbyScreen] Successfully joined room: {joinedRoomCode}");
     }
 
-    void HandleClientDisconnected(ulong clientId)
+    void HandleConnectionError()
     {
-        if (!isMobile || NetworkManager.Singleton == null)
-        {
-            return;
-        }
-
-        if (clientId != NetworkManager.Singleton.LocalClientId)
+        if (!isMobile)
         {
             return;
         }
@@ -278,13 +270,20 @@ public class LobbyScreen : MonoBehaviour
 
     void SetupDesktopHost()
     {
-        if (RWMNetworkManager.Instance != null && NetworkManager.Singleton != null)
+        if (RWMNetworkManager.Instance != null)
         {
-            if (!NetworkManager.Singleton.IsListening)
+            // Connect to WebSocket server, then start host
+            if (!RWMNetworkManager.Instance.isConnected)
             {
-                RWMNetworkManager.Instance.StartHost();
+                RWMNetworkManager.Instance.OnRoomCreated += OnHostRoomCreated;
+                RWMNetworkManager.Instance.Connect();
+                // StartHost will be called automatically once connected
+                // For now, generate a temporary room code for display
+                GenerateTempRoomCode();
+                return;
             }
 
+            RWMNetworkManager.Instance.StartHost();
             roomCode = RWMNetworkManager.Instance.GetRoomCode();
 
             if (roomCodeDisplay != null)
@@ -313,7 +312,40 @@ public class LobbyScreen : MonoBehaviour
             Debug.LogWarning("Networking not available - using locally generated room code");
         }
     }
-    
+
+    void OnHostRoomCreated(string createdRoomCode)
+    {
+        roomCode = createdRoomCode;
+        if (roomCodeDisplay != null)
+        {
+            roomCodeDisplay.text = roomCode;
+        }
+
+        if (ENABLE_DEBUG_LOGS)
+            Debug.Log($"[LobbyScreen] Host room created: {roomCode}");
+
+        // Unsubscribe after handling
+        RWMNetworkManager.Instance.OnRoomCreated -= OnHostRoomCreated;
+    }
+
+    void GenerateTempRoomCode()
+    {
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        System.Text.StringBuilder code = new System.Text.StringBuilder();
+
+        for (int i = 0; i < 4; i++)
+        {
+            code.Append(chars[Random.Range(0, chars.Length)]);
+        }
+
+        roomCode = code.ToString();
+
+        if (roomCodeDisplay != null)
+        {
+            roomCodeDisplay.text = "WAIT..."; // Show connecting status
+        }
+    }
+
     void OnGameModeSelected(GameManager.GameMode mode)
     {
         MobileHaptics.SelectionChanged();
@@ -516,7 +548,7 @@ public class LobbyScreen : MonoBehaviour
     void CompleteJoinFlow(string playerName, string enteredRoomCode)
     {
         // Validate network prerequisites BEFORE proceeding
-        if (RWMNetworkManager.Instance == null || NetworkManager.Singleton == null)
+        if (RWMNetworkManager.Instance == null)
         {
             ShowErrorMessage("Network system is not available. Please restart the app and try again.", false);
             return;
@@ -540,43 +572,12 @@ public class LobbyScreen : MonoBehaviour
             playerID = PlayerAuthSystem.Instance.GetLocalPlayerID();
         }
 
-        // Setup callback to register player AFTER successful connection
-        void SendRegistrationWhenConnected(ulong clientId)
-        {
-            if (NetworkManager.Singleton == null)
-            {
-                return;
-            }
+        // Store for use after connection
+        pendingPlayerName = playerName;
+        pendingPlayerID = playerID;
 
-            if (clientId != NetworkManager.Singleton.LocalClientId)
-            {
-                return;
-            }
-
-            NetworkManager.Singleton.OnClientConnectedCallback -= SendRegistrationWhenConnected;
-
-            // NOW register the player locally
-            if (PlayerAuthSystem.Instance != null)
-            {
-                PlayerAuthSystem.Instance.RegisterPlayer(playerName, selectedPlayerIconName);
-            }
-            else if (GameManager.Instance != null)
-            {
-                GameManager.Instance.AddPlayer(playerID, playerName, selectedPlayerIconName);
-            }
-
-            // Send to host
-            if (RWMNetworkManager.Instance != null)
-            {
-                RWMNetworkManager.Instance.AddPlayerServerRpc(playerID, playerName, selectedPlayerIconName);
-            }
-
-            UpdateWaitingScreenUI(playerName);
-            Debug.Log("Player successfully joined and registered: " + playerName);
-        }
-
-        // Register callback BEFORE attempting connection
-        NetworkManager.Singleton.OnClientConnectedCallback += SendRegistrationWhenConnected;
+        // Subscribe to connection events
+        RWMNetworkManager.Instance.OnRoomJoined += OnPlayerJoinedRoom;
 
         // Attempt connection
         ConnectToHostIfNeeded();
@@ -586,11 +587,39 @@ public class LobbyScreen : MonoBehaviour
         ShowJoinWait();
     }
 
+    private string pendingPlayerName;
+    private string pendingPlayerID;
+
+    void OnPlayerJoinedRoom(string joinedRoomCode)
+    {
+        // Unsubscribe
+        RWMNetworkManager.Instance.OnRoomJoined -= OnPlayerJoinedRoom;
+
+        // NOW register the player locally
+        if (PlayerAuthSystem.Instance != null)
+        {
+            PlayerAuthSystem.Instance.RegisterPlayer(pendingPlayerName, selectedPlayerIconName);
+        }
+        else if (GameManager.Instance != null)
+        {
+            GameManager.Instance.AddPlayer(pendingPlayerID, pendingPlayerName, selectedPlayerIconName);
+        }
+
+        // Send to host via WebSocket
+        if (RWMNetworkManager.Instance != null)
+        {
+            RWMNetworkManager.Instance.AddPlayer(pendingPlayerName, selectedPlayerIconName);
+        }
+
+        UpdateWaitingScreenUI(pendingPlayerName);
+        Debug.Log("Player successfully joined and registered: " + pendingPlayerName);
+    }
+
     void ConnectToHostIfNeeded()
     {
         RegisterNetworkCallbacks();
 
-        if (RWMNetworkManager.Instance == null || NetworkManager.Singleton == null)
+        if (RWMNetworkManager.Instance == null)
         {
             return;
         }
@@ -600,15 +629,25 @@ public class LobbyScreen : MonoBehaviour
             return;
         }
 
-        if (NetworkManager.Singleton.IsHost)
+        // Check if already connected
+        if (RWMNetworkManager.Instance.isHost)
         {
             return;
         }
 
-        if (NetworkManager.Singleton.IsClient)
+        if (RWMNetworkManager.Instance.isConnected && !string.IsNullOrEmpty(RWMNetworkManager.Instance.roomCode))
         {
             awaitingNetworkConnection = false;
             hasConnectedToHost = true;
+            return;
+        }
+
+        // Connect to WebSocket server and join room
+        if (!RWMNetworkManager.Instance.isConnected)
+        {
+            RWMNetworkManager.Instance.Connect();
+            // Wait a moment for connection before joining
+            StartCoroutine(WaitAndJoinRoom());
             return;
         }
 
@@ -619,6 +658,39 @@ public class LobbyScreen : MonoBehaviour
             ShowJoinForm();
             ShowErrorMessage("Unable to start the network client. Please try again.", false);
             return;
+        }
+
+        awaitingNetworkConnection = true;
+        hasConnectedToHost = false;
+    }
+
+    System.Collections.IEnumerator WaitAndJoinRoom()
+    {
+        // Wait for WebSocket connection
+        float timeout = 5f;
+        float elapsed = 0f;
+
+        while (!RWMNetworkManager.Instance.isConnected && elapsed < timeout)
+        {
+            yield return new WaitForSeconds(0.1f);
+            elapsed += 0.1f;
+        }
+
+        if (!RWMNetworkManager.Instance.isConnected)
+        {
+            ShowJoinForm();
+            ShowErrorMessage("Unable to connect to server. Please check your internet connection.", false);
+            yield break;
+        }
+
+        // Now join the room
+        bool started = RWMNetworkManager.Instance.JoinGame(roomCode);
+
+        if (!started)
+        {
+            ShowJoinForm();
+            ShowErrorMessage("Unable to join room. Please check the room code and try again.", false);
+            yield break;
         }
 
         awaitingNetworkConnection = true;

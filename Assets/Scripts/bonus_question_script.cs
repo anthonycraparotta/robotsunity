@@ -382,9 +382,9 @@ public class BonusQuestionScreen : MonoBehaviour
     void SubmitBonusVote()
     {
         // Submit vote via NetworkManager
-        if (RWMNetworkManager.Instance != null)
+        if (RWMNetworkManager.Instance != null && RWMNetworkManager.Instance.isConnected)
         {
-            RWMNetworkManager.Instance.SubmitBonusVoteServerRpc(playerID, selectedPlayerID);
+            RWMNetworkManager.Instance.SubmitBonusVote(selectedPlayerID);
         }
         else
         {

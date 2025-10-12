@@ -1,13 +1,11 @@
 using UnityEngine;
-using Unity.Netcode;
-using Unity.Collections;
 using System.Collections.Generic;
 
 /// <summary>
 /// Handles player authentication, ID management, and mapping between network clients and game players.
 /// Persists player data across scenes.
 /// </summary>
-public class PlayerAuthSystem : NetworkBehaviour
+public class PlayerAuthSystem : MonoBehaviour
 {
     public static PlayerAuthSystem Instance;
     
@@ -17,11 +15,8 @@ public class PlayerAuthSystem : NetworkBehaviour
     public string localPlayerIcon = "";
     
     [Header("Network Mapping")]
-    // Maps network client ID to game player ID
-    private NetworkVariable<NetworkPlayerData> networkPlayerData = new NetworkVariable<NetworkPlayerData>();
-    
-    // Client-side storage
-    private Dictionary<ulong, string> clientToPlayerMap = new Dictionary<ulong, string>();
+    // Client-side storage for player mapping
+    private Dictionary<string, string> playerDataMap = new Dictionary<string, string>(); // playerID -> playerName
     
     void Awake()
     {
@@ -86,10 +81,13 @@ public class PlayerAuthSystem : NetworkBehaviour
         
         Debug.Log($"Player registered: {playerName} ({localPlayerID})");
 
-        // If connected to network, send to server
-        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsClient)
+        // Add to local storage
+        playerDataMap[localPlayerID] = playerName;
+
+        // If connected to network, send to server via WebSocket
+        if (RWMNetworkManager.Instance != null && RWMNetworkManager.Instance.isConnected)
         {
-            RegisterPlayerServerRpc(localPlayerID, playerName, playerIcon);
+            RWMNetworkManager.Instance.AddPlayer(playerName, playerIcon);
         }
         else if (GameManager.Instance != null)
         {
@@ -98,39 +96,6 @@ public class PlayerAuthSystem : NetworkBehaviour
         }
     }
 
-    [ServerRpc(RequireOwnership = false)]
-    void RegisterPlayerServerRpc(string playerID, string playerName, string playerIcon, ServerRpcParams rpcParams = default)
-    {
-        ulong clientId = rpcParams.Receive.SenderClientId;
-
-        // Map network client ID to game player ID
-        if (!clientToPlayerMap.ContainsKey(clientId))
-        {
-            clientToPlayerMap.Add(clientId, playerID);
-        }
-
-        // Add player to GameManager
-        if (GameManager.Instance != null)
-        {
-            GameManager.Instance.AddPlayer(playerID, playerName, playerIcon, clientId);
-        }
-
-        // Broadcast to all clients
-        SyncPlayerToClientsClientRpc(playerID, playerName, playerIcon, clientId);
-
-        Debug.Log($"Server registered player: {playerName} (Client: {clientId}, Player: {playerID})");
-    }
-
-    [ClientRpc]
-    void SyncPlayerToClientsClientRpc(string playerID, string playerName, string playerIcon, ulong clientId)
-    {
-        // Update local GameManager on all clients
-        if (GameManager.Instance != null && !IsServer)
-        {
-            GameManager.Instance.AddPlayer(playerID, playerName, playerIcon, clientId);
-        }
-    }
-    
     // === PLAYER ID RETRIEVAL ===
     
     public string GetLocalPlayerID()
@@ -148,61 +113,17 @@ public class PlayerAuthSystem : NetworkBehaviour
         return localPlayerIcon;
     }
     
-    public string GetPlayerIDFromClientID(ulong clientId)
+    public string GetPlayerNameByID(string playerID)
     {
-        if (clientToPlayerMap.ContainsKey(clientId))
+        if (playerDataMap.ContainsKey(playerID))
         {
-            return clientToPlayerMap[clientId];
+            return playerDataMap[playerID];
         }
-        
-        Debug.LogWarning($"No player ID found for client {clientId}");
+
+        Debug.LogWarning($"No player name found for player ID {playerID}");
         return "";
     }
-    
-    // === NETWORK DISCONNECT HANDLING ===
-    
-    public override void OnNetworkSpawn()
-    {
-        base.OnNetworkSpawn();
-        
-        if (IsServer)
-        {
-            NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
-        }
-    }
-    
-    public override void OnNetworkDespawn()
-    {
-        base.OnNetworkDespawn();
-        
-        if (IsServer && NetworkManager.Singleton != null)
-        {
-            NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnected;
-        }
-    }
-    
-    void OnClientDisconnected(ulong clientId)
-    {
-        if (!IsServer) return;
-        
-        // Get player ID for this client
-        string playerID = GetPlayerIDFromClientID(clientId);
-        
-        if (!string.IsNullOrEmpty(playerID))
-        {
-            // Remove from game
-            if (GameManager.Instance != null)
-            {
-                GameManager.Instance.RemovePlayer(playerID);
-            }
-            
-            // Remove from mapping
-            clientToPlayerMap.Remove(clientId);
-            
-            Debug.Log($"Player {playerID} disconnected (Client: {clientId})");
-        }
-    }
-    
+
     // === UTILITY ===
     
     public bool IsPlayerRegistered()
@@ -220,24 +141,5 @@ public class PlayerAuthSystem : NetworkBehaviour
         PlayerPrefs.DeleteKey("PlayerName");
         PlayerPrefs.DeleteKey("PlayerIcon");
         PlayerPrefs.Save();
-    }
-}
-
-// === NETWORK DATA STRUCTURE ===
-
-[System.Serializable]
-public struct NetworkPlayerData : INetworkSerializable
-{
-    public ulong clientId;
-    public FixedString64Bytes playerID;
-    public FixedString64Bytes playerName;
-    public FixedString64Bytes playerIcon;
-    
-    public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
-    {
-        serializer.SerializeValue(ref clientId);
-        serializer.SerializeValue(ref playerID);
-        serializer.SerializeValue(ref playerName);
-        serializer.SerializeValue(ref playerIcon);
     }
 }

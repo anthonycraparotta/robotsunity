@@ -19,6 +19,7 @@ public class LoadingScreen : MonoBehaviour
     [Header("Settings")]
     public float minimumLoadTime = 2f; // Show loading screen for at least 2 seconds
     public bool clickToAdvance = true;
+    public bool autoAdvanceOnMobile = true; // Auto-advance on mobile devices
     
     private bool isLoaded = false;
     private float loadTimer = 0f;
@@ -111,9 +112,13 @@ public class LoadingScreen : MonoBehaviour
             yield return null;
         }
 
-        // Auto-advance if click-to-advance is disabled
-        if (!clickToAdvance)
+        // Auto-advance if click-to-advance is disabled OR if on mobile and autoAdvanceOnMobile is true
+        bool isMobile = DeviceDetector.Instance != null && DeviceDetector.Instance.IsMobile();
+        if (!clickToAdvance || (isMobile && autoAdvanceOnMobile))
         {
+            if (ENABLE_DEBUG_LOGS)
+                Debug.Log("[LoadingScreen] Auto-advancing (clickToAdvance=" + clickToAdvance + ", isMobile=" + isMobile + ", autoAdvanceOnMobile=" + autoAdvanceOnMobile + ")");
+
             AdvanceToLanding();
         }
     }

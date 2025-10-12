@@ -1,6 +1,4 @@
 using UnityEngine;
-using Unity.Netcode;
-using Unity.Netcode.Transports.UTP;
 
 /// <summary>
 /// Ensures that all core singleton-style systems are present in the scene graph
@@ -44,10 +42,8 @@ public static class CoreSystemsBootstrapper
         EnsureManagerExists<DeviceDetector>("DeviceDetector");
         EnsureManagerExists<ContentFilterManager>("ContentFilterManager");
         EnsureManagerExists<DebugManager>("DebugManager");
-
-        EnsureNetworkManagerExists();
-        EnsureNetworkBehaviourExists<RWMNetworkManager>("NetworkManager");
-        EnsureNetworkBehaviourExists<PlayerAuthSystem>("PlayerAuthSystem");
+        EnsureManagerExists<RWMNetworkManager>("NetworkManager");
+        EnsureManagerExists<PlayerAuthSystem>("PlayerAuthSystem");
 
         if (ENABLE_DEBUG_LOGS)
             Debug.Log("[CoreSystemsBootstrapper] ===== Core Systems Initialization Complete =====");
@@ -75,36 +71,6 @@ public static class CoreSystemsBootstrapper
 
         if (ENABLE_DEBUG_LOGS)
             Debug.Log($"[CoreSystemsBootstrapper] ✓ {managerName} created");
-    }
-
-    private static void EnsureNetworkManagerExists()
-    {
-        if (NetworkManager.Singleton != null)
-        {
-            return;
-        }
-
-        var netManagerObj = new GameObject("Unity_NetworkManager");
-        netManagerObj.AddComponent<NetworkManager>();
-
-        if (netManagerObj.GetComponent<UnityTransport>() == null)
-        {
-            netManagerObj.AddComponent<UnityTransport>();
-        }
-
-        Object.DontDestroyOnLoad(netManagerObj);
-    }
-
-    private static void EnsureNetworkBehaviourExists<T>(string managerName) where T : NetworkBehaviour
-    {
-        if (FindExistingComponent<T>() != null)
-        {
-            return;
-        }
-
-        var managerObj = new GameObject(managerName);
-        managerObj.AddComponent<NetworkObject>();
-        managerObj.AddComponent<T>();
     }
 
     private static T FindExistingComponent<T>() where T : Component

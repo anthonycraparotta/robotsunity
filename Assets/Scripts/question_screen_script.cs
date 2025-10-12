@@ -86,7 +86,7 @@ public class QuestionScreen : MonoBehaviour
         // Update timer display
         UpdateTimerDisplay();
 
-        // Update player status indicators (desktop only - mobile gets updates via ClientRpc)
+        // Update player status indicators (desktop only - mobile gets updates via WebSocket)
         if (!isMobile)
         {
             UpdatePlayerStatusIndicators();
@@ -99,7 +99,7 @@ public class QuestionScreen : MonoBehaviour
         }
     }
 
-    // Called by network ClientRpc or locally to update buzz-in feedback
+    // Called by WebSocket network events or locally to update buzz-in feedback
     public void OnPlayerSubmittedAnswer(string playerID)
     {
         if (isMobile)
@@ -482,9 +482,9 @@ public class QuestionScreen : MonoBehaviour
             string sanitizedAnswer = validation.sanitizedText;
 
             // Submit answer via NetworkManager
-            if (RWMNetworkManager.Instance != null)
+            if (RWMNetworkManager.Instance != null && RWMNetworkManager.Instance.isConnected)
             {
-                RWMNetworkManager.Instance.SubmitAnswerServerRpc(playerID, sanitizedAnswer);
+                RWMNetworkManager.Instance.SubmitAnswer(sanitizedAnswer);
             }
             else
             {
@@ -503,9 +503,9 @@ public class QuestionScreen : MonoBehaviour
             // Fallback if ContentFilterManager not available
             string answer = answerInput.text.Trim();
 
-            if (RWMNetworkManager.Instance != null)
+            if (RWMNetworkManager.Instance != null && RWMNetworkManager.Instance.isConnected)
             {
-                RWMNetworkManager.Instance.SubmitAnswerServerRpc(playerID, answer);
+                RWMNetworkManager.Instance.SubmitAnswer(answer);
             }
             else
             {

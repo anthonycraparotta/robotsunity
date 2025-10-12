@@ -273,9 +273,9 @@ public class EliminationScreen : MonoBehaviour
     void SubmitEliminationVote()
     {
         // Submit vote via NetworkManager
-        if (RWMNetworkManager.Instance != null)
+        if (RWMNetworkManager.Instance != null && RWMNetworkManager.Instance.isConnected)
         {
-            RWMNetworkManager.Instance.SubmitEliminationVoteServerRpc(playerID, selectedAnswer);
+            RWMNetworkManager.Instance.SubmitEliminationVote(selectedAnswer);
         }
         else
         {

@@ -273,9 +273,9 @@ public class VotingScreen : MonoBehaviour
     void SubmitVotingVote()
     {
         // Submit vote via NetworkManager
-        if (RWMNetworkManager.Instance != null)
+        if (RWMNetworkManager.Instance != null && RWMNetworkManager.Instance.isConnected)
         {
-            RWMNetworkManager.Instance.SubmitVotingVoteServerRpc(playerID, selectedAnswer);
+            RWMNetworkManager.Instance.SubmitVotingVote(selectedAnswer);
         }
         else
         {
