@@ -196,16 +196,9 @@ public class QuestionScreen : MonoBehaviour
         bool isPlayerQuestion = currentQuestion.questionType == GameManager.QuestionType.Player.ToString();
         string displayText = currentQuestion.questionText;
 
-        // Replace [player.name] placeholder with random player name for Player Questions
         if (isPlayerQuestion && displayText.Contains("[player.name]"))
         {
-            List<PlayerData> allPlayers = GameManager.Instance.GetAllPlayers();
-            if (allPlayers.Count > 0)
-            {
-                PlayerData randomPlayer = allPlayers[Random.Range(0, allPlayers.Count)];
-                displayText = displayText.Replace("[player.name]", randomPlayer.playerName);
-                Debug.Log($"Replaced [player.name] with: {randomPlayer.playerName}");
-            }
+            Debug.LogWarning("[QuestionScreen] Player question received without resolved [player.name] placeholder.");
         }
 
         // Set desktop question text
