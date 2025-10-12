@@ -186,7 +186,13 @@ public class BonusResultsScreen : MonoBehaviour
         if (nameText != null)
         {
             nameText.enabled = true;
-            nameText.text = player.playerName;
+            string displayName = player.playerName;
+            if (rankText == null)
+            {
+                displayName = $"{rank}. {displayName}";
+            }
+
+            nameText.text = displayName;
         }
 
         // Hide question text for standings rows
@@ -265,7 +271,17 @@ public class BonusResultsScreen : MonoBehaviour
         if (questionText != null)
         {
             questionText.enabled = true;
-            questionText.text = result.questionText;
+
+            // Some legacy prefabs do not include a dedicated rank label. In that case we
+            // prefix the question text so players still see which prompt the row
+            // represents instead of rendering a blank number column.
+            string resolvedQuestionText = result.questionText ?? string.Empty;
+            if (rankText == null)
+            {
+                resolvedQuestionText = $"Q{questionNumber}: {resolvedQuestionText}";
+            }
+
+            questionText.text = resolvedQuestionText;
         }
 
         if (scoreTransform != null) scoreTransform.gameObject.SetActive(true);
