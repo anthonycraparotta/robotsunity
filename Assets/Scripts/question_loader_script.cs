@@ -10,6 +10,10 @@ public class QuestionLoader : MonoBehaviour
     public string pictureQuestionsPath = "picqs";
     public string bonusQuestionsPath = "bonusquestions";
 
+    [Header("Bonus Question Settings")]
+    [SerializeField]
+    private int bonusQuestionsPerRound = 4;
+
     void Awake()
     {
         gameManager = GameManager.Instance;
@@ -164,8 +168,20 @@ public class QuestionLoader : MonoBehaviour
             // Shuffle the bonus questions to ensure varied playthrough order
             ShuffleUtility.Shuffle(bonusData.miniQuestions);
 
+            int originalCount = bonusData.miniQuestions.Count;
+            int desiredCount = Mathf.Clamp(bonusQuestionsPerRound, 0, originalCount);
+            if (desiredCount < originalCount)
+            {
+                bonusData.miniQuestions = bonusData.miniQuestions.GetRange(0, desiredCount);
+            }
+
             gameManager.bonusQuestions = bonusData;
-            Debug.Log("Loaded and shuffled " + bonusData.miniQuestions.Count + " bonus questions");
+            string logMessage = "Loaded and shuffled " + originalCount + " bonus questions";
+            if (desiredCount < originalCount)
+            {
+                logMessage += ", trimmed to " + bonusData.miniQuestions.Count + " for this round";
+            }
+            Debug.Log(logMessage);
         }
         else
         {
