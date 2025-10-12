@@ -46,7 +46,7 @@
     "Robot Answer": "109"
   },
   {
-    "Question": "What does [player.name] have sitting in her online shopping cart for the last 8 weeks?",
+    "Question": "What does [player.name] have sitting in their online shopping cart for the last 8 weeks?",
     "Right Answer": "Beekeeper starter kit",
     "Robot Answer": "Pregnancy test bulk pack"
   },
@@ -167,7 +167,7 @@
     "Robot Answer": "Bop It Extreme"
   },
   {
-    "Question": "What’s the WiFi network name [player.name] used before his current one?",
+    "Question": "What’s the WiFi network name [player.name] used before their current one?",
     "Right Answer": "ItHurtsWhenIP",
     "Robot Answer": "GetYourOwnWiFiBtch"
   },
