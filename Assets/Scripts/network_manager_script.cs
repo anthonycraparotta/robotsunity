@@ -292,7 +292,7 @@ public class RWMNetworkManager : NetworkBehaviour
         if (GameManager.Instance != null && !string.IsNullOrEmpty(gameState))
         {
             GameManager.GameState state = (GameManager.GameState)Enum.Parse(typeof(GameManager.GameState), gameState);
-            GameManager.Instance.currentGameState = state;
+            GameManager.Instance.currentGameState.Value = state;
         }
     }
 
@@ -312,8 +312,8 @@ public class RWMNetworkManager : NetworkBehaviour
 
         if (GameManager.Instance != null)
         {
-            GameManager.Instance.currentTimerValue = timerValue;
-            GameManager.Instance.timerActive = isActive;
+            GameManager.Instance.currentTimerValue.Value = timerValue;
+            GameManager.Instance.timerActive.Value = isActive;
         }
     }
 
@@ -331,7 +331,7 @@ public class RWMNetworkManager : NetworkBehaviour
 
         if (GameManager.Instance != null)
         {
-            GameManager.Instance.currentRound = round;
+            GameManager.Instance.currentRound.Value = round;
         }
     }
 

@@ -112,9 +112,9 @@ public class CreditsScreen : MonoBehaviour
         Debug.Log("New Game button clicked");
 
         // Reset game and return to landing
-        GameManager.Instance.currentRound = 0;
-        GameManager.Instance.isHalftimePlayed = false;
-        GameManager.Instance.isBonusRoundPlayed = false;
+        GameManager.Instance.currentRound.Value = 0;
+        GameManager.Instance.isHalftimePlayed.Value = false;
+        GameManager.Instance.isBonusRoundPlayed.Value = false;
         
         // Clear all players
         GameManager.Instance.players.Clear();

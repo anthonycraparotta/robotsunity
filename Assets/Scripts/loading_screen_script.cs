@@ -129,7 +129,11 @@ public class LoadingScreen : MonoBehaviour
             Debug.Log("[LoadingScreen] Advancing to IntroVideoScreen");
 
         UnityEngine.SceneManagement.SceneManager.LoadScene("IntroVideoScreen");
-        GameManager.Instance.currentGameState = GameManager.GameState.IntroVideo;
+
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.currentGameState.Value = GameManager.GameState.IntroVideo;
+        }
     }
     
     // Optional: Add actual asset loading here

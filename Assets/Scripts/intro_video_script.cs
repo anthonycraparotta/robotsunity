@@ -113,7 +113,11 @@ public class IntroVideoScreen : MonoBehaviour
         if (DeviceDetector.Instance != null && DeviceDetector.Instance.IsMobile())
         {
             UnityEngine.SceneManagement.SceneManager.LoadScene("LobbyScreen");
-            GameManager.Instance.currentGameState = GameManager.GameState.Lobby;
+
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.currentGameState.Value = GameManager.GameState.Lobby;
+            }
         }
         else
         {

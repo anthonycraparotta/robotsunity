@@ -71,7 +71,7 @@ public class LobbyScreen : MonoBehaviour
         // Set game state to Lobby
         if (GameManager.Instance != null)
         {
-            GameManager.Instance.currentGameState = GameManager.GameState.Lobby;
+            GameManager.Instance.currentGameState.Value = GameManager.GameState.Lobby;
             if (ENABLE_DEBUG_LOGS)
                 Debug.Log("[LobbyScreen] Set currentGameState to Lobby");
         }
@@ -327,7 +327,7 @@ public class LobbyScreen : MonoBehaviour
     {
         MobileHaptics.SelectionChanged();
 
-        GameManager.Instance.gameMode = mode;
+        GameManager.Instance.gameMode.Value = mode;
         Debug.Log("Game mode selected: " + mode);
         
         // Update UI to show selected mode
@@ -366,7 +366,7 @@ public class LobbyScreen : MonoBehaviour
             return;
         }
 
-        Debug.Log("Start button clicked - currentGameState: " + GameManager.Instance.currentGameState + ", currentRound: " + GameManager.Instance.currentRound);
+        Debug.Log("Start button clicked - currentGameState: " + GameManager.Instance.currentGameState.Value + ", currentRound: " + GameManager.Instance.currentRound.Value);
 
         // Advance to Round Art (which will load Round 1)
         GameManager.Instance.AdvanceToNextScreen();
@@ -784,7 +784,7 @@ public class LobbyScreen : MonoBehaviour
                 (RWMNetworkManager.Instance != null ? RWMNetworkManager.Instance.GetRoomCode() : "");
 
             waitData.text = nonHostPlayerCount + " Players\n" +
-                           (GameManager.Instance.gameMode == GameManager.GameMode.EightQuestions ? "8" : "12") + " Questions\n" +
+                           (GameManager.Instance.gameMode.Value == GameManager.GameMode.EightQuestions ? "8" : "12") + " Questions\n" +
                            displayRoomCode;
         }
 
