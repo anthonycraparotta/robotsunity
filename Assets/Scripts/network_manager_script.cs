@@ -17,6 +17,12 @@ public class RWMNetworkManager : NetworkBehaviour
     public bool isHost = false;
     public ushort port = 7777;
 
+    [Tooltip("IP address clients should use to connect when this device is hosting. Leave blank to use the transport's configured address.")]
+    public string hostAddress = "";
+
+    [Tooltip("Network interface address the host should bind to. Defaults to all interfaces.")]
+    public string listenAddress = "0.0.0.0";
+
     [Header("Connection Status")]
     public bool isConnected = false;
     public string playerId = "";
@@ -156,8 +162,22 @@ public class RWMNetworkManager : NetworkBehaviour
         GenerateRoomCode();
 
         // Start as Host (Server + Client)
-        // Bind to 0.0.0.0 to allow remote connections, not just loopback
-        unityTransport.SetConnectionData("0.0.0.0", port, "0.0.0.0");
+        // Bind to the specified listen address so remote connections are accepted.
+        string advertisedAddress = hostAddress;
+
+        if (string.IsNullOrWhiteSpace(advertisedAddress))
+        {
+            advertisedAddress = unityTransport.ConnectionData.Address;
+
+            if (string.IsNullOrWhiteSpace(advertisedAddress))
+            {
+                advertisedAddress = "127.0.0.1";
+            }
+        }
+
+        string bindAddress = string.IsNullOrWhiteSpace(listenAddress) ? "0.0.0.0" : listenAddress;
+
+        unityTransport.SetConnectionData(advertisedAddress, port, bindAddress);
 
         bool success = networkManager.StartHost();
 
