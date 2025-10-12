@@ -228,6 +228,8 @@ public class HalftimeResultsScreen : MonoBehaviour
                 DisplayPlayerGroup(losers, loserIconContainer, false);
             }
         }
+
+        UpdateScoreDifferences(winners, losers);
     }
 
     void DisplayMobileHalftimeResults(List<PlayerData> rankedPlayers)
@@ -354,6 +356,56 @@ public class HalftimeResultsScreen : MonoBehaviour
         }
 
         return rowObj;
+    }
+
+    void UpdateScoreDifferences(List<PlayerData> winners, List<PlayerData> losers)
+    {
+        if (scoreDiffWin == null && scoreDiffLose == null)
+        {
+            return;
+        }
+
+        bool hasWinner = winners != null && winners.Count > 0;
+        bool hasLoser = losers != null && losers.Count > 0;
+
+        if (!hasWinner || !hasLoser)
+        {
+            if (scoreDiffWin != null && hasWinner)
+            {
+                scoreDiffWin.text = winners[0].scorePercentage + "%";
+            }
+
+            if (scoreDiffLose != null && hasLoser)
+            {
+                scoreDiffLose.text = losers[0].scorePercentage + "%";
+            }
+
+            return;
+        }
+
+        int rawDifference = winners[0].scorePercentage - losers[0].scorePercentage;
+
+        if (scoreDiffWin != null)
+        {
+            scoreDiffWin.text = FormatScoreDifference(rawDifference, true);
+        }
+
+        if (scoreDiffLose != null)
+        {
+            scoreDiffLose.text = FormatScoreDifference(rawDifference, false);
+        }
+    }
+
+    string FormatScoreDifference(int rawDifference, bool forWinner)
+    {
+        if (rawDifference == 0)
+        {
+            return "0%";
+        }
+
+        int signedValue = forWinner ? rawDifference : -rawDifference;
+        string prefix = signedValue > 0 ? "+" : "-";
+        return $"{prefix}{Mathf.Abs(rawDifference)}%";
     }
     
     public void OnContinueClicked()
