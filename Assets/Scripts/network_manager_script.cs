@@ -50,14 +50,6 @@ public class RWMNetworkManager : NetworkBehaviour
         Debug.Log("[NetworkManager] Instance created");
     }
 
-    void OnDestroy()
-    {
-        if (Instance == this)
-        {
-            Instance = null;
-        }
-    }
-
     void Start()
     {
         // Get or add Unity's NetworkManager component
@@ -549,6 +541,11 @@ public class RWMNetworkManager : NetworkBehaviour
             {
                 networkManager.Shutdown();
             }
+        }
+
+        if (Instance == this)
+        {
+            Instance = null;
         }
     }
 }
