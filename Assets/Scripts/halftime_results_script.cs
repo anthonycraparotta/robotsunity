@@ -204,6 +204,13 @@ public class HalftimeResultsScreen : MonoBehaviour
             {
                 DisplayPlayerGroup(winners, winnerIconContainer, true);
             }
+
+            // Display cumulative score for the current leader
+            if (scoreDiffWin != null && winners.Count > 0)
+            {
+                int leaderScore = winners[0].scorePercentage;
+                scoreDiffWin.text = FormatScorePercentage(leaderScore);
+            }
         }
 
         // Display loser section
@@ -219,6 +226,20 @@ public class HalftimeResultsScreen : MonoBehaviour
             if (loserIconContainer != null)
             {
                 DisplayPlayerGroup(losers, loserIconContainer, false);
+            }
+
+            // Display cumulative score for the current last place player
+            if (scoreDiffLose != null)
+            {
+                if (losers.Count > 0)
+                {
+                    int lastPlaceScore = losers[losers.Count - 1].scorePercentage;
+                    scoreDiffLose.text = FormatScorePercentage(lastPlaceScore);
+                }
+                else
+                {
+                    scoreDiffLose.text = FormatScorePercentage(0);
+                }
             }
         }
     }
@@ -347,6 +368,11 @@ public class HalftimeResultsScreen : MonoBehaviour
         }
 
         return rowObj;
+    }
+
+    string FormatScorePercentage(int score)
+    {
+        return $"{score}%";
     }
     
     public void OnContinueClicked()

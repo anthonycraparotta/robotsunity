@@ -241,22 +241,22 @@ public class FinalResultsScreen : MonoBehaviour
             {
                 winnerHeadline.text = "MOST HUMAN";
             }
-            
+
             if (winnerName != null)
             {
                 winnerName.text = winner.playerName;
             }
-            
+
             if (winnerScore != null)
             {
                 winnerScore.text = winner.scorePercentage + "%";
             }
-            
+
             if (scoreDiffWin != null)
             {
-                scoreDiffWin.text = "+" + winner.scorePercentage + "%";
+                scoreDiffWin.text = FormatScorePercentage(winner.scorePercentage);
             }
-            
+
             // Display winner icon
             if (winnerIconContainer != null)
             {
@@ -279,7 +279,7 @@ public class FinalResultsScreen : MonoBehaviour
 
             if (scoreDiffLose != null)
             {
-                scoreDiffLose.text = loser.scorePercentage + "%";
+                scoreDiffLose.text = FormatScorePercentage(loser.scorePercentage);
             }
 
             // Display loser icon
@@ -374,6 +374,11 @@ public class FinalResultsScreen : MonoBehaviour
     {
         // This would populate a full leaderboard display
         // Implementation depends on your UI design
+    }
+
+    string FormatScorePercentage(int score)
+    {
+        return $"{score}%";
     }
     
     public void OnCreditsClicked()
