@@ -395,15 +395,32 @@ public class DebugManager : MonoBehaviour
             "Test submission"
         };
 
-        // Set up correct and robot answers if not already set (using NetworkVariable.Value)
-        if (string.IsNullOrEmpty(GameManager.Instance.correctAnswer.Value.ToString()))
+        // Set up correct and robot answers if not already set (using replicated payload)
+        var payload = GameManager.Instance.currentQuestionPayload.Value;
+        if (!payload.hasData)
         {
-            GameManager.Instance.correctAnswer.Value = "The Correct Answer (Debug)";
+            Debug.LogWarning("[DebugManager] Cannot simulate answers - no active question payload");
         }
-
-        if (string.IsNullOrEmpty(GameManager.Instance.robotAnswer.Value.ToString()))
+        else
         {
-            GameManager.Instance.robotAnswer.Value = "Robot Answer (Debug)";
+            bool payloadChanged = false;
+
+            if (string.IsNullOrEmpty(payload.correctAnswer.ToString()))
+            {
+                payload.correctAnswer = "The Correct Answer (Debug)";
+                payloadChanged = true;
+            }
+
+            if (string.IsNullOrEmpty(payload.robotAnswer.ToString()))
+            {
+                payload.robotAnswer = "Robot Answer (Debug)";
+                payloadChanged = true;
+            }
+
+            if (payloadChanged)
+            {
+                GameManager.Instance.currentQuestionPayload.Value = payload;
+            }
         }
 
         int index = 0;
