@@ -18,19 +18,33 @@ public class BonusIntroScreen : MonoBehaviour
     [Header("Settings")]
     public float autoAdvanceDelay = 4f; // Auto-advance after 4 seconds
     
+    private bool isHost;
+    private bool continueButtonListenerAdded;
+
     void Start()
     {
+        isHost = GameManager.Instance != null && GameManager.Instance.IsServer;
+
         // Show appropriate display
         ShowAppropriateDisplay();
-        
-        // Setup continue button
+
+        // Setup continue button (host only)
         if (continueButton != null)
         {
-            continueButton.onClick.AddListener(OnContinueClicked);
+            continueButton.gameObject.SetActive(isHost);
+
+            if (isHost)
+            {
+                continueButton.onClick.AddListener(OnContinueClicked);
+                continueButtonListenerAdded = true;
+            }
         }
-        
-        // Auto-advance to bonus questions
-        StartCoroutine(AutoAdvanceAfterDelay());
+
+        // Auto-advance to bonus questions (host drives scene flow)
+        if (isHost)
+        {
+            StartCoroutine(AutoAdvanceAfterDelay());
+        }
     }
     
     void ShowAppropriateDisplay()
@@ -51,15 +65,24 @@ public class BonusIntroScreen : MonoBehaviour
     IEnumerator AutoAdvanceAfterDelay()
     {
         yield return new WaitForSeconds(autoAdvanceDelay);
+
+        if (!isHost)
+        {
+            yield break;
+        }
+
         AdvanceToBonusQuestions();
     }
-    
+
     public void OnContinueClicked()
     {
         MobileHaptics.MediumImpact();
 
-        // Stop auto-advance
-        StopAllCoroutines();
+        if (isHost)
+        {
+            // Stop auto-advance
+            StopAllCoroutines();
+        }
         AdvanceToBonusQuestions();
     }
     
@@ -77,7 +100,7 @@ public class BonusIntroScreen : MonoBehaviour
     
     void OnDestroy()
     {
-        if (continueButton != null)
+        if (continueButton != null && continueButtonListenerAdded)
         {
             continueButton.onClick.RemoveListener(OnContinueClicked);
         }
