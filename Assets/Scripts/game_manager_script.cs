@@ -242,6 +242,29 @@ public class GameManager : NetworkBehaviour
 
     // === GAME FLOW METHODS ===
 
+    /// <summary>
+    /// Server-only: Reset game state for a new game
+    /// </summary>
+    public void ResetGameState()
+    {
+        if (!IsServer) return;
+
+        currentRound.Value = 0;
+        isHalftimePlayed.Value = false;
+        isBonusRoundPlayed.Value = false;
+        currentGameState.Value = GameState.Lobby;
+
+        // Reset all player scores
+        for (int i = 0; i < networkPlayers.Count; i++)
+        {
+            var player = networkPlayers[i];
+            player.scorePercentage = 0;
+            networkPlayers[i] = player;
+        }
+
+        Debug.Log("[GameManager] Game state reset for new game");
+    }
+
     public void StartGame(GameMode mode)
     {
         if (!IsServer) return;
@@ -919,6 +942,60 @@ public class GameManager : NetworkBehaviour
         }
     }
 
+    /// <summary>
+    /// Server-only: Set a specific player's score
+    /// </summary>
+    public void SetPlayerScore(string playerID, int score)
+    {
+        if (!IsServer) return;
+
+        for (int i = 0; i < networkPlayers.Count; i++)
+        {
+            if (networkPlayers[i].playerID.ToString() == playerID)
+            {
+                var player = networkPlayers[i];
+                player.scorePercentage = score;
+                networkPlayers[i] = player;
+                Debug.Log($"[GameManager] Set {player.playerName} score to {score}");
+                break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Server-only: Add points to all players (for debug/testing)
+    /// </summary>
+    public void AddPointsToAllPlayers(int points)
+    {
+        if (!IsServer) return;
+
+        for (int i = 0; i < networkPlayers.Count; i++)
+        {
+            var player = networkPlayers[i];
+            player.scorePercentage += points;
+            networkPlayers[i] = player;
+        }
+
+        Debug.Log($"[GameManager] Added {points} points to all players");
+    }
+
+    /// <summary>
+    /// Server-only: Reset all player scores to zero
+    /// </summary>
+    public void ResetAllPlayerScores()
+    {
+        if (!IsServer) return;
+
+        for (int i = 0; i < networkPlayers.Count; i++)
+        {
+            var player = networkPlayers[i];
+            player.scorePercentage = 0;
+            networkPlayers[i] = player;
+        }
+
+        Debug.Log("[GameManager] Reset all player scores to 0");
+    }
+
     // === TIMER MANAGEMENT ===
 
     public void StartTimer(float duration)
@@ -1178,10 +1255,18 @@ public class GameManager : NetworkBehaviour
         }
     }
 
-    void LoadScene(string sceneName)
+    /// <summary>
+    /// Server-only: Load a scene using NetworkSceneManager for synchronized transitions
+    /// This method ensures all clients load the same scene at the same time
+    /// </summary>
+    public void LoadScene(string sceneName)
     {
         // Only server can initiate scene changes in Netcode
-        if (!IsServer) return;
+        if (!IsServer)
+        {
+            Debug.LogError($"[GameManager] Only server can load scenes. Client attempted to load: {sceneName}");
+            return;
+        }
 
         // Use Netcode's NetworkSceneManager for proper synchronization
         if (NetworkManager.Singleton != null && NetworkManager.Singleton.SceneManager != null)

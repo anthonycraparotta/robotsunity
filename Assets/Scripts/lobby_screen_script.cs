@@ -68,10 +68,10 @@ public class LobbyScreen : MonoBehaviour
             Debug.Log($"[LobbyScreen] Screen size: {Screen.width}x{Screen.height}");
         }
 
-        // Set game state to Lobby
-        if (GameManager.Instance != null)
+        // Set game state to Lobby (server-only)
+        if (GameManager.Instance != null && GameManager.Instance.IsServer)
         {
-            GameManager.Instance.currentGameState = GameManager.GameState.Lobby;
+            GameManager.Instance.currentGameState.Value = GameManager.GameState.Lobby;
             if (ENABLE_DEBUG_LOGS)
                 Debug.Log("[LobbyScreen] Set currentGameState to Lobby");
         }
@@ -327,9 +327,17 @@ public class LobbyScreen : MonoBehaviour
     {
         MobileHaptics.SelectionChanged();
 
-        GameManager.Instance.gameMode = mode;
-        Debug.Log("Game mode selected: " + mode);
-        
+        // Only server can set game mode
+        if (GameManager.Instance != null && GameManager.Instance.IsServer)
+        {
+            GameManager.Instance.gameMode.Value = mode;
+            Debug.Log("Game mode selected: " + mode);
+        }
+        else
+        {
+            Debug.LogWarning("[LobbyScreen] Non-server tried to set game mode");
+        }
+
         // Update UI to show selected mode
         if (eightQButton != null && twelveQButton != null)
         {
@@ -572,20 +580,19 @@ public class LobbyScreen : MonoBehaviour
         // Unsubscribe
         RWMNetworkManager.Instance.OnRoomJoined -= OnPlayerJoinedRoom;
 
-        // NOW register the player locally
+        // Register the player - PlayerAuthSystem will handle sending RPC to server
         if (PlayerAuthSystem.Instance != null)
         {
             PlayerAuthSystem.Instance.RegisterPlayer(pendingPlayerName, selectedPlayerIconName);
         }
-        else if (GameManager.Instance != null)
+        else
         {
-            GameManager.Instance.AddPlayer(pendingPlayerID, pendingPlayerName, selectedPlayerIconName);
-        }
-
-        // Send to host via Unity Netcode RPC
-        if (RWMNetworkManager.Instance != null)
-        {
-            RWMNetworkManager.Instance.AddPlayer(pendingPlayerName, selectedPlayerIconName);
+            // Fallback: directly call network manager if auth system unavailable
+            Debug.LogWarning("[LobbyScreen] PlayerAuthSystem unavailable, using fallback registration");
+            if (RWMNetworkManager.Instance != null)
+            {
+                RWMNetworkManager.Instance.AddPlayer(pendingPlayerName, selectedPlayerIconName);
+            }
         }
 
         UpdateWaitingScreenUI(pendingPlayerName);

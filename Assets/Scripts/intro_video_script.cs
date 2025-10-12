@@ -109,16 +109,15 @@ public class IntroVideoScreen : MonoBehaviour
     
     void AdvanceToGame()
     {
-        // Check device type - mobile goes to LobbyScreen
-        if (DeviceDetector.Instance != null && DeviceDetector.Instance.IsMobile())
+        // Only server can advance scenes
+        if (GameManager.Instance != null && GameManager.Instance.IsServer)
         {
-            UnityEngine.SceneManagement.SceneManager.LoadScene("LobbyScreen");
-            GameManager.Instance.currentGameState = GameManager.GameState.Lobby;
+            // Desktop goes to LandingScreen (mobile should not be running IntroVideo)
+            GameManager.Instance.AdvanceToNextScreen();
         }
         else
         {
-            // Desktop goes to LandingScreen
-            GameManager.Instance.AdvanceToNextScreen();
+            Debug.LogWarning("[IntroVideoScreen] Non-server tried to advance scene - this should not happen");
         }
     }
     

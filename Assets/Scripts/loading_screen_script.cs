@@ -128,8 +128,16 @@ public class LoadingScreen : MonoBehaviour
         if (ENABLE_DEBUG_LOGS)
             Debug.Log("[LoadingScreen] Advancing to IntroVideoScreen");
 
-        UnityEngine.SceneManagement.SceneManager.LoadScene("IntroVideoScreen");
-        GameManager.Instance.currentGameState = GameManager.GameState.IntroVideo;
+        // Use GameManager's server-authoritative method to advance
+        if (GameManager.Instance != null && GameManager.Instance.IsServer)
+        {
+            GameManager.Instance.AdvanceToNextScreen();
+        }
+        else
+        {
+            // Clients should not trigger scene loads - this should only happen on host
+            Debug.LogWarning("[LoadingScreen] Non-server tried to advance scene - this should not happen");
+        }
     }
     
     // Optional: Add actual asset loading here

@@ -67,24 +67,43 @@ public class SceneTransitionManager : MonoBehaviour
     
     // === PUBLIC TRANSITION METHODS ===
     
+    /// <summary>
+    /// DEPRECATED: Use GameManager.LoadScene instead for networked games
+    /// This method bypasses Unity Netcode and will cause desyncs
+    /// </summary>
+    [System.Obsolete("Use GameManager.LoadScene for networked games")]
     public void LoadScene(string sceneName)
     {
+        Debug.LogWarning("[SceneTransitionManager] LoadScene is deprecated. Use GameManager.LoadScene for networked games.");
+
+        // For backwards compatibility in single-player or debug scenarios only
         if (!isTransitioning)
         {
             StartCoroutine(TransitionToScene(sceneName));
         }
     }
-    
+
+    /// <summary>
+    /// DEPRECATED: Use GameManager.LoadScene instead for networked games
+    /// </summary>
+    [System.Obsolete("Use GameManager.LoadScene for networked games")]
     public void LoadSceneWithDelay(string sceneName, float delay)
     {
+        Debug.LogWarning("[SceneTransitionManager] LoadSceneWithDelay is deprecated. Use GameManager.LoadScene for networked games.");
+
         if (!isTransitioning)
         {
             StartCoroutine(TransitionToSceneWithDelay(sceneName, delay));
         }
     }
-    
+
+    /// <summary>
+    /// DEPRECATED: Use GameManager.LoadScene instead for networked games
+    /// </summary>
+    [System.Obsolete("Use GameManager.LoadScene for networked games")]
     public void LoadSceneImmediate(string sceneName)
     {
+        Debug.LogWarning("[SceneTransitionManager] LoadSceneImmediate is deprecated. Use GameManager.LoadScene for networked games.");
         SceneManager.LoadScene(sceneName);
     }
     

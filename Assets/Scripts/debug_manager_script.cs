@@ -248,27 +248,55 @@ public class DebugManager : MonoBehaviour
         
         if (GUILayout.Button("Set Timer to 5 seconds"))
         {
-            GameManager.Instance.currentTimerValue = 5f;
+            if (GameManager.Instance.IsServer)
+            {
+                GameManager.Instance.currentTimerValue.Value = 5f;
+            }
+            else
+            {
+                Debug.LogWarning("[DebugManager] Only server can modify timer");
+            }
         }
-        
+
         if (GUILayout.Button("Skip Timer"))
         {
-            GameManager.Instance.currentTimerValue = 0f;
+            if (GameManager.Instance.IsServer)
+            {
+                GameManager.Instance.currentTimerValue.Value = 0f;
+            }
+            else
+            {
+                Debug.LogWarning("[DebugManager] Only server can modify timer");
+            }
         }
-        
+
         GUILayout.Space(10);
-        
+
         // === GAME MODE ===
         GUILayout.Label("=== GAME MODE ===");
-        
+
         if (GUILayout.Button("Switch to 8Q Mode"))
         {
-            GameManager.Instance.gameMode = GameManager.GameMode.EightQuestions;
+            if (GameManager.Instance.IsServer)
+            {
+                GameManager.Instance.gameMode.Value = GameManager.GameMode.EightQuestions;
+            }
+            else
+            {
+                Debug.LogWarning("[DebugManager] Only server can modify game mode");
+            }
         }
-        
+
         if (GUILayout.Button("Switch to 12Q Mode"))
         {
-            GameManager.Instance.gameMode = GameManager.GameMode.TwelveQuestions;
+            if (GameManager.Instance.IsServer)
+            {
+                GameManager.Instance.gameMode.Value = GameManager.GameMode.TwelveQuestions;
+            }
+            else
+            {
+                Debug.LogWarning("[DebugManager] Only server can modify game mode");
+            }
         }
         
         GUILayout.EndScrollView();
@@ -458,42 +486,66 @@ public class DebugManager : MonoBehaviour
     
     public void SkipToRound(int round)
     {
-        GameManager.Instance.currentRound = round - 1;
-        GameManager.Instance.AdvanceToNextScreen();
-        Debug.Log("Skipped to round " + round);
+        if (GameManager.Instance.IsServer)
+        {
+            GameManager.Instance.currentRound.Value = round - 1;
+            GameManager.Instance.AdvanceToNextScreen();
+            Debug.Log("Skipped to round " + round);
+        }
+        else
+        {
+            Debug.LogWarning("[DebugManager] Only server can skip rounds");
+        }
     }
-    
+
     public void AddPointsToAllPlayers(int points)
     {
-        foreach (var player in GameManager.Instance.players)
+        // Use server-authoritative method
+        if (GameManager.Instance != null)
         {
-            player.Value.scorePercentage += points;
+            GameManager.Instance.AddPointsToAllPlayers(points);
         }
-        Debug.Log("Added " + points + "% to all players");
     }
-    
+
     public void ResetAllScores()
     {
-        foreach (var player in GameManager.Instance.players)
+        // Use server-authoritative method
+        if (GameManager.Instance != null)
         {
-            player.Value.scorePercentage = 0;
+            GameManager.Instance.ResetAllPlayerScores();
         }
-        Debug.Log("Reset all player scores to 0%");
     }
-    
+
     public void RandomizeScores()
     {
-        foreach (var player in GameManager.Instance.players)
+        if (GameManager.Instance != null && GameManager.Instance.IsServer)
         {
-            player.Value.scorePercentage = Random.Range(-50, 150);
+            // Directly manipulate NetworkList on server
+            for (int i = 0; i < GameManager.Instance.networkPlayers.Count; i++)
+            {
+                var player = GameManager.Instance.networkPlayers[i];
+                player.scorePercentage = Random.Range(-50, 150);
+                GameManager.Instance.networkPlayers[i] = player;
+            }
+            Debug.Log("Randomized all player scores");
         }
-        Debug.Log("Randomized all player scores");
+        else
+        {
+            Debug.LogWarning("[DebugManager] Only server can randomize scores");
+        }
     }
     
     public void ToggleTimer()
     {
-        GameManager.Instance.timerActive = !GameManager.Instance.timerActive;
-        Debug.Log("Timer " + (GameManager.Instance.timerActive ? "resumed" : "paused"));
+        if (GameManager.Instance.IsServer)
+        {
+            GameManager.Instance.timerActive.Value = !GameManager.Instance.timerActive.Value;
+            Debug.Log("Timer " + (GameManager.Instance.timerActive.Value ? "resumed" : "paused"));
+        }
+        else
+        {
+            Debug.LogWarning("[DebugManager] Only server can toggle timer");
+        }
     }
     
     // === COROUTINE HELPER ===

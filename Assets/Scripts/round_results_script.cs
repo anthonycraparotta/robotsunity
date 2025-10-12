@@ -742,17 +742,18 @@ public class RoundResultsScreen : MonoBehaviour
     {
         MobileHaptics.HeavyImpact();
 
-        // Load final results screen
-        if (SceneTransitionManager.Instance != null)
+        // Only server can load scenes and set game state
+        if (GameManager.Instance != null && GameManager.Instance.IsServer)
         {
-            SceneTransitionManager.Instance.LoadScene("FinalResults");
+            // Use GameManager's LoadScene method which uses NetworkSceneManager
+            // LoadScene is already server-only in GameManager
+            GameManager.Instance.LoadScene("FinalResults");
+            GameManager.Instance.currentGameState.Value = GameManager.GameState.FinalResults;
         }
         else
         {
-            UnityEngine.SceneManagement.SceneManager.LoadScene("FinalResults");
+            Debug.LogWarning("[RoundResults] Non-server tried to load FinalResults - this should be server-driven");
         }
-
-        GameManager.Instance.currentGameState = GameManager.GameState.FinalResults;
     }
     
     string GetLocalPlayerID()

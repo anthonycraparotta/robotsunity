@@ -278,65 +278,13 @@ public class RWMNetworkManager : NetworkBehaviour
 
     // === GAME STATE SYNC ===
 
-    public void SyncGameState(GameManager.GameState state)
-    {
-        if (!isHost || !IsSpawned) return;
-
-        SyncGameStateClientRpc(state.ToString());
-    }
-
-    [ClientRpc]
-    private void SyncGameStateClientRpc(string gameState)
-    {
-        if (isHost) return; // Host already has the state
-
-        OnGameStateChanged?.Invoke(gameState);
-
-        if (GameManager.Instance != null && !string.IsNullOrEmpty(gameState))
-        {
-            GameManager.GameState state = (GameManager.GameState)Enum.Parse(typeof(GameManager.GameState), gameState);
-            GameManager.Instance.currentGameState = state;
-        }
-    }
-
-    public void SyncTimer(float timerValue, bool isActive)
-    {
-        if (!isHost || !IsSpawned) return;
-
-        SyncTimerClientRpc(timerValue, isActive);
-    }
-
-    [ClientRpc]
-    private void SyncTimerClientRpc(float timerValue, bool isActive)
-    {
-        if (isHost) return; // Host already has the timer
-
-        OnTimerSync?.Invoke(timerValue, isActive);
-
-        if (GameManager.Instance != null)
-        {
-            GameManager.Instance.currentTimerValue = timerValue;
-            GameManager.Instance.timerActive = isActive;
-        }
-    }
-
-    public void SyncCurrentRound(int round)
-    {
-        if (!isHost || !IsSpawned) return;
-
-        SyncCurrentRoundClientRpc(round);
-    }
-
-    [ClientRpc]
-    private void SyncCurrentRoundClientRpc(int round)
-    {
-        if (isHost) return;
-
-        if (GameManager.Instance != null)
-        {
-            GameManager.Instance.currentRound = round;
-        }
-    }
+    // REMOVED: Redundant sync methods - GameManager NetworkVariables handle replication automatically
+    // NetworkVariables in GameManager already sync from server to clients automatically.
+    // These manual RPC sync methods were duplicating that functionality and trying to
+    // write to server-owned NetworkVariables from clients, which violates Netcode authority.
+    //
+    // If UI needs to react to state changes, use NetworkVariable.OnValueChanged callbacks
+    // in GameManager instead of these RPCs.
 
     // === ANSWER SUBMISSION ===
 

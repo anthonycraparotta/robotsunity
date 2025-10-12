@@ -380,14 +380,14 @@ public class FinalResultsScreen : MonoBehaviour
     {
         MobileHaptics.MediumImpact();
 
-        // Go to Credits scene
-        if (SceneTransitionManager.Instance != null)
+        // Only server can load scenes
+        if (GameManager.Instance != null && GameManager.Instance.IsServer)
         {
-            SceneTransitionManager.Instance.LoadScene("CreditsScreen");
+            GameManager.Instance.AdvanceToNextScreen();
         }
         else
         {
-            UnityEngine.SceneManagement.SceneManager.LoadScene("CreditsScreen");
+            Debug.LogWarning("[FinalResults] Non-server tried to load Credits - this should be server-driven");
         }
     }
 
@@ -395,25 +395,18 @@ public class FinalResultsScreen : MonoBehaviour
     {
         MobileHaptics.HeavyImpact();
 
-        // Reset game and go back to lobby
-        GameManager.Instance.currentRound = 0;
-        GameManager.Instance.isHalftimePlayed = false;
-        GameManager.Instance.isBonusRoundPlayed = false;
-
-        // Reset all scores
-        foreach (var player in GameManager.Instance.players.Values)
+        // Only server can reset game state and load scenes
+        if (GameManager.Instance != null && GameManager.Instance.IsServer)
         {
-            player.scorePercentage = 0;
-        }
+            // Use server-authoritative reset method
+            GameManager.Instance.ResetGameState();
 
-        // Go back to lobby
-        if (SceneTransitionManager.Instance != null)
-        {
-            SceneTransitionManager.Instance.LoadScene("LobbyScreen");
+            // Load lobby scene using NetworkSceneManager
+            GameManager.Instance.LoadScene("LobbyScreen");
         }
         else
         {
-            UnityEngine.SceneManagement.SceneManager.LoadScene("LobbyScreen");
+            Debug.LogWarning("[FinalResults] Non-server tried to reset game - this should be server-driven");
         }
     }
 
