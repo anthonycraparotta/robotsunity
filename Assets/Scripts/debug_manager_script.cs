@@ -123,40 +123,40 @@ public class DebugManager : MonoBehaviour
         
         // === SCENE JUMPING ===
         GUILayout.Label("=== SCENE NAVIGATION ===");
-        
+
         if (GUILayout.Button("Landing Screen"))
         {
-            SceneManager.LoadScene("LandingScreen");
+            TryLoadScene("LandingScreen");
         }
-        
+
         if (GUILayout.Button("Lobby Screen"))
         {
-            SceneManager.LoadScene("LobbyScreen");
+            TryLoadScene("LobbyScreen");
         }
-        
+
         if (GUILayout.Button("Question Screen"))
         {
-            SceneManager.LoadScene("QuestionScreen");
+            TryLoadScene("QuestionScreen");
         }
-        
+
         if (GUILayout.Button("Elimination Screen"))
         {
-            SceneManager.LoadScene("EliminationScreen");
+            TryLoadScene("EliminationScreen");
         }
-        
+
         if (GUILayout.Button("Voting Screen"))
         {
-            SceneManager.LoadScene("VotingScreen");
+            TryLoadScene("VotingScreen");
         }
-        
+
         if (GUILayout.Button("Results Screen"))
         {
-            SceneManager.LoadScene("ResultsScreen");
+            TryLoadScene("ResultsScreen");
         }
-        
+
         if (GUILayout.Button("Final Results"))
         {
-            SceneManager.LoadScene("FinalResults");
+            TryLoadScene("FinalResults");
         }
         
         GUILayout.Space(10);
@@ -177,8 +177,11 @@ public class DebugManager : MonoBehaviour
         
         if (GUILayout.Button("Next Round"))
         {
-            GameManager.Instance.currentRound++;
-            GameManager.Instance.AdvanceToNextScreen();
+            if (EnsureServerAuthority("advance to the next round"))
+            {
+                GameManager.Instance.currentRound.Value++;
+                GameManager.Instance.AdvanceToNextScreen();
+            }
         }
         
         GUILayout.Space(10);
@@ -248,25 +251,17 @@ public class DebugManager : MonoBehaviour
         
         if (GUILayout.Button("Set Timer to 5 seconds"))
         {
-            if (GameManager.Instance.IsServer)
+            if (EnsureServerAuthority("set the timer to 5 seconds"))
             {
                 GameManager.Instance.currentTimerValue.Value = 5f;
-            }
-            else
-            {
-                Debug.LogWarning("[DebugManager] Only server can modify timer");
             }
         }
 
         if (GUILayout.Button("Skip Timer"))
         {
-            if (GameManager.Instance.IsServer)
+            if (EnsureServerAuthority("skip the timer"))
             {
                 GameManager.Instance.currentTimerValue.Value = 0f;
-            }
-            else
-            {
-                Debug.LogWarning("[DebugManager] Only server can modify timer");
             }
         }
 
@@ -277,35 +272,52 @@ public class DebugManager : MonoBehaviour
 
         if (GUILayout.Button("Switch to 8Q Mode"))
         {
-            if (GameManager.Instance.IsServer)
+            if (EnsureServerAuthority("switch to 8Q mode"))
             {
                 GameManager.Instance.gameMode.Value = GameManager.GameMode.EightQuestions;
-            }
-            else
-            {
-                Debug.LogWarning("[DebugManager] Only server can modify game mode");
             }
         }
 
         if (GUILayout.Button("Switch to 12Q Mode"))
         {
-            if (GameManager.Instance.IsServer)
+            if (EnsureServerAuthority("switch to 12Q mode"))
             {
                 GameManager.Instance.gameMode.Value = GameManager.GameMode.TwelveQuestions;
-            }
-            else
-            {
-                Debug.LogWarning("[DebugManager] Only server can modify game mode");
             }
         }
         
         GUILayout.EndScrollView();
-        
+
         GUI.DragWindow();
     }
-    
+
+    bool EnsureServerAuthority(string action)
+    {
+        if (GameManager.Instance == null)
+        {
+            Debug.LogWarning($"[DebugManager] Cannot {action}: GameManager is not available.");
+            return false;
+        }
+
+        if (!GameManager.Instance.IsServer)
+        {
+            Debug.LogWarning($"[DebugManager] Cannot {action}: host authority required.");
+            return false;
+        }
+
+        return true;
+    }
+
+    void TryLoadScene(string sceneName)
+    {
+        if (EnsureServerAuthority($"load scene {sceneName}"))
+        {
+            GameManager.Instance.LoadScene(sceneName);
+        }
+    }
+
     // === DEBUG FUNCTIONS ===
-    
+
     public void AddTestPlayers()
     {
         if (!GameManager.Instance.IsServer)
@@ -361,8 +373,7 @@ public class DebugManager : MonoBehaviour
     
     public void ClearAllPlayers()
     {
-        // Use server-authoritative method
-        if (GameManager.Instance != null)
+        if (EnsureServerAuthority("clear all players"))
         {
             GameManager.Instance.ClearAllPlayers();
         }
@@ -370,11 +381,7 @@ public class DebugManager : MonoBehaviour
 
     public void SimulateAllAnswers()
     {
-        if (!GameManager.Instance.IsServer)
-        {
-            Debug.LogWarning("[DebugManager] Only server can simulate answers");
-            return;
-        }
+        if (!EnsureServerAuthority("simulate answers")) return;
 
         string[] sampleAnswers = new string[]
         {
@@ -410,9 +417,11 @@ public class DebugManager : MonoBehaviour
 
         Debug.Log("Simulated answers for all players");
     }
-    
+
     public void SimulateRandomVotes()
     {
+        if (!EnsureServerAuthority("simulate votes")) return;
+
         List<string> answers;
 
         // Use appropriate answer list based on current screen
@@ -473,6 +482,8 @@ public class DebugManager : MonoBehaviour
 
     public void SimulateBonusVotes()
     {
+        if (!EnsureServerAuthority("simulate bonus votes")) return;
+
         // Get all players
         List<PlayerData> allPlayers = GameManager.Instance.GetAllPlayers();
 
@@ -493,14 +504,19 @@ public class DebugManager : MonoBehaviour
 
         Debug.Log("Simulated bonus votes for all players");
     }
-    
+
     public void AutoCompleteRound()
     {
-        StartCoroutine(AutoCompleteRoundCoroutine());
+        if (EnsureServerAuthority("auto-complete the round"))
+        {
+            StartCoroutine(AutoCompleteRoundCoroutine());
+        }
     }
 
     System.Collections.IEnumerator AutoCompleteRoundCoroutine()
     {
+        if (!EnsureServerAuthority("auto-complete the round")) yield break;
+
         // Simulate entire round automatically
         SimulateAllAnswers();
         yield return new WaitForSeconds(0.5f);
@@ -518,25 +534,20 @@ public class DebugManager : MonoBehaviour
 
         Debug.Log("Auto-completed round");
     }
-    
+
     public void SkipToRound(int round)
     {
-        if (GameManager.Instance.IsServer)
+        if (EnsureServerAuthority($"skip to round {round}"))
         {
             GameManager.Instance.currentRound.Value = round - 1;
             GameManager.Instance.AdvanceToNextScreen();
             Debug.Log("Skipped to round " + round);
         }
-        else
-        {
-            Debug.LogWarning("[DebugManager] Only server can skip rounds");
-        }
     }
 
     public void AddPointsToAllPlayers(int points)
     {
-        // Use server-authoritative method
-        if (GameManager.Instance != null)
+        if (EnsureServerAuthority("add points to all players"))
         {
             GameManager.Instance.AddPointsToAllPlayers(points);
         }
@@ -544,8 +555,7 @@ public class DebugManager : MonoBehaviour
 
     public void ResetAllScores()
     {
-        // Use server-authoritative method
-        if (GameManager.Instance != null)
+        if (EnsureServerAuthority("reset all player scores"))
         {
             GameManager.Instance.ResetAllPlayerScores();
         }
@@ -553,7 +563,7 @@ public class DebugManager : MonoBehaviour
 
     public void RandomizeScores()
     {
-        if (GameManager.Instance != null && GameManager.Instance.IsServer)
+        if (EnsureServerAuthority("randomize scores"))
         {
             // Directly manipulate NetworkList on server
             for (int i = 0; i < GameManager.Instance.networkPlayers.Count; i++)
@@ -564,22 +574,14 @@ public class DebugManager : MonoBehaviour
             }
             Debug.Log("Randomized all player scores");
         }
-        else
-        {
-            Debug.LogWarning("[DebugManager] Only server can randomize scores");
-        }
     }
-    
+
     public void ToggleTimer()
     {
-        if (GameManager.Instance.IsServer)
+        if (EnsureServerAuthority("toggle the timer"))
         {
             GameManager.Instance.timerActive.Value = !GameManager.Instance.timerActive.Value;
             Debug.Log("Timer " + (GameManager.Instance.timerActive.Value ? "resumed" : "paused"));
-        }
-        else
-        {
-            Debug.LogWarning("[DebugManager] Only server can toggle timer");
         }
     }
     

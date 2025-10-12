@@ -149,7 +149,14 @@ public class HalftimeResultsScreen : MonoBehaviour
         else
         {
             // Both panels shown, advance to next screen
-            GameManager.Instance.AdvanceToNextScreen();
+            if (GameManager.Instance != null && GameManager.Instance.IsServer)
+            {
+                GameManager.Instance.AdvanceToNextScreen();
+            }
+            else
+            {
+                Debug.LogWarning("[HalftimeResults] Only the host can advance to the next screen.");
+            }
         }
     }
     
@@ -354,7 +361,14 @@ public class HalftimeResultsScreen : MonoBehaviour
         MobileHaptics.MediumImpact();
 
         // Continue to Bonus Round
-        GameManager.Instance.AdvanceToNextScreen();
+        if (GameManager.Instance != null && GameManager.Instance.IsServer)
+        {
+            GameManager.Instance.AdvanceToNextScreen();
+        }
+        else
+        {
+            Debug.LogWarning("[HalftimeResults] Only the host can advance to the next screen.");
+        }
     }
     
     string GetLocalPlayerID()

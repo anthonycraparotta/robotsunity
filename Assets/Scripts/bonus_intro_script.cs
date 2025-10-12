@@ -65,7 +65,14 @@ public class BonusIntroScreen : MonoBehaviour
     
     void AdvanceToBonusQuestions()
     {
-        GameManager.Instance.AdvanceToNextScreen();
+        if (GameManager.Instance != null && GameManager.Instance.IsServer)
+        {
+            GameManager.Instance.AdvanceToNextScreen();
+        }
+        else
+        {
+            Debug.LogWarning("[BonusIntroScreen] Only the host can advance to the next screen.");
+        }
     }
     
     void OnDestroy()

@@ -188,7 +188,14 @@ public class RoundResultsScreen : MonoBehaviour
         else
         {
             // All panels shown, advance to next screen
-            GameManager.Instance.AdvanceToNextScreen();
+            if (GameManager.Instance != null && GameManager.Instance.IsServer)
+            {
+                GameManager.Instance.AdvanceToNextScreen();
+            }
+            else
+            {
+                Debug.LogWarning("[RoundResults] Only the host can advance to the next screen.");
+            }
         }
     }
     
@@ -735,7 +742,14 @@ public class RoundResultsScreen : MonoBehaviour
     {
         MobileHaptics.MediumImpact();
 
-        GameManager.Instance.AdvanceToNextScreen();
+        if (GameManager.Instance != null && GameManager.Instance.IsServer)
+        {
+            GameManager.Instance.AdvanceToNextScreen();
+        }
+        else
+        {
+            Debug.LogWarning("[RoundResults] Only the host can advance to the next screen.");
+        }
     }
 
     public void OnFinalResultsClicked()
