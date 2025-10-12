@@ -567,7 +567,18 @@ public class FinalResultsScreen : MonoBehaviour
                 ? "{0} just won Robots Wearing Moustaches with {1}% human!"
                 : "{0} scored {1}% human in Robots Wearing Moustaches!";
         }
-        string shareMessage = string.Format(messageTemplate, shareDisplayName, shareScore);
+
+        string safeShareName = shareDisplayName.Replace("{", "{{").Replace("}", "}}");
+        string shareMessage;
+        try
+        {
+            shareMessage = string.Format(messageTemplate, safeShareName, shareScore);
+        }
+        catch (FormatException ex)
+        {
+            Debug.LogWarning($"Invalid share message template '{messageTemplate}': {ex.Message}");
+            shareMessage = string.Format("{0} scored {1}% human in Robots Wearing Moustaches!", safeShareName, shareScore);
+        }
 
         yield return StartCoroutine(ShareImage(filePath, shareMessage));
 
