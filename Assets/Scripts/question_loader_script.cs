@@ -116,22 +116,21 @@ public class QuestionLoader : MonoBehaviour
     void LoadPictureQuestions()
     {
         TextAsset jsonFile = Resources.Load<TextAsset>(pictureQuestionsPath);
-        
+
         if (jsonFile == null)
         {
             Debug.LogError("Could not find picqs.json at Resources/" + pictureQuestionsPath);
             return;
         }
-        
-        QuestionArrayWrapper wrapper = new QuestionArrayWrapper();
-        wrapper.questions = ParseQuestionArray(jsonFile.text);
-        
-        if (wrapper.questions != null && wrapper.questions.Count > 0)
+
+        List<Question> pictureQuestionList = ParsePictureQuestionArray(jsonFile.text);
+
+        if (pictureQuestionList != null && pictureQuestionList.Count > 0)
         {
             // Shuffle the questions to ensure varied playthrough order
-            ShuffleUtility.Shuffle(wrapper.questions);
-            gameManager.pictureQuestions = wrapper.questions;
-            Debug.Log("Loaded and shuffled " + wrapper.questions.Count + " picture questions");
+            ShuffleUtility.Shuffle(pictureQuestionList);
+            gameManager.pictureQuestions = pictureQuestionList;
+            Debug.Log("Loaded and shuffled " + pictureQuestionList.Count + " picture questions");
         }
         else
         {
@@ -269,6 +268,46 @@ public class QuestionLoader : MonoBehaviour
 
         return questions;
     }
+
+    List<Question> ParsePictureQuestionArray(string json)
+    {
+        List<Question> questions = new List<Question>();
+
+        try
+        {
+            string wrappedJson = "{\"questions\":" + json + "}"; // Wrap array for JsonUtility
+
+            RawPictureQuestionArrayWrapper wrapper = JsonUtility.FromJson<RawPictureQuestionArrayWrapper>(wrappedJson);
+
+            if (wrapper != null && wrapper.questions != null)
+            {
+                foreach (RawPictureQuestionData raw in wrapper.questions)
+                {
+                    Question q = new Question();
+
+                    // The "question" field in picqs.json represents the image identifier (e.g. "picq1")
+                    string imageIdentifier = raw.question ?? string.Empty;
+
+                    q.questionText = imageIdentifier;
+                    q.correctAnswer = raw.correctAnswer ?? string.Empty;
+                    q.robotAnswer = raw.robotAnswer ?? string.Empty;
+                    q.robotAnecdote = ""; // Not part of the data structure yet
+                    q.questionType = "picture";
+
+                    // Allow explicit imageURL override, otherwise fall back to the identifier itself
+                    q.imageURL = string.IsNullOrEmpty(raw.imageURL) ? imageIdentifier : raw.imageURL;
+
+                    questions.Add(q);
+                }
+            }
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError("Error parsing picture question array: " + e.Message);
+        }
+
+        return questions;
+    }
 }
 
 // === JSON DATA STRUCTURES ===
@@ -299,6 +338,21 @@ public class RawPlayerQuestionData
 public class RawPlayerQuestionArrayWrapper
 {
     public List<RawPlayerQuestionData> questions;
+}
+
+[System.Serializable]
+public class RawPictureQuestionData
+{
+    public string question;
+    public string correctAnswer;
+    public string robotAnswer;
+    public string imageURL;
+}
+
+[System.Serializable]
+public class RawPictureQuestionArrayWrapper
+{
+    public List<RawPictureQuestionData> questions;
 }
 
 [System.Serializable]
