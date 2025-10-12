@@ -544,17 +544,61 @@ public class GameManager : NetworkBehaviour
         bonusVotes.Remove(playerID);
     }
 
-    void SyncQuestionData(Question question, QuestionType questionType)
+    private Question CreateResolvedQuestion(Question question, QuestionType questionType)
+    {
+        if (question == null)
+        {
+            return null;
+        }
+
+        Question resolved = new Question
+        {
+            questionText = question.questionText,
+            correctAnswer = question.correctAnswer,
+            robotAnswer = question.robotAnswer,
+            robotAnecdote = question.robotAnecdote,
+            questionType = questionType.ToString(),
+            imageURL = question.imageURL
+        };
+
+        if (questionType == QuestionType.Player)
+        {
+            resolved.questionText = ResolvePlayerNamePlaceholder(resolved.questionText);
+        }
+
+        return resolved;
+    }
+
+    private string ResolvePlayerNamePlaceholder(string questionText)
+    {
+        if (string.IsNullOrEmpty(questionText) || !questionText.Contains("[player.name]"))
+        {
+            return questionText;
+        }
+
+        List<PlayerData> players = GetAllPlayers();
+        if (players.Count == 0)
+        {
+            Debug.LogWarning("[GameManager] Unable to resolve [player.name] placeholder - no players connected.");
+            return questionText.Replace("[player.name]", "Player");
+        }
+
+        PlayerData selectedPlayer = players[UnityEngine.Random.Range(0, players.Count)];
+        string replacement = string.IsNullOrEmpty(selectedPlayer.playerName) ? "Player" : selectedPlayer.playerName;
+
+        Debug.Log($"[GameManager] Replacing [player.name] with '{replacement}' for player question.");
+
+        return questionText.Replace("[player.name]", replacement);
+    }
+
+    private void SyncQuestionData(Question question, QuestionType questionType)
     {
         if (!IsServer) return;
 
-        if (question != null)
-        {
-            question.questionType = questionType.ToString();
-        }
+        Question resolvedQuestion = CreateResolvedQuestion(question, questionType);
 
-        currentQuestion = question;
-        currentQuestionPayload.Value = NetworkQuestionPayload.FromQuestion(question, questionType);
+        currentQuestion = resolvedQuestion;
+        currentQuestionPayload.Value = NetworkQuestionPayload.FromQuestion(resolvedQuestion, questionType);
     }
 
     void CheckForSpecialScreens()
