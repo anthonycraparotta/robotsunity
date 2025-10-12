@@ -1,4 +1,5 @@
 using UnityEngine;
+using Unity.Netcode;
 
 /// <summary>
 /// Ensures that all core singleton-style systems are present in the scene graph
@@ -67,7 +68,23 @@ public static class CoreSystemsBootstrapper
             Debug.Log($"[CoreSystemsBootstrapper] Creating {managerName}...");
 
         var managerObj = new GameObject(managerName);
-        managerObj.AddComponent<T>();
+        var managerComponent = managerObj.AddComponent<T>();
+
+        if (managerComponent is GameManager)
+        {
+            var networkObject = managerObj.GetComponent<NetworkObject>();
+
+            if (networkObject == null)
+            {
+                networkObject = managerObj.AddComponent<NetworkObject>();
+            }
+
+            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer && !networkObject.IsSpawned)
+            {
+                networkObject.Spawn();
+                Debug.Log("[CoreSystemsBootstrapper] Spawned fallback GameManager NetworkObject");
+            }
+        }
 
         if (ENABLE_DEBUG_LOGS)
             Debug.Log($"[CoreSystemsBootstrapper] ✓ {managerName} created");

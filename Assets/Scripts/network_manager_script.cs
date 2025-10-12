@@ -95,6 +95,24 @@ public class RWMNetworkManager : NetworkBehaviour
         isConnected = true;
         isHost = true;
         OnRoomCreated?.Invoke(roomCode);
+
+        var gameManager = GameManager.Instance;
+
+        if (gameManager == null)
+        {
+            gameManager = FindObjectOfType<GameManager>();
+        }
+
+        if (gameManager != null)
+        {
+            var networkObject = gameManager.GetComponent<NetworkObject>();
+
+            if (networkObject != null && !networkObject.IsSpawned)
+            {
+                networkObject.Spawn();
+                Debug.Log("[NetworkManager] Spawned GameManager NetworkObject on host start");
+            }
+        }
     }
 
     private void OnClientConnected(ulong clientId)
