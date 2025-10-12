@@ -78,12 +78,12 @@ public class EliminationScreen : MonoBehaviour
         UpdateTimerDisplay();
 
         // Check timer warning for audio
-        if (AudioManager.Instance != null)
+        if (AudioManager.Instance != null && GameManager.Instance != null)
         {
             AudioManager.Instance.CheckTimerWarning(GameManager.Instance.GetTimeRemaining());
         }
     }
-    
+
     void ShowAppropriateDisplay()
     {
         if (desktopDisplay != null)
@@ -102,16 +102,23 @@ public class EliminationScreen : MonoBehaviour
         List<string> answers;
         Transform container;
         
+        var gameManager = GameManager.Instance;
+        if (gameManager == null)
+        {
+            Debug.LogWarning("DisplayAnswers called before GameManager was ready");
+            return;
+        }
+
         if (isMobile)
         {
             // Mobile: Filter out player's own answer
-            answers = GameManager.Instance.GetEliminationAnswersForMobile(playerID);
+            answers = gameManager.GetEliminationAnswersForMobile(playerID);
             container = elimListMobile;
         }
         else
         {
             // Desktop: Show all answers
-            answers = GameManager.Instance.GetAllAnswers();
+            answers = gameManager.GetAllAnswers();
             container = answerListContainer;
         }
         
@@ -277,7 +284,7 @@ public class EliminationScreen : MonoBehaviour
         {
             RWMNetworkManager.Instance.SubmitEliminationVote(selectedAnswer);
         }
-        else
+        else if (GameManager.Instance != null)
         {
             // Fallback for local testing without network
             GameManager.Instance.SubmitEliminationVote(playerID, selectedAnswer);
@@ -304,7 +311,7 @@ public class EliminationScreen : MonoBehaviour
     
     void UpdateTimerDisplay()
     {
-        if (timerCountdown != null)
+        if (timerCountdown != null && GameManager.Instance != null)
         {
             timerCountdown.text = GameManager.Instance.GetTimerDisplay();
         }
