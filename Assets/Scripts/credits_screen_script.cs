@@ -111,15 +111,19 @@ public class CreditsScreen : MonoBehaviour
 
         Debug.Log("New Game button clicked");
 
-        // Reset game and return to landing
-        GameManager.Instance.currentRound.Value = 0;
-        GameManager.Instance.isHalftimePlayed.Value = false;
-        GameManager.Instance.isBonusRoundPlayed.Value = false;
-        
-        // Clear all players
-        GameManager.Instance.players.Clear();
-        
-        GameManager.Instance.AdvanceToNextScreen();
+        if (GameManager.Instance == null)
+        {
+            Debug.LogWarning("[CreditsScreen] GameManager not available - cannot start a new game");
+            return;
+        }
+
+        if (!GameManager.Instance.HasHostAuthority())
+        {
+            Debug.LogWarning("[CreditsScreen] Only the host can start a new game from credits");
+            return;
+        }
+
+        GameManager.Instance.HostReturnToLobby(clearPlayers: true);
     }
     
     void OnDestroy()
