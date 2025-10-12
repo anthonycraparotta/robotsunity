@@ -396,7 +396,7 @@ public class QuestionScreen : MonoBehaviour
             PlayerData player = players[i];
 
             // Check if this player has submitted an answer
-            bool hasSubmitted = GameManager.Instance.currentRoundAnswers.ContainsKey(player.playerID);
+            bool hasSubmitted = GameManager.Instance.HasPlayerSubmittedAnswer(player.playerID);
 
             // Check previous state
             bool wasActive = iconObj.activeSelf;

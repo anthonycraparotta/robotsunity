@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using Unity.Netcode;
 using Unity.Collections;
@@ -31,10 +32,15 @@ public class GameManager : NetworkBehaviour
     public NetworkList<NetworkedPlayerData> networkPlayers; // Replaces Dictionary
 
     // Temporary dictionaries for compatibility during transition (server-only)
-    private Dictionary<string, string> currentRoundAnswers = new Dictionary<string, string>();
-    private Dictionary<string, string> eliminationVotes = new Dictionary<string, string>();
-    private Dictionary<string, string> votingVotes = new Dictionary<string, string>();
-    private Dictionary<string, string> bonusVotes = new Dictionary<string, string>();
+    private readonly Dictionary<string, string> currentRoundAnswers = new Dictionary<string, string>();
+    private readonly Dictionary<string, string> eliminationVotes = new Dictionary<string, string>();
+    private readonly Dictionary<string, string> votingVotes = new Dictionary<string, string>();
+    private readonly Dictionary<string, string> bonusVotes = new Dictionary<string, string>();
+
+    private ReadOnlyDictionary<string, string> readOnlyCurrentRoundAnswers;
+    private ReadOnlyDictionary<string, string> readOnlyEliminationVotes;
+    private ReadOnlyDictionary<string, string> readOnlyVotingVotes;
+    private ReadOnlyDictionary<string, string> readOnlyBonusVotes;
 
     // === ROUND DATA ===
     [Header("Current Round Data")]
@@ -105,6 +111,12 @@ public class GameManager : NetworkBehaviour
         networkPlayers = new NetworkList<NetworkedPlayerData>();
         allAnswers = new NetworkList<FixedString128Bytes>();
         remainingAnswers = new NetworkList<FixedString128Bytes>();
+
+        // Initialize read-only wrappers for server dictionaries used by UI code
+        readOnlyCurrentRoundAnswers = new ReadOnlyDictionary<string, string>(currentRoundAnswers);
+        readOnlyEliminationVotes = new ReadOnlyDictionary<string, string>(eliminationVotes);
+        readOnlyVotingVotes = new ReadOnlyDictionary<string, string>(votingVotes);
+        readOnlyBonusVotes = new ReadOnlyDictionary<string, string>(bonusVotes);
 
         // Singleton setup
         if (Instance == null)
@@ -1130,6 +1142,32 @@ public class GameManager : NetworkBehaviour
     {
         List<PlayerData> allPlayers = GetAllPlayers();
         return allPlayers.OrderByDescending(p => p.scorePercentage).ToList();
+    }
+
+    // Read-only accessors for server-maintained dictionaries so UI can query submission state without modifying data
+    public IReadOnlyDictionary<string, string> CurrentRoundAnswers => readOnlyCurrentRoundAnswers;
+    public IReadOnlyDictionary<string, string> EliminationVotes => readOnlyEliminationVotes;
+    public IReadOnlyDictionary<string, string> VotingVotes => readOnlyVotingVotes;
+    public IReadOnlyDictionary<string, string> BonusVotes => readOnlyBonusVotes;
+
+    public bool HasPlayerSubmittedAnswer(string playerID)
+    {
+        return currentRoundAnswers.ContainsKey(playerID);
+    }
+
+    public bool TryGetPlayerAnswer(string playerID, out string answer)
+    {
+        return currentRoundAnswers.TryGetValue(playerID, out answer);
+    }
+
+    public bool TryGetVotingVote(string playerID, out string votedAnswer)
+    {
+        return votingVotes.TryGetValue(playerID, out votedAnswer);
+    }
+
+    public bool TryGetBonusVote(string playerID, out string votedPlayerID)
+    {
+        return bonusVotes.TryGetValue(playerID, out votedPlayerID);
     }
 
     // Compatibility property for old Dictionary access pattern
