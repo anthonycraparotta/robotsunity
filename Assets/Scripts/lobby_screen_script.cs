@@ -327,9 +327,13 @@ public class LobbyScreen : MonoBehaviour
     {
         MobileHaptics.SelectionChanged();
 
-        GameManager.Instance.gameMode.Value = mode;
+        if (!TrySetGameMode(mode))
+        {
+            return;
+        }
+
         Debug.Log("Game mode selected: " + mode);
-        
+
         // Update UI to show selected mode
         if (eightQButton != null && twelveQButton != null)
         {
@@ -343,6 +347,28 @@ public class LobbyScreen : MonoBehaviour
                 Debug.Log("12 Questions selected");
             }
         }
+    }
+
+    bool TrySetGameMode(GameManager.GameMode mode)
+    {
+        if (GameManager.Instance == null)
+        {
+            Debug.LogWarning("[LobbyScreen] Cannot set game mode - GameManager is unavailable.");
+            return false;
+        }
+
+        if (!GameManager.Instance.IsServer)
+        {
+            Debug.LogWarning("[LobbyScreen] Ignoring game mode selection on a non-host client.");
+            return false;
+        }
+
+        if (GameManager.Instance.gameMode.Value != mode)
+        {
+            GameManager.Instance.gameMode.Value = mode;
+        }
+
+        return true;
     }
     
     public void OnEightQuestionsClicked()
@@ -783,8 +809,11 @@ public class LobbyScreen : MonoBehaviour
             string displayRoomCode = !string.IsNullOrEmpty(roomCode) ? roomCode :
                 (RWMNetworkManager.Instance != null ? RWMNetworkManager.Instance.GetRoomCode() : "");
 
+            GameManager.GameMode currentMode = ResolveCurrentGameMode();
+            string questionCount = currentMode == GameManager.GameMode.EightQuestions ? "8" : "12";
+
             waitData.text = nonHostPlayerCount + " Players\n" +
-                           (GameManager.Instance.gameMode.Value == GameManager.GameMode.EightQuestions ? "8" : "12") + " Questions\n" +
+                           questionCount + " Questions\n" +
                            displayRoomCode;
         }
 
@@ -797,6 +826,16 @@ public class LobbyScreen : MonoBehaviour
                 roomCodeDisplay.text = roomCode;
             }
         }
+    }
+
+    GameManager.GameMode ResolveCurrentGameMode()
+    {
+        if (GameManager.Instance != null)
+        {
+            return GameManager.Instance.gameMode.Value;
+        }
+
+        return GameManager.GameMode.EightQuestions;
     }
 
     System.Collections.IEnumerator BounceScaleUp(Transform transform)
