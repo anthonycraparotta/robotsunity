@@ -426,21 +426,22 @@ public class RWMNetworkManager : NetworkBehaviour
 
     // === SCORE UPDATES ===
 
+    /// <summary>
+    /// DEPRECATED: Use GameManager.SetPlayerScore() instead
+    /// This method tried to update scores via RPC but wrote to a transient dictionary copy.
+    /// GameManager's NetworkList<NetworkedPlayerData> handles replication automatically.
+    /// </summary>
+    [System.Obsolete("Use GameManager.SetPlayerScore() - NetworkList handles replication")]
     public void UpdateScore(string playerIdToUpdate, int newScore)
     {
+        Debug.LogWarning("[RWMNetworkManager] UpdateScore is deprecated. Use GameManager.SetPlayerScore() instead.");
+
         if (!isHost || !IsSpawned) return;
 
-        UpdateScoreClientRpc(playerIdToUpdate, newScore);
-    }
-
-    [ClientRpc]
-    private void UpdateScoreClientRpc(string playerIdToUpdate, int newScore)
-    {
-        OnScoreUpdated?.Invoke(playerIdToUpdate, newScore);
-
-        if (GameManager.Instance != null && GameManager.Instance.players.ContainsKey(playerIdToUpdate))
+        // Forward to proper server-authoritative method
+        if (GameManager.Instance != null)
         {
-            GameManager.Instance.players[playerIdToUpdate].scorePercentage = newScore;
+            GameManager.Instance.SetPlayerScore(playerIdToUpdate, newScore);
         }
     }
 

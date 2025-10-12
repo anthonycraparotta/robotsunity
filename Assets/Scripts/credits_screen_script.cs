@@ -111,15 +111,19 @@ public class CreditsScreen : MonoBehaviour
 
         Debug.Log("New Game button clicked");
 
-        // Reset game and return to landing
-        GameManager.Instance.currentRound = 0;
-        GameManager.Instance.isHalftimePlayed = false;
-        GameManager.Instance.isBonusRoundPlayed = false;
-        
-        // Clear all players
-        GameManager.Instance.players.Clear();
-        
-        GameManager.Instance.AdvanceToNextScreen();
+        // Only server can reset game state
+        if (GameManager.Instance != null && GameManager.Instance.IsServer)
+        {
+            // Use server-authoritative reset method
+            GameManager.Instance.ResetGameState();
+
+            // Navigate back to landing
+            GameManager.Instance.AdvanceToNextScreen();
+        }
+        else
+        {
+            Debug.LogWarning("[CreditsScreen] Non-server tried to reset game - this should be server-driven");
+        }
     }
     
     void OnDestroy()

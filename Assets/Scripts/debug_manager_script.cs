@@ -116,7 +116,7 @@ public class DebugManager : MonoBehaviour
         GUILayout.Label("=== GAME STATE ===");
         GUILayout.Label("Current Round: " + GameManager.Instance.currentRound);
         GUILayout.Label("Game Mode: " + GameManager.Instance.gameMode);
-        GUILayout.Label("Players: " + GameManager.Instance.players.Count);
+        GUILayout.Label("Players: " + GameManager.Instance.GetAllPlayers().Count);
         GUILayout.Label("Timer: " + GameManager.Instance.GetTimerDisplay());
         
         GUILayout.Space(10);
@@ -308,11 +308,35 @@ public class DebugManager : MonoBehaviour
     
     public void AddTestPlayers()
     {
-        // Find next available test player index
-        int startIndex = 0;
-        while (GameManager.Instance.players.ContainsKey("test_player_" + startIndex))
+        if (!GameManager.Instance.IsServer)
         {
-            startIndex++;
+            Debug.LogWarning("[DebugManager] Only server can add test players");
+            return;
+        }
+
+        // Find next available test player index by checking NetworkList
+        int startIndex = 0;
+        bool foundAvailable = false;
+        while (!foundAvailable)
+        {
+            bool exists = false;
+            for (int j = 0; j < GameManager.Instance.networkPlayers.Count; j++)
+            {
+                if (GameManager.Instance.networkPlayers[j].playerID.ToString() == "test_player_" + startIndex)
+                {
+                    exists = true;
+                    break;
+                }
+            }
+
+            if (!exists)
+            {
+                foundAvailable = true;
+            }
+            else
+            {
+                startIndex++;
+            }
         }
 
         for (int i = 0; i < numberOfTestPlayers; i++)
@@ -337,12 +361,21 @@ public class DebugManager : MonoBehaviour
     
     public void ClearAllPlayers()
     {
-        GameManager.Instance.players.Clear();
-        Debug.Log("Cleared all players");
+        // Use server-authoritative method
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.ClearAllPlayers();
+        }
     }
-    
+
     public void SimulateAllAnswers()
     {
+        if (!GameManager.Instance.IsServer)
+        {
+            Debug.LogWarning("[DebugManager] Only server can simulate answers");
+            return;
+        }
+
         string[] sampleAnswers = new string[]
         {
             "This is a test answer",
@@ -355,22 +388,23 @@ public class DebugManager : MonoBehaviour
             "Test submission"
         };
 
-        // Set up correct and robot answers if not already set
-        if (string.IsNullOrEmpty(GameManager.Instance.correctAnswer))
+        // Set up correct and robot answers if not already set (using NetworkVariable.Value)
+        if (string.IsNullOrEmpty(GameManager.Instance.correctAnswer.Value.ToString()))
         {
-            GameManager.Instance.correctAnswer = "The Correct Answer (Debug)";
+            GameManager.Instance.correctAnswer.Value = "The Correct Answer (Debug)";
         }
 
-        if (string.IsNullOrEmpty(GameManager.Instance.robotAnswer))
+        if (string.IsNullOrEmpty(GameManager.Instance.robotAnswer.Value.ToString()))
         {
-            GameManager.Instance.robotAnswer = "Robot Answer (Debug)";
+            GameManager.Instance.robotAnswer.Value = "Robot Answer (Debug)";
         }
 
         int index = 0;
-        foreach (var player in GameManager.Instance.players)
+        // Use GetAllPlayers() instead of transient dictionary
+        foreach (var player in GameManager.Instance.GetAllPlayers())
         {
             string answer = sampleAnswers[index % sampleAnswers.Length];
-            GameManager.Instance.SubmitPlayerAnswer(player.Key, answer);
+            GameManager.Instance.SubmitPlayerAnswer(player.playerID, answer);
             index++;
         }
 
@@ -402,7 +436,8 @@ public class DebugManager : MonoBehaviour
             return;
         }
 
-        foreach (var player in GameManager.Instance.players)
+        // Use GetAllPlayers() instead of transient dictionary
+        foreach (var player in GameManager.Instance.GetAllPlayers())
         {
             // Filter out null/empty answers
             List<string> validAnswers = new List<string>();
@@ -416,7 +451,7 @@ public class DebugManager : MonoBehaviour
 
             if (validAnswers.Count == 0)
             {
-                Debug.LogWarning("No valid answers to vote on for player " + player.Key);
+                Debug.LogWarning("No valid answers to vote on for player " + player.playerID);
                 continue;
             }
 
@@ -425,11 +460,11 @@ public class DebugManager : MonoBehaviour
             // Simulate elimination or voting depending on current screen
             if (SceneManager.GetActiveScene().name == "EliminationScreen")
             {
-                GameManager.Instance.SubmitEliminationVote(player.Key, randomAnswer);
+                GameManager.Instance.SubmitEliminationVote(player.playerID, randomAnswer);
             }
             else if (SceneManager.GetActiveScene().name == "VotingScreen")
             {
-                GameManager.Instance.SubmitVotingVote(player.Key, randomAnswer);
+                GameManager.Instance.SubmitVotingVote(player.playerID, randomAnswer);
             }
         }
 
@@ -447,13 +482,13 @@ public class DebugManager : MonoBehaviour
             return;
         }
 
-        // Each player votes for a random player
-        foreach (var voter in GameManager.Instance.players)
+        // Each player votes for a random player (already using GetAllPlayers correctly)
+        foreach (var voter in allPlayers)
         {
             // Pick a random player to vote for
             PlayerData randomPlayer = allPlayers[Random.Range(0, allPlayers.Count)];
 
-            GameManager.Instance.SubmitBonusVote(voter.Key, randomPlayer.playerID);
+            GameManager.Instance.SubmitBonusVote(voter.playerID, randomPlayer.playerID);
         }
 
         Debug.Log("Simulated bonus votes for all players");
@@ -562,7 +597,7 @@ public class DebugManager : MonoBehaviour
         Debug.Log("=== GAME STATE ===");
         Debug.Log("Round: " + GameManager.Instance.currentRound);
         Debug.Log("Mode: " + GameManager.Instance.gameMode);
-        Debug.Log("Players: " + GameManager.Instance.players.Count);
+        Debug.Log("Players: " + GameManager.Instance.GetAllPlayers().Count);
         Debug.Log("Timer: " + GameManager.Instance.GetTimeRemaining() + "s");
         Debug.Log("Current Scene: " + SceneManager.GetActiveScene().name);
     }

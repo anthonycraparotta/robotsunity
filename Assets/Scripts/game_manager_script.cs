@@ -1086,6 +1086,24 @@ public class GameManager : NetworkBehaviour
         }
     }
 
+    /// <summary>
+    /// Server-only: Remove all players (for debug/testing)
+    /// </summary>
+    public void ClearAllPlayers()
+    {
+        if (!IsServer) return;
+
+        networkPlayers.Clear();
+
+        // Clean up all vote/answer dictionaries
+        currentRoundAnswers.Clear();
+        eliminationVotes.Clear();
+        votingVotes.Clear();
+        bonusVotes.Clear();
+
+        Debug.Log("[GameManager] Cleared all players");
+    }
+
     public PlayerData GetPlayer(string playerID)
     {
         for (int i = 0; i < networkPlayers.Count; i++)

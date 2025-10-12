@@ -126,18 +126,19 @@ public class PlayerQuestionVideoScreen : MonoBehaviour
 
     void AdvanceToNextScreen()
     {
-        // Load the QuestionScreen for player questions
-        if (SceneTransitionManager.Instance != null)
+        // Only server can advance scenes
+        if (GameManager.Instance != null && GameManager.Instance.IsServer)
         {
-            SceneTransitionManager.Instance.LoadScene("QuestionScreen");
+            // Use NetworkSceneManager via GameManager
+            GameManager.Instance.LoadScene("QuestionScreen");
+
+            // Start the question timer (server-only)
+            GameManager.Instance.StartTimer(GameManager.Instance.questionTimer);
         }
         else
         {
-            UnityEngine.SceneManagement.SceneManager.LoadScene("QuestionScreen");
+            Debug.LogWarning("[PlayerQuestionVideo] Non-server tried to advance scene - this should be server-driven");
         }
-
-        // Start the question timer
-        GameManager.Instance.StartTimer(GameManager.Instance.questionTimer);
     }
 
     void OnDestroy()
