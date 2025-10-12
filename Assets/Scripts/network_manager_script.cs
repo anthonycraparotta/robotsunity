@@ -10,7 +10,7 @@ using Unity.Netcode.Transports.UTP;
 /// </summary>
 public class RWMNetworkManager : NetworkBehaviour
 {
-    public static RWMNetworkManager Instance;
+    public static RWMNetworkManager Instance { get; private set; }
 
     [Header("Network Settings")]
     public string roomCode = "";
@@ -39,15 +39,22 @@ public class RWMNetworkManager : NetworkBehaviour
 
     void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-            Debug.Log("[NetworkManager] Instance created");
-        }
-        else
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+        Debug.Log("[NetworkManager] Instance created");
+    }
+
+    void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
         }
     }
 

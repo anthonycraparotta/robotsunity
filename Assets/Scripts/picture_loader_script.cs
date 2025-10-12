@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 public class PictureQuestionLoader : MonoBehaviour
 {
-    public static PictureQuestionLoader Instance;
+    public static PictureQuestionLoader Instance { get; private set; }
     
     [Header("Picture Settings")]
     public string picturePath = "sprites/picture questions/";
@@ -15,17 +15,24 @@ public class PictureQuestionLoader : MonoBehaviour
     
     void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
+            return;
         }
-        
+
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+
         LoadAllPictures();
+    }
+
+    void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
+        }
     }
     
     void LoadAllPictures()

@@ -14,7 +14,7 @@ using Unity.Collections;
 public class GameManager : NetworkBehaviour
 {
     // Singleton pattern - only one GameManager exists
-    public static GameManager Instance;
+    public static GameManager Instance { get; private set; }
 
     // === CONFIGURATION ===
     [Header("Game Configuration")]
@@ -103,25 +103,24 @@ public class GameManager : NetworkBehaviour
         remainingAnswers = new NetworkList<FixedString128Bytes>();
 
         // Singleton setup
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-            Debug.Log("[GameManager] Instance created");
-
-            _networkObject = GetComponent<NetworkObject>();
-
-            TrySpawnNetworkObject();
-
-            if (NetworkManager.Singleton != null)
-            {
-                NetworkManager.Singleton.OnServerStarted += HandleServerStarted;
-            }
-        }
-        else
+        if (Instance != null && Instance != this)
         {
             Debug.Log("[GameManager] Duplicate found and destroyed");
             Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+        Debug.Log("[GameManager] Instance created");
+
+        _networkObject = GetComponent<NetworkObject>();
+
+        TrySpawnNetworkObject();
+
+        if (NetworkManager.Singleton != null)
+        {
+            NetworkManager.Singleton.OnServerStarted += HandleServerStarted;
         }
     }
 
@@ -130,6 +129,11 @@ public class GameManager : NetworkBehaviour
         if (NetworkManager.Singleton != null)
         {
             NetworkManager.Singleton.OnServerStarted -= HandleServerStarted;
+        }
+
+        if (Instance == this)
+        {
+            Instance = null;
         }
     }
 

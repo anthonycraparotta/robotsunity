@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 public class DebugManager : MonoBehaviour
 {
-    public static DebugManager Instance;
+    public static DebugManager Instance { get; private set; }
     
     [Header("Debug Settings")]
     public bool debugModeEnabled = false;
@@ -33,14 +33,21 @@ public class DebugManager : MonoBehaviour
     
     void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+    }
+
+    void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
         }
     }
     
