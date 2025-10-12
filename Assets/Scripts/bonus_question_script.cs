@@ -71,7 +71,7 @@ public class BonusQuestionScreen : MonoBehaviour
 
     void InitializeBonusQuestion()
     {
-        Debug.Log("InitializeBonusQuestion called for question index: " + GameManager.Instance.currentBonusQuestion);
+        Debug.Log("InitializeBonusQuestion called for question index: " + GameManager.Instance.currentBonusQuestion.Value);
 
         // Display current bonus question
         DisplayBonusQuestion();
@@ -121,7 +121,7 @@ public class BonusQuestionScreen : MonoBehaviour
     void Update()
     {
         // Check if we moved to next bonus question
-        int currentQuestionIndex = GameManager.Instance.currentBonusQuestion;
+        int currentQuestionIndex = GameManager.Instance.currentBonusQuestion.Value;
         int totalBonusQuestions = GameManager.Instance.GetBonusQuestionCount();
         if (currentQuestionIndex != lastBonusQuestionIndex && lastBonusQuestionIndex != -1 && currentQuestionIndex < totalBonusQuestions)
         {
@@ -170,7 +170,7 @@ public class BonusQuestionScreen : MonoBehaviour
         }
 
         // Show question number (1/4, 2/4, etc.)
-        int questionNum = GameManager.Instance.currentBonusQuestion + 1;
+        int questionNum = GameManager.Instance.currentBonusQuestion.Value + 1;
         int totalQuestions = GameManager.Instance.GetBonusQuestionCount();
         Debug.Log("Bonus Question " + questionNum + "/" + totalQuestions);
     }

@@ -114,8 +114,8 @@ public class DebugManager : MonoBehaviour
         scrollPosition = GUILayout.BeginScrollView(scrollPosition);
         
         GUILayout.Label("=== GAME STATE ===");
-        GUILayout.Label("Current Round: " + GameManager.Instance.currentRound);
-        GUILayout.Label("Game Mode: " + GameManager.Instance.gameMode);
+        GUILayout.Label("Current Round: " + GameManager.Instance.currentRound.Value);
+        GUILayout.Label("Game Mode: " + GameManager.Instance.gameMode.Value);
         GUILayout.Label("Players: " + GameManager.Instance.players.Count);
         GUILayout.Label("Timer: " + GameManager.Instance.GetTimerDisplay());
         
@@ -177,7 +177,7 @@ public class DebugManager : MonoBehaviour
         
         if (GUILayout.Button("Next Round"))
         {
-            GameManager.Instance.currentRound++;
+            GameManager.Instance.currentRound.Value++;
             GameManager.Instance.AdvanceToNextScreen();
         }
         
@@ -248,12 +248,12 @@ public class DebugManager : MonoBehaviour
         
         if (GUILayout.Button("Set Timer to 5 seconds"))
         {
-            GameManager.Instance.currentTimerValue = 5f;
+            GameManager.Instance.currentTimerValue.Value = 5f;
         }
         
         if (GUILayout.Button("Skip Timer"))
         {
-            GameManager.Instance.currentTimerValue = 0f;
+            GameManager.Instance.currentTimerValue.Value = 0f;
         }
         
         GUILayout.Space(10);
@@ -263,12 +263,12 @@ public class DebugManager : MonoBehaviour
         
         if (GUILayout.Button("Switch to 8Q Mode"))
         {
-            GameManager.Instance.gameMode = GameManager.GameMode.EightQuestions;
+            GameManager.Instance.gameMode.Value = GameManager.GameMode.EightQuestions;
         }
         
         if (GUILayout.Button("Switch to 12Q Mode"))
         {
-            GameManager.Instance.gameMode = GameManager.GameMode.TwelveQuestions;
+            GameManager.Instance.gameMode.Value = GameManager.GameMode.TwelveQuestions;
         }
         
         GUILayout.EndScrollView();
@@ -328,14 +328,16 @@ public class DebugManager : MonoBehaviour
         };
 
         // Set up correct and robot answers if not already set
-        if (string.IsNullOrEmpty(GameManager.Instance.correctAnswer))
+        string correctAnswer = GameManager.Instance.correctAnswer.Value.ToString();
+        if (string.IsNullOrEmpty(correctAnswer))
         {
-            GameManager.Instance.correctAnswer = "The Correct Answer (Debug)";
+            GameManager.Instance.correctAnswer.Value = "The Correct Answer (Debug)";
         }
 
-        if (string.IsNullOrEmpty(GameManager.Instance.robotAnswer))
+        string robotAnswer = GameManager.Instance.robotAnswer.Value.ToString();
+        if (string.IsNullOrEmpty(robotAnswer))
         {
-            GameManager.Instance.robotAnswer = "Robot Answer (Debug)";
+            GameManager.Instance.robotAnswer.Value = "Robot Answer (Debug)";
         }
 
         int index = 0;
@@ -458,7 +460,7 @@ public class DebugManager : MonoBehaviour
     
     public void SkipToRound(int round)
     {
-        GameManager.Instance.currentRound = round - 1;
+        GameManager.Instance.currentRound.Value = round - 1;
         GameManager.Instance.AdvanceToNextScreen();
         Debug.Log("Skipped to round " + round);
     }
@@ -492,8 +494,8 @@ public class DebugManager : MonoBehaviour
     
     public void ToggleTimer()
     {
-        GameManager.Instance.timerActive = !GameManager.Instance.timerActive;
-        Debug.Log("Timer " + (GameManager.Instance.timerActive ? "resumed" : "paused"));
+        GameManager.Instance.timerActive.Value = !GameManager.Instance.timerActive.Value;
+        Debug.Log("Timer " + (GameManager.Instance.timerActive.Value ? "resumed" : "paused"));
     }
     
     // === COROUTINE HELPER ===
@@ -508,8 +510,8 @@ public class DebugManager : MonoBehaviour
     public void LogGameState()
     {
         Debug.Log("=== GAME STATE ===");
-        Debug.Log("Round: " + GameManager.Instance.currentRound);
-        Debug.Log("Mode: " + GameManager.Instance.gameMode);
+        Debug.Log("Round: " + GameManager.Instance.currentRound.Value);
+        Debug.Log("Mode: " + GameManager.Instance.gameMode.Value);
         Debug.Log("Players: " + GameManager.Instance.players.Count);
         Debug.Log("Timer: " + GameManager.Instance.GetTimeRemaining() + "s");
         Debug.Log("Current Scene: " + SceneManager.GetActiveScene().name);

@@ -396,9 +396,9 @@ public class FinalResultsScreen : MonoBehaviour
         MobileHaptics.HeavyImpact();
 
         // Reset game and go back to lobby
-        GameManager.Instance.currentRound = 0;
-        GameManager.Instance.isHalftimePlayed = false;
-        GameManager.Instance.isBonusRoundPlayed = false;
+        GameManager.Instance.currentRound.Value = 0;
+        GameManager.Instance.isHalftimePlayed.Value = false;
+        GameManager.Instance.isBonusRoundPlayed.Value = false;
 
         // Reset all scores
         foreach (var player in GameManager.Instance.players.Values)
