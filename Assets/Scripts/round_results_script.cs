@@ -344,7 +344,7 @@ public class RoundResultsScreen : MonoBehaviour
         }
 
         // Get voting results
-        var votingVotes = GameManager.Instance.votingVotes;
+        var votingVotes = GameManager.Instance.VotingVotes;
         List<PlayerData> allPlayers = GameManager.Instance.GetAllPlayers();
 
         int trueCount = 0, robotCount = 0, otherCount = 0;
@@ -454,7 +454,7 @@ public class RoundResultsScreen : MonoBehaviour
         }
 
         // Get player answers and voting results
-        var playerAnswers = GameManager.Instance.currentRoundAnswers;
+        var playerAnswers = GameManager.Instance.CurrentRoundAnswers;
         var votingResults = GameManager.Instance.GetVotingResults();
         List<PlayerData> allPlayers = GameManager.Instance.GetAllPlayers();
 

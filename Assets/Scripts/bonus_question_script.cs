@@ -422,7 +422,7 @@ public class BonusQuestionScreen : MonoBehaviour
     {
         // Update icon appearance for players who have voted
         List<PlayerData> allPlayers = GameManager.Instance.GetAllPlayers();
-        var bonusVotes = GameManager.Instance.bonusVotes;
+        var bonusVotes = GameManager.Instance.BonusVotes;
 
         for (int i = 0; i < allPlayers.Count && i < spawnedPlayerIcons.Count; i++)
         {

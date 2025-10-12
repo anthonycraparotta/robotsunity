@@ -195,7 +195,7 @@ public class PictureQuestionScreen : MonoBehaviour
             PlayerData player = players[i];
 
             // Check if this player has submitted an answer
-            bool hasSubmitted = GameManager.Instance.currentRoundAnswers.ContainsKey(player.playerID);
+            bool hasSubmitted = GameManager.Instance.HasPlayerSubmittedAnswer(player.playerID);
 
             // Show/hide entire icon based on submission (matching regular Questions behavior)
             iconObj.SetActive(hasSubmitted);
