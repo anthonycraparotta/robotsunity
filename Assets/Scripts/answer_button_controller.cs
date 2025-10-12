@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using UnityEngine.EventSystems;
+using UnityEngine.Events;
 
 public class AnswerButtonController : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
@@ -21,6 +22,7 @@ public class AnswerButtonController : MonoBehaviour, IPointerEnterHandler, IPoin
     private bool isSelected = false;
     private bool isHovered = false;
     private string answerContent = "";
+    private UnityAction buttonClickAction;
     
     void Awake()
     {
@@ -64,14 +66,20 @@ public class AnswerButtonController : MonoBehaviour, IPointerEnterHandler, IPoin
         
         if (button != null)
         {
-            button.onClick.RemoveAllListeners();
-            button.onClick.AddListener(() =>
+            if (buttonClickAction != null)
+            {
+                button.onClick.RemoveListener(buttonClickAction);
+            }
+
+            buttonClickAction = () =>
             {
                 MobileHaptics.SelectionChanged();
                 onClickCallback?.Invoke(answerContent);
-            });
+            };
+
+            button.onClick.AddListener(buttonClickAction);
         }
-        
+
         UpdateVisuals();
     }
     
@@ -107,7 +115,7 @@ public class AnswerButtonController : MonoBehaviour, IPointerEnterHandler, IPoin
     void UpdateVisuals()
     {
         if (background == null) return;
-        
+
         if (button != null && !button.interactable)
         {
             // Disabled state
@@ -145,5 +153,13 @@ public class AnswerButtonController : MonoBehaviour, IPointerEnterHandler, IPoin
     {
         isHovered = false;
         UpdateVisuals();
+    }
+
+    void OnDestroy()
+    {
+        if (button != null && buttonClickAction != null)
+        {
+            button.onClick.RemoveListener(buttonClickAction);
+        }
     }
 }
