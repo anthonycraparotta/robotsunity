@@ -1000,6 +1000,105 @@ public class GameManager : NetworkBehaviour
         }
     }
 
+    // === HOST HELPERS ===
+
+    public bool HasHostAuthority()
+    {
+        if (RWMNetworkManager.Instance != null)
+        {
+            return RWMNetworkManager.Instance.isHost;
+        }
+
+        return IsServer;
+    }
+
+    public void HostResetMatchState(bool resetScores = true)
+    {
+        if (!HasHostAuthority())
+        {
+            Debug.LogWarning("[GameManager] HostResetMatchState called without host authority");
+            return;
+        }
+
+        ResetMatchStateInternal(resetScores);
+    }
+
+    public void HostClearPlayers()
+    {
+        if (!HasHostAuthority())
+        {
+            Debug.LogWarning("[GameManager] HostClearPlayers called without host authority");
+            return;
+        }
+
+        ClearPlayersInternal();
+    }
+
+    public void HostReturnToLobby(bool clearPlayers = false, bool resetScores = true)
+    {
+        if (!HasHostAuthority())
+        {
+            Debug.LogWarning("[GameManager] HostReturnToLobby called without host authority");
+            return;
+        }
+
+        ResetMatchStateInternal(resetScores);
+
+        if (clearPlayers)
+        {
+            ClearPlayersInternal();
+        }
+
+        LoadScene("LobbyScreen");
+        currentGameState.Value = GameState.Lobby;
+    }
+
+    private void ResetMatchStateInternal(bool resetScores)
+    {
+        Debug.Log("[GameManager] Resetting match state");
+
+        timerActive.Value = false;
+        currentTimerValue.Value = 0f;
+
+        currentRound.Value = 0;
+        isHalftimePlayed.Value = false;
+        isBonusRoundPlayed.Value = false;
+        currentBonusQuestion.Value = 0;
+        currentGameState.Value = GameState.Lobby;
+
+        currentQuestion = null;
+        robotAnswer.Value = default;
+        correctAnswer.Value = default;
+        eliminatedAnswer.Value = default;
+
+        currentRoundAnswers.Clear();
+        eliminationVotes.Clear();
+        votingVotes.Clear();
+        bonusVotes.Clear();
+        allAnswers.Clear();
+        remainingAnswers.Clear();
+
+        standardQuestionIndex = 0;
+        playerQuestionIndex = 0;
+        pictureQuestionIndex = 0;
+
+        if (resetScores)
+        {
+            for (int i = 0; i < networkPlayers.Count; i++)
+            {
+                var player = networkPlayers[i];
+                player.scorePercentage = 0;
+                networkPlayers[i] = player;
+            }
+        }
+    }
+
+    private void ClearPlayersInternal()
+    {
+        Debug.Log("[GameManager] Clearing all players");
+        networkPlayers.Clear();
+    }
+
     public PlayerData GetPlayer(string playerID)
     {
         for (int i = 0; i < networkPlayers.Count; i++)
