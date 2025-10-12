@@ -273,17 +273,10 @@ public class LobbyScreen : MonoBehaviour
     {
         if (RWMNetworkManager.Instance != null)
         {
-            // Connect to WebSocket server, then start host
-            if (!RWMNetworkManager.Instance.isConnected)
-            {
-                RWMNetworkManager.Instance.OnRoomCreated += OnHostRoomCreated;
-                RWMNetworkManager.Instance.Connect();
-                // StartHost will be called automatically once connected
-                // For now, generate a temporary room code for display
-                GenerateTempRoomCode();
-                return;
-            }
+            // Register callback for when room is created
+            RWMNetworkManager.Instance.OnRoomCreated += OnHostRoomCreated;
 
+            // Start host immediately
             RWMNetworkManager.Instance.StartHost();
             roomCode = RWMNetworkManager.Instance.GetRoomCode();
 
@@ -329,23 +322,6 @@ public class LobbyScreen : MonoBehaviour
         RWMNetworkManager.Instance.OnRoomCreated -= OnHostRoomCreated;
     }
 
-    void GenerateTempRoomCode()
-    {
-        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        System.Text.StringBuilder code = new System.Text.StringBuilder();
-
-        for (int i = 0; i < 5; i++)
-        {
-            code.Append(chars[Random.Range(0, chars.Length)]);
-        }
-
-        roomCode = code.ToString();
-
-        if (roomCodeDisplay != null)
-        {
-            roomCodeDisplay.text = "WAIT..."; // Show connecting status
-        }
-    }
 
     void OnGameModeSelected(GameManager.GameMode mode)
     {
@@ -606,7 +582,7 @@ public class LobbyScreen : MonoBehaviour
             GameManager.Instance.AddPlayer(pendingPlayerID, pendingPlayerName, selectedPlayerIconName);
         }
 
-        // Send to host via WebSocket
+        // Send to host via Unity Netcode RPC
         if (RWMNetworkManager.Instance != null)
         {
             RWMNetworkManager.Instance.AddPlayer(pendingPlayerName, selectedPlayerIconName);
@@ -643,55 +619,18 @@ public class LobbyScreen : MonoBehaviour
             return;
         }
 
-        // Connect to WebSocket server and join room
-        if (!RWMNetworkManager.Instance.isConnected)
-        {
-            RWMNetworkManager.Instance.Connect();
-            // Wait a moment for connection before joining
-            StartCoroutine(WaitAndJoinRoom());
-            return;
-        }
+        // NOTE: For local testing, connect to localhost
+        // For networked play, you'll need to provide the host's IP address
+        // TODO: Add UI for entering host IP address for mobile clients
+        string hostIP = "127.0.0.1"; // Localhost for testing
 
-        bool started = RWMNetworkManager.Instance.JoinGame(roomCode);
+        bool started = RWMNetworkManager.Instance.JoinGame(roomCode, hostIP);
 
         if (!started)
         {
             ShowJoinForm();
             ShowErrorMessage("Unable to start the network client. Please try again.", false);
             return;
-        }
-
-        awaitingNetworkConnection = true;
-        hasConnectedToHost = false;
-    }
-
-    System.Collections.IEnumerator WaitAndJoinRoom()
-    {
-        // Wait for WebSocket connection
-        float timeout = 5f;
-        float elapsed = 0f;
-
-        while (!RWMNetworkManager.Instance.isConnected && elapsed < timeout)
-        {
-            yield return new WaitForSeconds(0.1f);
-            elapsed += 0.1f;
-        }
-
-        if (!RWMNetworkManager.Instance.isConnected)
-        {
-            ShowJoinForm();
-            ShowErrorMessage("Unable to connect to server. Please check your internet connection.", false);
-            yield break;
-        }
-
-        // Now join the room
-        bool started = RWMNetworkManager.Instance.JoinGame(roomCode);
-
-        if (!started)
-        {
-            ShowJoinForm();
-            ShowErrorMessage("Unable to join room. Please check the room code and try again.", false);
-            yield break;
         }
 
         awaitingNetworkConnection = true;

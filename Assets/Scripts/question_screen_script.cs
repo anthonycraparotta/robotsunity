@@ -86,7 +86,7 @@ public class QuestionScreen : MonoBehaviour
         // Update timer display
         UpdateTimerDisplay();
 
-        // Update player status indicators (desktop only - mobile gets updates via WebSocket)
+        // Update player status indicators (desktop only - mobile gets updates via Netcode RPCs)
         if (!isMobile)
         {
             UpdatePlayerStatusIndicators();
@@ -99,7 +99,7 @@ public class QuestionScreen : MonoBehaviour
         }
     }
 
-    // Called by WebSocket network events or locally to update buzz-in feedback
+    // Called by Netcode RPC events or locally to update buzz-in feedback
     public void OnPlayerSubmittedAnswer(string playerID)
     {
         if (isMobile)

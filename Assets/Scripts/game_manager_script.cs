@@ -3,51 +3,60 @@ using UnityEngine.SceneManagement;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Netcode;
+using Unity.Collections;
 
-public class GameManager : MonoBehaviour
+/// <summary>
+/// Unity Netcode-based GameManager using NetworkVariables and NetworkLists
+/// Follows Unity Netcode best practices for state synchronization
+/// </summary>
+public class GameManager : NetworkBehaviour
 {
     // Singleton pattern - only one GameManager exists
     public static GameManager Instance;
-    
+
     // === CONFIGURATION ===
     [Header("Game Configuration")]
-    public GameMode gameMode = GameMode.EightQuestions;
-    
-    // === GAME STATE ===
-    public int currentRound = 0;
-    public bool isHalftimePlayed = false;
-    public bool isBonusRoundPlayed = false;
-    
+    public NetworkVariable<GameMode> gameMode = new NetworkVariable<GameMode>(GameMode.EightQuestions);
+
+    // === GAME STATE === (Synced across network)
+    public NetworkVariable<int> currentRound = new NetworkVariable<int>(0);
+    public NetworkVariable<bool> isHalftimePlayed = new NetworkVariable<bool>(false);
+    public NetworkVariable<bool> isBonusRoundPlayed = new NetworkVariable<bool>(false);
+    public NetworkVariable<GameState> currentGameState = new NetworkVariable<GameState>(GameState.Loading);
+
     // === PLAYER DATA ===
     [Header("Player Data")]
-    public Dictionary<string, PlayerData> players = new Dictionary<string, PlayerData>();
-    public Dictionary<string, string> currentRoundAnswers = new Dictionary<string, string>();
-    public Dictionary<string, string> eliminationVotes = new Dictionary<string, string>();
-    public Dictionary<string, string> votingVotes = new Dictionary<string, string>();
-    
+    public NetworkList<NetworkedPlayerData> networkPlayers; // Replaces Dictionary
+
+    // Temporary dictionaries for compatibility during transition (server-only)
+    private Dictionary<string, string> currentRoundAnswers = new Dictionary<string, string>();
+    private Dictionary<string, string> eliminationVotes = new Dictionary<string, string>();
+    private Dictionary<string, string> votingVotes = new Dictionary<string, string>();
+    private Dictionary<string, string> bonusVotes = new Dictionary<string, string>();
+
     // === ROUND DATA ===
     [Header("Current Round Data")]
     public Question currentQuestion;
-    public string robotAnswer = "";
-    public string correctAnswer = "";
-    public List<string> allAnswers = new List<string>(); // For Elimination
-    public List<string> remainingAnswers = new List<string>(); // For Voting
-    public string eliminatedAnswer = "";
-    
+    public NetworkVariable<FixedString128Bytes> robotAnswer = new NetworkVariable<FixedString128Bytes>();
+    public NetworkVariable<FixedString128Bytes> correctAnswer = new NetworkVariable<FixedString128Bytes>();
+    public NetworkList<FixedString128Bytes> allAnswers; // For Elimination
+    public NetworkList<FixedString128Bytes> remainingAnswers; // For Voting
+    public NetworkVariable<FixedString128Bytes> eliminatedAnswer = new NetworkVariable<FixedString128Bytes>();
+
     // === BONUS ROUND DATA ===
     [Header("Bonus Round Data")]
     public BonusQuestion bonusQuestions;
-    public int currentBonusQuestion = 0;
-    public Dictionary<string, string> bonusVotes = new Dictionary<string, string>(); // playerID -> votedPlayerID
-    
+    public NetworkVariable<int> currentBonusQuestion = new NetworkVariable<int>(0);
+
     // === TIMER STATE ===
     [Header("Timer Configuration")]
     public float questionTimer = 60f;
     public float eliminationTimer = 30f;
     public float votingTimer = 30f;
-    public float currentTimerValue = 0f;
-    public bool timerActive = false;
-    
+    public NetworkVariable<float> currentTimerValue = new NetworkVariable<float>(0f);
+    public NetworkVariable<bool> timerActive = new NetworkVariable<bool>(false);
+
     // === QUESTION DATA ===
     [Header("Question Database")]
     public List<Question> standardQuestions = new List<Question>();
@@ -56,14 +65,14 @@ public class GameManager : MonoBehaviour
     private int standardQuestionIndex = 0;
     private int playerQuestionIndex = 0;
     private int pictureQuestionIndex = 0;
-    
+
     // === ENUMS ===
     public enum GameMode
     {
         EightQuestions,
         TwelveQuestions
     }
-    
+
     public enum GameState
     {
         Loading,
@@ -82,22 +91,52 @@ public class GameManager : MonoBehaviour
         FinalResults,
         Credits
     }
-    
-    public GameState currentGameState = GameState.Loading;
-    
+
     void Awake()
     {
+        // Initialize NetworkLists before NetworkObject spawns
+        networkPlayers = new NetworkList<NetworkedPlayerData>();
+        allAnswers = new NetworkList<FixedString128Bytes>();
+        remainingAnswers = new NetworkList<FixedString128Bytes>();
+
         // Singleton setup
         if (Instance == null)
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
-            Debug.Log("GameManager created");
+            Debug.Log("[GameManager] Instance created");
         }
         else
         {
-            Debug.Log("Duplicate GameManager found and destroyed");
+            Debug.Log("[GameManager] Duplicate found and destroyed");
             Destroy(gameObject);
+        }
+    }
+
+    public override void OnNetworkSpawn()
+    {
+        base.OnNetworkSpawn();
+
+        Debug.Log($"[GameManager] NetworkSpawn - IsServer: {IsServer}, IsClient: {IsClient}");
+
+        // Subscribe to NetworkVariable changes for client-side reactions
+        if (IsClient && !IsServer)
+        {
+            currentGameState.OnValueChanged += OnGameStateChanged;
+            currentRound.OnValueChanged += OnRoundChanged;
+            timerActive.OnValueChanged += OnTimerActiveChanged;
+        }
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        base.OnNetworkDespawn();
+
+        if (IsClient && !IsServer)
+        {
+            currentGameState.OnValueChanged -= OnGameStateChanged;
+            currentRound.OnValueChanged -= OnRoundChanged;
+            timerActive.OnValueChanged -= OnTimerActiveChanged;
         }
     }
 
@@ -105,346 +144,364 @@ public class GameManager : MonoBehaviour
     {
         LoadQuestions();
     }
-    
+
     void Update()
     {
+        // Only server updates timer
+        if (!IsServer) return;
+
         // Handle timer countdown
-        if (timerActive && currentTimerValue > 0)
+        if (timerActive.Value && currentTimerValue.Value > 0)
         {
-            currentTimerValue -= Time.deltaTime;
-            
-            if (currentTimerValue <= 0)
+            currentTimerValue.Value -= Time.deltaTime;
+
+            if (currentTimerValue.Value <= 0)
             {
-                currentTimerValue = 0;
-                timerActive = false;
+                currentTimerValue.Value = 0;
+                timerActive.Value = false;
                 OnTimerExpired();
             }
         }
     }
-    
+
+    // === NETWORK VARIABLE CALLBACKS ===
+
+    private void OnGameStateChanged(GameState oldState, GameState newState)
+    {
+        Debug.Log($"[GameManager] State changed: {oldState} → {newState}");
+    }
+
+    private void OnRoundChanged(int oldRound, int newRound)
+    {
+        Debug.Log($"[GameManager] Round changed: {oldRound} → {newRound}");
+    }
+
+    private void OnTimerActiveChanged(bool oldValue, bool newValue)
+    {
+        Debug.Log($"[GameManager] Timer active: {oldValue} → {newValue}");
+    }
+
     // === GAME FLOW METHODS ===
-    
+
     public void StartGame(GameMode mode)
     {
-        gameMode = mode;
-        currentRound = 0;
-        isHalftimePlayed = false;
-        isBonusRoundPlayed = false;
-        
+        if (!IsServer) return;
+
+        gameMode.Value = mode;
+        currentRound.Value = 0;
+        isHalftimePlayed.Value = false;
+        isBonusRoundPlayed.Value = false;
+
         // Reset all player scores
-        foreach (var player in players.Values)
+        for (int i = 0; i < networkPlayers.Count; i++)
         {
+            var player = networkPlayers[i];
             player.scorePercentage = 0;
+            networkPlayers[i] = player;
         }
 
-        // Broadcast score resets to all clients
-        if (RWMNetworkManager.Instance != null && RWMNetworkManager.Instance.isHost)
-        {
-            foreach (var playerID in players.Keys)
-            {
-                RWMNetworkManager.Instance.UpdateScore(playerID, 0);
-            }
-        }
-        
         LoadScene("IntroVideoScreen");
-        currentGameState = GameState.IntroVideo;
+        currentGameState.Value = GameState.IntroVideo;
     }
-    
+
     public void AdvanceToNextScreen()
     {
-        switch (currentGameState)
+        if (!IsServer) return;
+
+        switch (currentGameState.Value)
         {
             case GameState.Loading:
                 // Check device type - mobile skips IntroVideo and Landing, goes directly to join flow
                 if (DeviceDetector.Instance != null && DeviceDetector.Instance.IsMobile())
                 {
                     LoadScene("JoinRoomScreen");
-                    currentGameState = GameState.Lobby; // Using Lobby state for join flow
+                    currentGameState.Value = GameState.Lobby;
                 }
                 else
                 {
                     LoadScene("IntroVideoScreen");
-                    currentGameState = GameState.IntroVideo;
+                    currentGameState.Value = GameState.IntroVideo;
                 }
                 break;
 
             case GameState.IntroVideo:
                 LoadScene("LandingScreen");
-                currentGameState = GameState.Landing;
+                currentGameState.Value = GameState.Landing;
                 break;
 
             case GameState.Landing:
                 LoadScene("LobbyScreen");
-                currentGameState = GameState.Lobby;
+                currentGameState.Value = GameState.Lobby;
                 break;
 
             case GameState.Lobby:
-                Debug.Log("AdvanceToNextScreen - Lobby state detected, calling StartNextRound()");
+                Debug.Log("[GameManager] AdvanceToNextScreen - Lobby state detected, calling StartNextRound()");
                 StartNextRound();
                 break;
-                
+
             case GameState.RoundArt:
                 LoadQuestionScreen();
                 break;
-                
+
             case GameState.Question:
                 LoadScene("EliminationScreen");
-                currentGameState = GameState.Elimination;
+                currentGameState.Value = GameState.Elimination;
                 PrepareEliminationPhase();
                 StartTimer(eliminationTimer);
                 break;
-                
+
             case GameState.Elimination:
                 ProcessEliminationVotes();
                 LoadScene("VotingScreen");
-                currentGameState = GameState.Voting;
+                currentGameState.Value = GameState.Voting;
                 PrepareVotingPhase();
                 StartTimer(votingTimer);
                 break;
-                
+
             case GameState.Voting:
                 LoadScene("ResultsScreen");
-                currentGameState = GameState.RoundResults;
+                currentGameState.Value = GameState.RoundResults;
                 CalculateRoundScores();
                 break;
-                
+
             case GameState.RoundResults:
                 CheckForSpecialScreens();
                 break;
-                
+
             case GameState.Halftime:
                 LoadScene("BonusIntroScreen");
-                currentGameState = GameState.BonusIntro;
+                currentGameState.Value = GameState.BonusIntro;
                 break;
-                
+
             case GameState.BonusIntro:
-                Debug.Log("Advancing from BonusIntro to BonusQuestion");
+                Debug.Log("[GameManager] Advancing from BonusIntro to BonusQuestion");
                 LoadScene("BonusQuestionScreen");
-                currentGameState = GameState.BonusQuestion;
-                currentBonusQuestion = 0;
-                Debug.Log($"Reset currentBonusQuestion to 0, starting timer");
+                currentGameState.Value = GameState.BonusQuestion;
+                currentBonusQuestion.Value = 0;
+                Debug.Log($"[GameManager] Reset currentBonusQuestion to 0, starting timer");
                 StartTimer(votingTimer);
                 break;
 
             case GameState.BonusQuestion:
-                Debug.Log($"BonusQuestion AdvanceToNextScreen called - currentBonusQuestion before increment: {currentBonusQuestion}");
+                Debug.Log($"[GameManager] BonusQuestion AdvanceToNextScreen - currentBonusQuestion before increment: {currentBonusQuestion.Value}");
                 ProcessBonusVotes();
-                currentBonusQuestion++;
-                Debug.Log($"After increment: currentBonusQuestion = {currentBonusQuestion}");
+                currentBonusQuestion.Value++;
+                Debug.Log($"[GameManager] After increment: currentBonusQuestion = {currentBonusQuestion.Value}");
 
                 int totalBonusQuestions = GetBonusQuestionCount();
-                if (currentBonusQuestion < totalBonusQuestions)
+                if (currentBonusQuestion.Value < totalBonusQuestions)
                 {
-                    // Next bonus question
-                    Debug.Log($"Continuing to bonus question {currentBonusQuestion}");
+                    Debug.Log($"[GameManager] Continuing to bonus question {currentBonusQuestion.Value}");
                     bonusVotes.Clear();
                     StartTimer(votingTimer);
                 }
                 else
                 {
-                    // Bonus round complete
-                    Debug.Log($"All {totalBonusQuestions} bonus questions complete, going to BonusResults");
-                    isBonusRoundPlayed = true;
+                    Debug.Log($"[GameManager] All {totalBonusQuestions} bonus questions complete, going to BonusResults");
+                    isBonusRoundPlayed.Value = true;
                     LoadScene("BonusResultsScreen");
-                    currentGameState = GameState.BonusResults;
+                    currentGameState.Value = GameState.BonusResults;
                 }
                 break;
-                
+
             case GameState.BonusResults:
                 StartNextRound();
                 break;
-                
+
             case GameState.FinalResults:
                 LoadScene("CreditsScreen");
-                currentGameState = GameState.Credits;
+                currentGameState.Value = GameState.Credits;
                 break;
-                
+
             case GameState.Credits:
-                // Return to landing or restart
                 LoadScene("LandingScreen");
-                currentGameState = GameState.Landing;
+                currentGameState.Value = GameState.Landing;
                 break;
         }
     }
-    
+
     void StartNextRound()
     {
-        currentRound++;
+        if (!IsServer) return;
 
-        Debug.Log("StartNextRound called - currentRound incremented to: " + currentRound);
+        currentRound.Value++;
 
-        int totalRounds = (gameMode == GameMode.EightQuestions) ? 8 : 12;
+        Debug.Log($"[GameManager] StartNextRound - currentRound incremented to: {currentRound.Value}");
 
-        if (currentRound > totalRounds)
+        int totalRounds = (gameMode.Value == GameMode.EightQuestions) ? 8 : 12;
+
+        if (currentRound.Value > totalRounds)
         {
             LoadScene("FinalResults");
-            currentGameState = GameState.FinalResults;
+            currentGameState.Value = GameState.FinalResults;
             return;
         }
 
-        Debug.Log("Loading RoundArtScreen for round " + currentRound);
-        Debug.Log("About to load scene - currentRound is: " + currentRound + ", GameManager instance ID: " + GetInstanceID());
+        Debug.Log($"[GameManager] Loading RoundArtScreen for round {currentRound.Value}");
         LoadScene("RoundArtScreen");
-        currentGameState = GameState.RoundArt;
-        Debug.Log("After setting RoundArt state - currentRound is: " + currentRound);
+        currentGameState.Value = GameState.RoundArt;
     }
-    
+
     void LoadQuestionScreen()
     {
+        if (!IsServer) return;
+
         // Determine which question type for this round
-        QuestionType questionType = GetQuestionTypeForRound(currentRound);
+        QuestionType questionType = GetQuestionTypeForRound(currentRound.Value);
 
         // Load appropriate question data
         switch (questionType)
         {
             case QuestionType.Standard:
                 currentQuestion = GetStandardQuestion();
-                correctAnswer = currentQuestion.correctAnswer;
-                robotAnswer = currentQuestion.robotAnswer;
+                correctAnswer.Value = currentQuestion.correctAnswer;
+                robotAnswer.Value = currentQuestion.robotAnswer;
                 LoadScene("QuestionScreen");
-                currentGameState = GameState.Question;
+                currentGameState.Value = GameState.Question;
                 StartTimer(questionTimer);
                 break;
 
             case QuestionType.Player:
-                // Player questions: Load question data first, then show intro video
-                Debug.Log("LoadQuestionScreen - Loading Player Question");
+                Debug.Log("[GameManager] LoadQuestionScreen - Loading Player Question");
                 currentQuestion = GetPlayerQuestion();
-                Debug.Log($"LoadQuestionScreen - currentQuestion after GetPlayerQuestion: {currentQuestion?.questionText}");
-                correctAnswer = currentQuestion.correctAnswer;
-                robotAnswer = currentQuestion.robotAnswer;
-                Debug.Log($"LoadQuestionScreen - Set correctAnswer: '{correctAnswer}', robotAnswer: '{robotAnswer}'");
+                correctAnswer.Value = currentQuestion.correctAnswer;
+                robotAnswer.Value = currentQuestion.robotAnswer;
                 LoadScene("PlayerQuestionVideoScreen");
-                currentGameState = GameState.Question;
-                // Timer will start after video finishes
+                currentGameState.Value = GameState.Question;
                 break;
 
             case QuestionType.Picture:
                 currentQuestion = GetPictureQuestion();
-                correctAnswer = currentQuestion.correctAnswer;
-                robotAnswer = currentQuestion.robotAnswer;
+                correctAnswer.Value = currentQuestion.correctAnswer;
+                robotAnswer.Value = currentQuestion.robotAnswer;
                 LoadScene("PictureQuestionScreen");
-                currentGameState = GameState.Question;
+                currentGameState.Value = GameState.Question;
                 StartTimer(questionTimer);
                 break;
         }
 
-        // Clear previous round data at start of new question
+        // Clear previous round data
         currentRoundAnswers.Clear();
         eliminationVotes.Clear();
         votingVotes.Clear();
         allAnswers.Clear();
         remainingAnswers.Clear();
-        eliminatedAnswer = "";
+        eliminatedAnswer.Value = "";
     }
-    
+
     void CheckForSpecialScreens()
     {
-        int halftimeRound = (gameMode == GameMode.EightQuestions) ? 4 : 6;
-        int totalRounds = (gameMode == GameMode.EightQuestions) ? 8 : 12;
-        
+        if (!IsServer) return;
+
+        int halftimeRound = (gameMode.Value == GameMode.EightQuestions) ? 4 : 6;
+        int totalRounds = (gameMode.Value == GameMode.EightQuestions) ? 8 : 12;
+
         // Check for Halftime
-        if (currentRound == halftimeRound && !isHalftimePlayed)
+        if (currentRound.Value == halftimeRound && !isHalftimePlayed.Value)
         {
             LoadScene("HalftimeResultsScreen");
-            currentGameState = GameState.Halftime;
-            isHalftimePlayed = true;
+            currentGameState.Value = GameState.Halftime;
+            isHalftimePlayed.Value = true;
             return;
         }
-        
+
         // Check for Final Results
-        if (currentRound >= totalRounds)
+        if (currentRound.Value >= totalRounds)
         {
             LoadScene("FinalResults");
-            currentGameState = GameState.FinalResults;
+            currentGameState.Value = GameState.FinalResults;
             return;
         }
-        
+
         // Otherwise, continue to next round
         StartNextRound();
     }
-    
+
     // === QUESTION TYPE LOGIC ===
-    
+
     public enum QuestionType
     {
         Standard,
         Player,
         Picture
     }
-    
+
     QuestionType GetQuestionTypeForRound(int round)
     {
         // Picture question is always round 8 or 12
-        int pictureRound = (gameMode == GameMode.EightQuestions) ? 8 : 12;
+        int pictureRound = (gameMode.Value == GameMode.EightQuestions) ? 8 : 12;
         if (round == pictureRound)
         {
             return QuestionType.Picture;
         }
-        
+
         // Player questions are rounds 3, 6, 9
         if (round == 3 || round == 6 || round == 9)
         {
             return QuestionType.Player;
         }
-        
+
         // Everything else is standard
         return QuestionType.Standard;
     }
-    
+
     public bool IsPlayerQuestion()
     {
-        return GetQuestionTypeForRound(currentRound) == QuestionType.Player;
+        return GetQuestionTypeForRound(currentRound.Value) == QuestionType.Player;
     }
-    
+
     public bool IsPictureQuestion()
     {
-        return GetQuestionTypeForRound(currentRound) == QuestionType.Picture;
+        return GetQuestionTypeForRound(currentRound.Value) == QuestionType.Picture;
     }
-    
+
     // === PHASE PREPARATION ===
-    
+
     void PrepareEliminationPhase()
     {
+        if (!IsServer) return;
+
         allAnswers.Clear();
-        
+
         // Add all player answers
         foreach (var answer in currentRoundAnswers.Values)
         {
             allAnswers.Add(answer);
         }
-        
+
         // Add robot answer
-        allAnswers.Add(robotAnswer);
-        
+        allAnswers.Add(robotAnswer.Value);
+
         // For Player Questions, also add the "correct" answer as a 2nd decoy
         if (IsPlayerQuestion())
         {
-            allAnswers.Add(correctAnswer);
+            allAnswers.Add(correctAnswer.Value);
         }
-        
-        // Shuffle the answers
-        ShuffleList(allAnswers);
+
+        // Shuffle the answers using Fisher-Yates
+        ShuffleNetworkList(allAnswers);
     }
-    
+
     void PrepareVotingPhase()
     {
+        if (!IsServer) return;
+
         remainingAnswers.Clear();
-        
+
         // Add all answers except the eliminated one
-        foreach (var answer in allAnswers)
+        for (int i = 0; i < allAnswers.Count; i++)
         {
-            if (answer != eliminatedAnswer)
+            if (allAnswers[i].ToString() != eliminatedAnswer.Value.ToString())
             {
-                remainingAnswers.Add(answer);
+                remainingAnswers.Add(allAnswers[i]);
             }
         }
     }
-    
+
     // === ANSWER SUBMISSION ===
 
     /// <summary>
-    /// Get all existing answers for duplicate checking (includes robot answer and correct answer)
+    /// Get all existing answers for duplicate checking
     /// </summary>
     public List<string> GetAllExistingAnswers()
     {
@@ -460,15 +517,15 @@ public class GameManager : MonoBehaviour
         }
 
         // Add robot answer
-        if (!string.IsNullOrEmpty(robotAnswer))
+        if (!string.IsNullOrEmpty(robotAnswer.Value.ToString()))
         {
-            existingAnswers.Add(robotAnswer);
+            existingAnswers.Add(robotAnswer.Value.ToString());
         }
 
-        // Add correct answer (not for player questions, but for standard/picture)
-        if (!IsPlayerQuestion() && !string.IsNullOrEmpty(correctAnswer))
+        // Add correct answer (not for player questions)
+        if (!IsPlayerQuestion() && !string.IsNullOrEmpty(correctAnswer.Value.ToString()))
         {
-            existingAnswers.Add(correctAnswer);
+            existingAnswers.Add(correctAnswer.Value.ToString());
         }
 
         return existingAnswers;
@@ -476,23 +533,27 @@ public class GameManager : MonoBehaviour
 
     public void SubmitPlayerAnswer(string playerID, string answer)
     {
+        if (!IsServer) return;
+
         if (!currentRoundAnswers.ContainsKey(playerID))
         {
             currentRoundAnswers.Add(playerID, answer);
         }
 
         // Check if all players have submitted
-        if (currentRoundAnswers.Count >= players.Count)
+        if (currentRoundAnswers.Count >= networkPlayers.Count)
         {
             StopTimer();
             AdvanceToNextScreen();
         }
     }
-    
+
     // === ELIMINATION VOTING ===
-    
+
     public void SubmitEliminationVote(string playerID, string votedAnswer)
     {
+        if (!IsServer) return;
+
         if (!eliminationVotes.ContainsKey(playerID))
         {
             eliminationVotes.Add(playerID, votedAnswer);
@@ -501,20 +562,22 @@ public class GameManager : MonoBehaviour
         {
             eliminationVotes[playerID] = votedAnswer;
         }
-        
+
         // Check if all players have voted
-        if (eliminationVotes.Count >= players.Count)
+        if (eliminationVotes.Count >= networkPlayers.Count)
         {
             ProcessEliminationVotes();
             StopTimer();
             AdvanceToNextScreen();
         }
     }
-    
+
     void ProcessEliminationVotes()
     {
+        if (!IsServer) return;
+
         // Skip if no votes or already processed
-        if (eliminationVotes.Count == 0 || !string.IsNullOrEmpty(eliminatedAnswer))
+        if (eliminationVotes.Count == 0 || !string.IsNullOrEmpty(eliminatedAnswer.Value.ToString()))
         {
             return;
         }
@@ -544,24 +607,24 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        eliminatedAnswer = mostVoted;
-        
+        eliminatedAnswer.Value = mostVoted;
+
         // Award points for correct elimination
-        bool isRobotEliminated = (eliminatedAnswer == robotAnswer);
-        bool isCorrectEliminated = (eliminatedAnswer == correctAnswer && !IsPlayerQuestion());
-        bool isDecoyEliminated = (eliminatedAnswer == correctAnswer && IsPlayerQuestion()) || isRobotEliminated;
-        
+        bool isRobotEliminated = (eliminatedAnswer.Value.ToString() == robotAnswer.Value.ToString());
+        bool isCorrectEliminated = (eliminatedAnswer.Value.ToString() == correctAnswer.Value.ToString() && !IsPlayerQuestion());
+        bool isDecoyEliminated = (eliminatedAnswer.Value.ToString() == correctAnswer.Value.ToString() && IsPlayerQuestion()) || isRobotEliminated;
+
         int eliminationPoints = GetEliminationPoints();
-        
+
         foreach (var kvp in eliminationVotes)
         {
             string playerID = kvp.Key;
             string vote = kvp.Value;
-            
+
             if (IsPlayerQuestion())
             {
                 // For player questions, both robot and "correct" are decoys
-                if (isDecoyEliminated && vote == eliminatedAnswer)
+                if (isDecoyEliminated && vote == eliminatedAnswer.Value.ToString())
                 {
                     AwardPoints(playerID, eliminationPoints);
                 }
@@ -569,19 +632,20 @@ public class GameManager : MonoBehaviour
             else
             {
                 // Standard/Picture questions
-                if (isRobotEliminated && vote == eliminatedAnswer)
+                if (isRobotEliminated && vote == eliminatedAnswer.Value.ToString())
                 {
                     AwardPoints(playerID, eliminationPoints);
                 }
-                // Eliminating correct answer = 0 points (no penalty, but no reward)
             }
         }
     }
-    
+
     // === VOTING PHASE ===
-    
+
     public void SubmitVotingVote(string playerID, string votedAnswer)
     {
+        if (!IsServer) return;
+
         if (!votingVotes.ContainsKey(playerID))
         {
             votingVotes.Add(playerID, votedAnswer);
@@ -590,21 +654,23 @@ public class GameManager : MonoBehaviour
         {
             votingVotes[playerID] = votedAnswer;
         }
-        
+
         // Check if all players have voted
-        if (votingVotes.Count >= players.Count)
+        if (votingVotes.Count >= networkPlayers.Count)
         {
             StopTimer();
             AdvanceToNextScreen();
         }
     }
-    
+
     void CalculateRoundScores()
     {
+        if (!IsServer) return;
+
         int correctVotePoints = GetCorrectVotePoints();
         int robotVotePenalty = GetRobotVotePenalty();
         int voteReceivedPoints = GetVoteReceivedPoints();
-        
+
         // Count votes received per answer
         Dictionary<string, int> votesReceived = new Dictionary<string, int>();
         foreach (var vote in votingVotes.Values)
@@ -615,43 +681,42 @@ public class GameManager : MonoBehaviour
             }
             votesReceived[vote]++;
         }
-        
+
         // Award points for voting correctly/incorrectly
         foreach (var kvp in votingVotes)
         {
             string playerID = kvp.Key;
             string vote = kvp.Value;
-            
+
             if (IsPlayerQuestion())
             {
                 // Player questions have no "correct" answer
                 // Penalty for voting robot or decoy
-                if (vote == robotAnswer || vote == correctAnswer)
+                if (vote == robotAnswer.Value.ToString() || vote == correctAnswer.Value.ToString())
                 {
-                    AwardPoints(playerID, robotVotePenalty); // Negative points
+                    AwardPoints(playerID, robotVotePenalty);
                 }
-                // No points for voting for any player answer (they're all valid opinions)
             }
             else
             {
                 // Standard/Picture questions
-                if (vote == correctAnswer)
+                if (vote == correctAnswer.Value.ToString())
                 {
                     AwardPoints(playerID, correctVotePoints);
                 }
-                else if (vote == robotAnswer)
+                else if (vote == robotAnswer.Value.ToString())
                 {
-                    AwardPoints(playerID, robotVotePenalty); // Negative points
+                    AwardPoints(playerID, robotVotePenalty);
                 }
             }
         }
-        
+
         // Award points for receiving votes on your answer
         foreach (var kvp in currentRoundAnswers)
         {
             string playerID = kvp.Key;
             string playerAnswer = kvp.Value;
-            
+
             if (votesReceived.ContainsKey(playerAnswer))
             {
                 int votes = votesReceived[playerAnswer];
@@ -659,12 +724,14 @@ public class GameManager : MonoBehaviour
             }
         }
     }
-    
+
     // === BONUS ROUND ===
-    
+
     public void SubmitBonusVote(string playerID, string votedPlayerID)
     {
-        Debug.Log($"SubmitBonusVote: player {playerID} voted for {votedPlayerID} (question {currentBonusQuestion})");
+        if (!IsServer) return;
+
+        Debug.Log($"[GameManager] SubmitBonusVote: player {playerID} voted for {votedPlayerID} (question {currentBonusQuestion.Value})");
 
         if (!bonusVotes.ContainsKey(playerID))
         {
@@ -675,20 +742,22 @@ public class GameManager : MonoBehaviour
             bonusVotes[playerID] = votedPlayerID;
         }
 
-        Debug.Log($"Bonus votes now: {bonusVotes.Count}/{players.Count}");
+        Debug.Log($"[GameManager] Bonus votes now: {bonusVotes.Count}/{networkPlayers.Count}");
 
         // Check if all players have voted
-        if (bonusVotes.Count >= players.Count)
+        if (bonusVotes.Count >= networkPlayers.Count)
         {
-            Debug.Log("All players voted, advancing to next screen");
+            Debug.Log("[GameManager] All players voted, advancing to next screen");
             StopTimer();
             AdvanceToNextScreen();
         }
     }
-    
+
     void ProcessBonusVotes()
     {
-        Debug.Log($"ProcessBonusVotes called for question {currentBonusQuestion}, total votes: {bonusVotes.Count}");
+        if (!IsServer) return;
+
+        Debug.Log($"[GameManager] ProcessBonusVotes for question {currentBonusQuestion.Value}, total votes: {bonusVotes.Count}");
 
         // Count votes for each player
         Dictionary<string, int> voteCounts = new Dictionary<string, int>();
@@ -712,53 +781,50 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        // Award points to all players with max votes (handles ties)
-        int bonusPoints = (gameMode == GameMode.EightQuestions) ? 6 : 4;
+        // Award points to all players with max votes
+        int bonusPoints = (gameMode.Value == GameMode.EightQuestions) ? 6 : 4;
 
-        Debug.Log($"Awarding {bonusPoints} points to players with {maxVotes} votes");
+        Debug.Log($"[GameManager] Awarding {bonusPoints} points to players with {maxVotes} votes");
 
         foreach (var kvp in voteCounts)
         {
             if (kvp.Value == maxVotes)
             {
-                PlayerData player = GetPlayer(kvp.Key);
-                Debug.Log($"Awarding {bonusPoints} points to player {player?.playerName} (ID: {kvp.Key})");
                 AwardPoints(kvp.Key, bonusPoints);
             }
         }
     }
-    
+
     // === SCORING HELPERS ===
-    
+
     int GetEliminationPoints()
     {
         if (IsPictureQuestion())
         {
-            return (gameMode == GameMode.EightQuestions) ? 8 : 6;
+            return (gameMode.Value == GameMode.EightQuestions) ? 8 : 6;
         }
-        return (gameMode == GameMode.EightQuestions) ? 4 : 3;
+        return (gameMode.Value == GameMode.EightQuestions) ? 4 : 3;
     }
-    
+
     public int GetCorrectVotePoints()
     {
         if (IsPictureQuestion())
         {
-            return (gameMode == GameMode.EightQuestions) ? 16 : 12;
+            return (gameMode.Value == GameMode.EightQuestions) ? 16 : 12;
         }
-        return (gameMode == GameMode.EightQuestions) ? 8 : 6;
+        return (gameMode.Value == GameMode.EightQuestions) ? 8 : 6;
     }
 
     public int GetRobotVotePenalty()
     {
-        // Penalty is NOT doubled for picture questions
-        return (gameMode == GameMode.EightQuestions) ? -8 : -6;
+        return (gameMode.Value == GameMode.EightQuestions) ? -8 : -6;
     }
 
     public int GetVoteReceivedPoints()
     {
         bool isDoubled = IsPlayerQuestion() || IsPictureQuestion();
 
-        if (gameMode == GameMode.EightQuestions)
+        if (gameMode.Value == GameMode.EightQuestions)
         {
             return isDoubled ? 8 : 4;
         }
@@ -767,109 +833,159 @@ public class GameManager : MonoBehaviour
             return isDoubled ? 6 : 3;
         }
     }
-    
+
     void AwardPoints(string playerID, int points)
     {
-        if (players.ContainsKey(playerID))
-        {
-            players[playerID].scorePercentage += points;
+        if (!IsServer) return;
 
-            // Sync score changes to all clients
-            if (RWMNetworkManager.Instance != null && RWMNetworkManager.Instance.isHost)
+        for (int i = 0; i < networkPlayers.Count; i++)
+        {
+            if (networkPlayers[i].playerID.ToString() == playerID)
             {
-                RWMNetworkManager.Instance.UpdateScore(playerID, players[playerID].scorePercentage);
+                var player = networkPlayers[i];
+                player.scorePercentage += points;
+                networkPlayers[i] = player;
+                Debug.Log($"[GameManager] Awarded {points} points to {player.playerName} (new score: {player.scorePercentage})");
+                break;
             }
         }
     }
-    
+
     // === TIMER MANAGEMENT ===
 
     public void StartTimer(float duration)
     {
-        currentTimerValue = duration;
-        timerActive = true;
+        if (!IsServer) return;
+
+        currentTimerValue.Value = duration;
+        timerActive.Value = true;
     }
-    
+
     void StopTimer()
     {
-        timerActive = false;
-        currentTimerValue = 0f;
+        if (!IsServer) return;
+
+        timerActive.Value = false;
+        currentTimerValue.Value = 0f;
     }
-    
+
     void OnTimerExpired()
     {
+        if (!IsServer) return;
+
         // Auto-advance when timer expires
         AdvanceToNextScreen();
     }
-    
+
     public float GetTimeRemaining()
     {
-        return currentTimerValue;
+        return currentTimerValue.Value;
     }
-    
+
     public string GetTimerDisplay()
     {
-        int seconds = Mathf.FloorToInt(currentTimerValue);
+        int seconds = Mathf.FloorToInt(currentTimerValue.Value);
         return seconds.ToString();
     }
-    
+
     // === PLAYER MANAGEMENT ===
-    
+
     public void AddPlayer(string playerID, string playerName, string iconName, ulong clientId = 0)
     {
-        if (!players.ContainsKey(playerID))
+        if (!IsServer) return;
+
+        // Check if player already exists
+        for (int i = 0; i < networkPlayers.Count; i++)
         {
-            players.Add(playerID, new PlayerData
+            if (networkPlayers[i].playerID.ToString() == playerID)
             {
-                playerID = playerID,
-                playerName = playerName,
-                iconName = iconName,
-                scorePercentage = 0,
-                isHost = false,
-                deviceType = "mobile",
-                clientId = clientId
-            });
+                Debug.LogWarning($"[GameManager] Player {playerID} already exists");
+                return;
+            }
         }
+
+        NetworkedPlayerData newPlayer = new NetworkedPlayerData
+        {
+            playerID = playerID,
+            playerName = playerName,
+            iconName = iconName,
+            scorePercentage = 0,
+            isHost = (clientId == 0),
+            deviceType = (clientId == 0) ? "desktop" : "mobile",
+            clientId = clientId
+        };
+
+        networkPlayers.Add(newPlayer);
+        Debug.Log($"[GameManager] Added player: {playerName} (ID: {playerID}, ClientID: {clientId})");
     }
-    
+
     public void RemovePlayer(string playerID)
     {
-        if (players.ContainsKey(playerID))
+        if (!IsServer) return;
+
+        for (int i = 0; i < networkPlayers.Count; i++)
         {
-            players.Remove(playerID);
+            if (networkPlayers[i].playerID.ToString() == playerID)
+            {
+                networkPlayers.RemoveAt(i);
+                Debug.Log($"[GameManager] Removed player: {playerID}");
 
-            // Clean up all stale votes and answers from disconnected player
-            // to prevent premature auto-advance when count checks trigger
-            currentRoundAnswers.Remove(playerID);
-            eliminationVotes.Remove(playerID);
-            votingVotes.Remove(playerID);
-            bonusVotes.Remove(playerID);
+                // Clean up votes and answers
+                currentRoundAnswers.Remove(playerID);
+                eliminationVotes.Remove(playerID);
+                votingVotes.Remove(playerID);
+                bonusVotes.Remove(playerID);
 
-            Debug.Log($"Removed player {playerID} and cleaned up their votes/answers");
+                break;
+            }
         }
     }
-    
+
     public PlayerData GetPlayer(string playerID)
     {
-        if (players.ContainsKey(playerID))
+        for (int i = 0; i < networkPlayers.Count; i++)
         {
-            return players[playerID];
+            if (networkPlayers[i].playerID.ToString() == playerID)
+            {
+                return networkPlayers[i].ToPlayerData();
+            }
         }
         return null;
     }
-    
+
     public List<PlayerData> GetAllPlayers()
     {
-        return players.Values.ToList();
+        List<PlayerData> result = new List<PlayerData>();
+        for (int i = 0; i < networkPlayers.Count; i++)
+        {
+            result.Add(networkPlayers[i].ToPlayerData());
+        }
+        return result;
     }
-    
+
     public List<PlayerData> GetPlayersByRank()
     {
-        return players.Values.OrderByDescending(p => p.scorePercentage).ToList();
+        List<PlayerData> allPlayers = GetAllPlayers();
+        return allPlayers.OrderByDescending(p => p.scorePercentage).ToList();
     }
-    
+
+    // Compatibility property for old Dictionary access pattern
+    public Dictionary<string, PlayerData> players
+    {
+        get
+        {
+            Dictionary<string, PlayerData> dict = new Dictionary<string, PlayerData>();
+            for (int i = 0; i < networkPlayers.Count; i++)
+            {
+                var player = networkPlayers[i].ToPlayerData();
+                dict[player.playerID] = player;
+            }
+            return dict;
+        }
+    }
+
     // === ANSWER FILTERING (for mobile display) ===
-    
+
     public List<string> GetAnswersForPlayer(string playerID, List<string> answers)
     {
         // Filter out the player's own answer
@@ -878,7 +994,7 @@ public class GameManager : MonoBehaviour
         {
             playerAnswer = currentRoundAnswers[playerID];
         }
-        
+
         List<string> filtered = new List<string>();
         foreach (var answer in answers)
         {
@@ -887,71 +1003,70 @@ public class GameManager : MonoBehaviour
                 filtered.Add(answer);
             }
         }
-        
+
         return filtered;
     }
-    
+
     public List<string> GetEliminationAnswersForMobile(string playerID)
     {
-        return GetAnswersForPlayer(playerID, allAnswers);
+        List<string> allAnswersList = new List<string>();
+        for (int i = 0; i < allAnswers.Count; i++)
+        {
+            allAnswersList.Add(allAnswers[i].ToString());
+        }
+        return GetAnswersForPlayer(playerID, allAnswersList);
     }
-    
+
     public List<string> GetVotingAnswersForMobile(string playerID)
     {
-        return GetAnswersForPlayer(playerID, remainingAnswers);
+        List<string> remainingAnswersList = new List<string>();
+        for (int i = 0; i < remainingAnswers.Count; i++)
+        {
+            remainingAnswersList.Add(remainingAnswers[i].ToString());
+        }
+        return GetAnswersForPlayer(playerID, remainingAnswersList);
     }
-    
+
     // === DATA LOADING ===
-    
+
     void LoadQuestions()
     {
-        // Questions are now loaded by QuestionLoader.cs
-        // This method is called after QuestionLoader populates the lists
-        Debug.Log("GameManager ready to use questions");
-        Debug.Log("Standard Questions: " + standardQuestions.Count);
-        Debug.Log("Player Questions: " + playerQuestions.Count);
-        Debug.Log("Picture Questions: " + pictureQuestions.Count);
+        Debug.Log("[GameManager] Ready to use questions");
+        Debug.Log($"[GameManager] Standard Questions: {standardQuestions.Count}");
+        Debug.Log($"[GameManager] Player Questions: {playerQuestions.Count}");
+        Debug.Log($"[GameManager] Picture Questions: {pictureQuestions.Count}");
     }
-    
+
     Question GetStandardQuestion()
     {
         if (standardQuestions.Count == 0)
         {
-            Debug.LogError("No standard questions loaded!");
+            Debug.LogError("[GameManager] No standard questions loaded!");
             return null;
         }
-        
-        // Get next question and increment index
+
         Question question = standardQuestions[standardQuestionIndex];
         standardQuestionIndex++;
-        
-        // Loop back if we run out (shouldn't happen in normal gameplay)
+
         if (standardQuestionIndex >= standardQuestions.Count)
         {
             standardQuestionIndex = 0;
         }
-        
+
         return question;
     }
-    
+
     Question GetPlayerQuestion()
     {
         if (playerQuestions.Count == 0)
         {
-            Debug.LogError("No player questions loaded!");
+            Debug.LogError("[GameManager] No player questions loaded!");
             return null;
         }
 
-        Debug.Log($"GetPlayerQuestion - playerQuestions.Count: {playerQuestions.Count}, playerQuestionIndex: {playerQuestionIndex}");
-
-        // Get next question and increment index
         Question question = playerQuestions[playerQuestionIndex];
-
-        Debug.Log($"GetPlayerQuestion - Retrieved question: '{question?.questionText}'");
-
         playerQuestionIndex++;
 
-        // Loop back if we run out
         if (playerQuestionIndex >= playerQuestions.Count)
         {
             playerQuestionIndex = 0;
@@ -959,52 +1074,53 @@ public class GameManager : MonoBehaviour
 
         return question;
     }
-    
+
     Question GetPictureQuestion()
     {
         if (pictureQuestions.Count == 0)
         {
-            Debug.LogError("No picture questions loaded!");
+            Debug.LogError("[GameManager] No picture questions loaded!");
             return null;
         }
-        
-        // Get next question and increment index
+
         Question question = pictureQuestions[pictureQuestionIndex];
         pictureQuestionIndex++;
-        
-        // Loop back if we run out
+
         if (pictureQuestionIndex >= pictureQuestions.Count)
         {
             pictureQuestionIndex = 0;
         }
-        
+
         return question;
     }
-    
+
     // === UTILITY ===
-    
-    void ShuffleList<T>(List<T> list)
+
+    void ShuffleNetworkList(NetworkList<FixedString128Bytes> list)
     {
+        if (!IsServer) return;
+
+        // Fisher-Yates shuffle
         for (int i = list.Count - 1; i > 0; i--)
         {
             int randomIndex = Random.Range(0, i + 1);
-            T temp = list[i];
+            var temp = list[i];
             list[i] = list[randomIndex];
             list[randomIndex] = temp;
         }
     }
-    
+
     void LoadScene(string sceneName)
     {
         // HOST AUTHORITY: Only host can initiate scene changes
-        // Mobile clients will receive ChangeScene message via WebSocket and load scenes that way
-        bool isHost = RWMNetworkManager.Instance != null && RWMNetworkManager.Instance.isHost;
+        // Mobile clients will receive ChangeScene RPC via Unity Netcode and load scenes that way
+        bool isHostCheck = RWMNetworkManager.Instance != null && RWMNetworkManager.Instance.isHost;
         bool isMobile = DeviceDetector.Instance != null && DeviceDetector.Instance.IsMobile();
 
         // If mobile client, ignore - wait for host's RPC
-        if (isMobile && !isHost)
+        if (isMobile && !isHostCheck)
         {
-            Debug.LogWarning($"Mobile client attempted to load scene '{sceneName}' - ignoring. Waiting for host command.");
+            Debug.LogWarning($"[GameManager] Mobile client attempted to load scene '{sceneName}' - ignoring. Waiting for host command.");
             return;
         }
 
@@ -1019,55 +1135,65 @@ public class GameManager : MonoBehaviour
         }
 
         // Host broadcasts to all clients
-        if (isHost && RWMNetworkManager.Instance != null)
+        if (isHostCheck && RWMNetworkManager.Instance != null)
         {
             RWMNetworkManager.Instance.ChangeScene(sceneName);
-            Debug.Log($"Host broadcasting scene change to clients: {sceneName}");
+            Debug.Log($"[GameManager] Host broadcasting scene change to clients: {sceneName}");
         }
     }
-    
+
     // === PUBLIC GETTERS ===
-    
+
     public Question GetCurrentQuestion()
     {
         return currentQuestion;
     }
-    
+
     public int GetCurrentRound()
     {
-        return currentRound;
+        return currentRound.Value;
     }
-    
+
     public string GetCorrectAnswer()
     {
-        return correctAnswer;
+        return correctAnswer.Value.ToString();
     }
-    
+
     public string GetRobotAnswer()
     {
-        return robotAnswer;
+        return robotAnswer.Value.ToString();
     }
-    
+
     public List<string> GetAllAnswers()
     {
-        return allAnswers;
+        List<string> result = new List<string>();
+        for (int i = 0; i < allAnswers.Count; i++)
+        {
+            result.Add(allAnswers[i].ToString());
+        }
+        return result;
     }
-    
+
     public List<string> GetRemainingAnswers()
     {
-        return remainingAnswers;
+        List<string> result = new List<string>();
+        for (int i = 0; i < remainingAnswers.Count; i++)
+        {
+            result.Add(remainingAnswers[i].ToString());
+        }
+        return result;
     }
-    
+
     public string GetEliminatedAnswer()
     {
-        return eliminatedAnswer;
+        return eliminatedAnswer.Value.ToString();
     }
-    
+
     public string GetCurrentBonusQuestion()
     {
-        if (bonusQuestions != null && currentBonusQuestion < bonusQuestions.miniQuestions.Count)
+        if (bonusQuestions != null && currentBonusQuestion.Value < bonusQuestions.miniQuestions.Count)
         {
-            return bonusQuestions.miniQuestions[currentBonusQuestion];
+            return bonusQuestions.miniQuestions[currentBonusQuestion.Value];
         }
         return "";
     }
@@ -1094,7 +1220,7 @@ public class GameManager : MonoBehaviour
         }
         return results;
     }
-    
+
     public Dictionary<string, int> GetEliminationResults()
     {
         Dictionary<string, int> results = new Dictionary<string, int>();
@@ -1110,7 +1236,49 @@ public class GameManager : MonoBehaviour
     }
 }
 
-// === DATA STRUCTURES ===
+// === NETWORK-SERIALIZABLE DATA STRUCTURES ===
+
+/// <summary>
+/// Network-serializable player data for NetworkList
+/// Uses INetworkSerializable for efficient synchronization
+/// </summary>
+public struct NetworkedPlayerData : INetworkSerializable
+{
+    public FixedString64Bytes playerID;
+    public FixedString64Bytes playerName;
+    public FixedString64Bytes iconName;
+    public int scorePercentage;
+    public bool isHost;
+    public FixedString32Bytes deviceType;
+    public ulong clientId;
+
+    public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+    {
+        serializer.SerializeValue(ref playerID);
+        serializer.SerializeValue(ref playerName);
+        serializer.SerializeValue(ref iconName);
+        serializer.SerializeValue(ref scorePercentage);
+        serializer.SerializeValue(ref isHost);
+        serializer.SerializeValue(ref deviceType);
+        serializer.SerializeValue(ref clientId);
+    }
+
+    public PlayerData ToPlayerData()
+    {
+        return new PlayerData
+        {
+            playerID = playerID.ToString(),
+            playerName = playerName.ToString(),
+            iconName = iconName.ToString(),
+            scorePercentage = scorePercentage,
+            isHost = isHost,
+            deviceType = deviceType.ToString(),
+            clientId = clientId
+        };
+    }
+}
+
+// === LEGACY DATA STRUCTURES (for compatibility) ===
 
 [System.Serializable]
 public class PlayerData
@@ -1120,8 +1288,8 @@ public class PlayerData
     public string iconName;
     public int scorePercentage;
     public bool isHost;
-    public string deviceType; // "desktop" or "mobile"
-    public ulong clientId; // Network client ID for tracking connections
+    public string deviceType;
+    public ulong clientId;
 }
 
 [System.Serializable]
@@ -1131,8 +1299,8 @@ public class Question
     public string correctAnswer;
     public string robotAnswer;
     public string robotAnecdote;
-    public string questionType; // "standard", "player", or "picture"
-    public string imageURL; // For picture questions
+    public string questionType;
+    public string imageURL;
 }
 
 [System.Serializable]

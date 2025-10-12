@@ -1,26 +1,25 @@
 using UnityEngine;
 using System;
 using System.Collections.Generic;
-using NativeWebSocket;
+using Unity.Netcode;
+using Unity.Netcode.Transports.UTP;
 
 /// <summary>
-/// WebSocket-based NetworkManager for RWM multiplayer
-/// Connects to Node.js server for room management and game state sync
+/// Unity Netcode-based NetworkManager for RWM multiplayer
+/// Desktop acts as Host (Server + Client), mobile devices connect as Clients
 /// </summary>
-public class RWMNetworkManager : MonoBehaviour
+public class RWMNetworkManager : NetworkBehaviour
 {
     public static RWMNetworkManager Instance;
 
     [Header("Network Settings")]
-    public string serverUrl = "ws://localhost:3000"; // Change to your server URL
     public string roomCode = "";
     public bool isHost = false;
+    public ushort port = 7777;
 
     [Header("Connection Status")]
     public bool isConnected = false;
     public string playerId = "";
-
-    private WebSocket websocket;
 
     // Event delegates for network messages
     public event Action<string> OnRoomCreated;
@@ -35,6 +34,8 @@ public class RWMNetworkManager : MonoBehaviour
     public event Action<string> OnSceneChanged; // sceneName
     public event Action<float, bool> OnTimerSync; // timerValue, isActive
     public event Action OnConnectionError;
+
+    private NetworkManager networkManager;
 
     void Awake()
     {
@@ -52,6 +53,21 @@ public class RWMNetworkManager : MonoBehaviour
 
     void Start()
     {
+        // Get or add Unity's NetworkManager component
+        networkManager = GetComponent<NetworkManager>();
+        if (networkManager == null)
+        {
+            networkManager = gameObject.AddComponent<NetworkManager>();
+        }
+
+        // Setup Unity Transport
+        var transport = GetComponent<UnityTransport>();
+        if (transport == null)
+        {
+            transport = gameObject.AddComponent<UnityTransport>();
+            networkManager.NetworkConfig.NetworkTransport = transport;
+        }
+
         // Load or generate player ID
         if (PlayerPrefs.HasKey("PlayerID"))
         {
@@ -64,97 +80,73 @@ public class RWMNetworkManager : MonoBehaviour
         }
 
         Debug.Log($"[NetworkManager] Player ID: {playerId}");
+
+        // Register connection callbacks
+        networkManager.OnClientConnectedCallback += OnClientConnected;
+        networkManager.OnClientDisconnectCallback += OnClientDisconnected;
+        networkManager.OnServerStarted += OnServerStarted;
     }
 
-    void Update()
+    // === CONNECTION CALLBACKS ===
+
+    private void OnServerStarted()
     {
-        #if !UNITY_WEBGL || UNITY_EDITOR
-        // Dispatch WebSocket messages on main thread (not needed for WebGL)
-        if (websocket != null)
-        {
-            websocket.DispatchMessageQueue();
-        }
-        #endif
+        Debug.Log("[NetworkManager] Server started successfully");
+        isConnected = true;
+        isHost = true;
+        OnRoomCreated?.Invoke(roomCode);
     }
 
-    // === CONNECTION METHODS ===
-
-    public async void Connect()
+    private void OnClientConnected(ulong clientId)
     {
-        if (isConnected)
+        Debug.Log($"[NetworkManager] Client connected: {clientId}");
+
+        if (NetworkManager.Singleton.IsClient && clientId == NetworkManager.Singleton.LocalClientId)
         {
-            Debug.LogWarning("[NetworkManager] Already connected");
-            return;
-        }
-
-        Debug.Log($"[NetworkManager] Connecting to {serverUrl}");
-
-        websocket = new WebSocket(serverUrl);
-
-        websocket.OnOpen += () =>
-        {
-            Debug.Log("[NetworkManager] WebSocket connected!");
             isConnected = true;
-        };
+            OnRoomJoined?.Invoke(roomCode);
+        }
 
-        websocket.OnError += (e) =>
+        OnPlayerJoined?.Invoke(clientId.ToString());
+    }
+
+    private void OnClientDisconnected(ulong clientId)
+    {
+        Debug.Log($"[NetworkManager] Client disconnected: {clientId}");
+
+        if (NetworkManager.Singleton.IsClient && clientId == NetworkManager.Singleton.LocalClientId)
         {
-            Debug.LogError($"[NetworkManager] WebSocket error: {e}");
             isConnected = false;
             OnConnectionError?.Invoke();
-        };
-
-        websocket.OnClose += (e) =>
-        {
-            Debug.Log($"[NetworkManager] WebSocket closed: {e}");
-            isConnected = false;
-        };
-
-        websocket.OnMessage += (bytes) =>
-        {
-            string message = System.Text.Encoding.UTF8.GetString(bytes);
-            HandleMessage(message);
-        };
-
-        await websocket.Connect();
-    }
-
-    public async void Disconnect()
-    {
-        if (websocket != null && websocket.State == WebSocketState.Open)
-        {
-            Debug.Log("[NetworkManager] Disconnecting...");
-            await websocket.Close();
-            isConnected = false;
         }
+
+        OnPlayerLeft?.Invoke(clientId.ToString());
     }
 
     // === HOST METHODS ===
 
     public void StartHost()
     {
-        if (!isConnected)
-        {
-            Debug.LogError("[NetworkManager] Cannot start host - not connected to server");
-            Connect();
-            return;
-        }
-
         isHost = true;
 
         // Generate room code
         GenerateRoomCode();
 
-        // Send create room request to server
-        var message = new NetworkMessage
-        {
-            type = "create_room",
-            roomCode = roomCode,
-            playerId = playerId
-        };
+        // Start as Host (Server + Client)
+        var transport = networkManager.GetComponent<UnityTransport>();
+        transport.SetConnectionData("127.0.0.1", port);
 
-        SendMessage(message);
-        Debug.Log($"[NetworkManager] Host started with room code: {roomCode}");
+        bool success = networkManager.StartHost();
+
+        if (success)
+        {
+            Debug.Log($"[NetworkManager] Host started with room code: {roomCode}");
+        }
+        else
+        {
+            Debug.LogError("[NetworkManager] Failed to start host");
+            OnConnectionError?.Invoke();
+        }
     }
 
     void GenerateRoomCode()
@@ -172,339 +164,333 @@ public class RWMNetworkManager : MonoBehaviour
 
     // === CLIENT METHODS ===
 
-    public bool JoinGame(string code)
+    public bool JoinGame(string code, string hostIP = "127.0.0.1")
     {
-        if (!isConnected)
-        {
-            Debug.LogError("[NetworkManager] Cannot join game - not connected to server");
-            Connect();
-            return false;
-        }
-
         isHost = false;
         roomCode = code.ToUpper();
 
-        // Send join room request to server
-        var message = new NetworkMessage
-        {
-            type = "join_room",
-            roomCode = roomCode,
-            playerId = playerId
-        };
+        // Set connection data to host's IP
+        var transport = networkManager.GetComponent<UnityTransport>();
+        transport.SetConnectionData(hostIP, port);
 
-        SendMessage(message);
-        Debug.Log($"[NetworkManager] Attempting to join room: {roomCode}");
-        return true;
+        // Start as Client
+        bool success = networkManager.StartClient();
+
+        if (success)
+        {
+            Debug.Log($"[NetworkManager] Attempting to join room: {roomCode} at {hostIP}:{port}");
+        }
+        else
+        {
+            Debug.LogError("[NetworkManager] Failed to start client");
+            OnConnectionError?.Invoke();
+        }
+
+        return success;
     }
 
     // === PLAYER MANAGEMENT ===
 
     public void AddPlayer(string playerName, string iconName)
     {
-        var message = new NetworkMessage
-        {
-            type = "add_player",
-            roomCode = roomCode,
-            playerId = playerId,
-            playerName = playerName,
-            iconName = iconName
-        };
+        if (!IsSpawned) return;
 
-        SendMessage(message);
+        AddPlayerServerRpc(playerId, playerName, iconName);
         Debug.Log($"[NetworkManager] Adding player: {playerName}");
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void AddPlayerServerRpc(string playerIdParam, string playerName, string iconName, ServerRpcParams serverRpcParams = default)
+    {
+        ulong clientId = serverRpcParams.Receive.SenderClientId;
+
+        // Add to GameManager on server
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.AddPlayer(playerIdParam, playerName, iconName, clientId);
+        }
+
+        // Broadcast to all clients
+        AddPlayerClientRpc(playerIdParam, playerName, iconName);
+    }
+
+    [ClientRpc]
+    private void AddPlayerClientRpc(string playerIdParam, string playerName, string iconName)
+    {
+        OnPlayerAdded?.Invoke(playerIdParam, playerName, iconName);
+
+        // Add to GameManager on all clients
+        if (GameManager.Instance != null && !GameManager.Instance.players.ContainsKey(playerIdParam))
+        {
+            GameManager.Instance.AddPlayer(playerIdParam, playerName, iconName);
+        }
     }
 
     public void RemovePlayer(string playerIdToRemove)
     {
-        var message = new NetworkMessage
-        {
-            type = "remove_player",
-            roomCode = roomCode,
-            playerId = playerIdToRemove
-        };
+        if (!IsSpawned) return;
 
-        SendMessage(message);
+        RemovePlayerServerRpc(playerIdToRemove);
         Debug.Log($"[NetworkManager] Removing player: {playerIdToRemove}");
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void RemovePlayerServerRpc(string playerIdToRemove)
+    {
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.RemovePlayer(playerIdToRemove);
+        }
+
+        RemovePlayerClientRpc(playerIdToRemove);
+    }
+
+    [ClientRpc]
+    private void RemovePlayerClientRpc(string playerIdToRemove)
+    {
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.RemovePlayer(playerIdToRemove);
+        }
     }
 
     // === GAME STATE SYNC ===
 
     public void SyncGameState(GameManager.GameState state)
     {
-        if (!isHost) return;
+        if (!isHost || !IsSpawned) return;
 
-        var message = new NetworkMessage
+        SyncGameStateClientRpc(state.ToString());
+    }
+
+    [ClientRpc]
+    private void SyncGameStateClientRpc(string gameState)
+    {
+        if (isHost) return; // Host already has the state
+
+        OnGameStateChanged?.Invoke(gameState);
+
+        if (GameManager.Instance != null && !string.IsNullOrEmpty(gameState))
         {
-            type = "game_state",
-            roomCode = roomCode,
-            gameState = state.ToString()
-        };
-
-        SendMessage(message);
+            GameManager.GameState state = (GameManager.GameState)Enum.Parse(typeof(GameManager.GameState), gameState);
+            GameManager.Instance.currentGameState = state;
+        }
     }
 
     public void SyncTimer(float timerValue, bool isActive)
     {
-        if (!isHost) return;
+        if (!isHost || !IsSpawned) return;
 
-        var message = new NetworkMessage
+        SyncTimerClientRpc(timerValue, isActive);
+    }
+
+    [ClientRpc]
+    private void SyncTimerClientRpc(float timerValue, bool isActive)
+    {
+        if (isHost) return; // Host already has the timer
+
+        OnTimerSync?.Invoke(timerValue, isActive);
+
+        if (GameManager.Instance != null)
         {
-            type = "timer_sync",
-            roomCode = roomCode,
-            timerValue = timerValue,
-            timerActive = isActive
-        };
-
-        SendMessage(message);
+            GameManager.Instance.currentTimerValue = timerValue;
+            GameManager.Instance.timerActive = isActive;
+        }
     }
 
     public void SyncCurrentRound(int round)
     {
-        if (!isHost) return;
+        if (!isHost || !IsSpawned) return;
 
-        var message = new NetworkMessage
+        SyncCurrentRoundClientRpc(round);
+    }
+
+    [ClientRpc]
+    private void SyncCurrentRoundClientRpc(int round)
+    {
+        if (isHost) return;
+
+        if (GameManager.Instance != null)
         {
-            type = "round_sync",
-            roomCode = roomCode,
-            currentRound = round
-        };
-
-        SendMessage(message);
+            GameManager.Instance.currentRound = round;
+        }
     }
 
     // === ANSWER SUBMISSION ===
 
     public void SubmitAnswer(string answer)
     {
-        var message = new NetworkMessage
-        {
-            type = "submit_answer",
-            roomCode = roomCode,
-            playerId = playerId,
-            answer = answer
-        };
+        if (!IsSpawned) return;
 
-        SendMessage(message);
+        SubmitAnswerServerRpc(playerId, answer);
         Debug.Log($"[NetworkManager] Submitting answer: {answer}");
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void SubmitAnswerServerRpc(string playerIdParam, string answer)
+    {
+        OnAnswerSubmitted?.Invoke(playerIdParam, answer);
+
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.SubmitPlayerAnswer(playerIdParam, answer);
+        }
+
+        // Broadcast to all clients
+        SubmitAnswerClientRpc(playerIdParam, answer);
+    }
+
+    [ClientRpc]
+    private void SubmitAnswerClientRpc(string playerIdParam, string answer)
+    {
+        if (isHost) return; // Host already processed
+
+        OnAnswerSubmitted?.Invoke(playerIdParam, answer);
+
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.SubmitPlayerAnswer(playerIdParam, answer);
+        }
     }
 
     // === VOTING ===
 
     public void SubmitEliminationVote(string votedAnswer)
     {
-        var message = new NetworkMessage
-        {
-            type = "elimination_vote",
-            roomCode = roomCode,
-            playerId = playerId,
-            votedAnswer = votedAnswer
-        };
+        if (!IsSpawned) return;
 
-        SendMessage(message);
+        SubmitEliminationVoteServerRpc(playerId, votedAnswer);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void SubmitEliminationVoteServerRpc(string playerIdParam, string votedAnswer)
+    {
+        OnVoteSubmitted?.Invoke(playerIdParam, votedAnswer);
+
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.SubmitEliminationVote(playerIdParam, votedAnswer);
+        }
+
+        SubmitEliminationVoteClientRpc(playerIdParam, votedAnswer);
+    }
+
+    [ClientRpc]
+    private void SubmitEliminationVoteClientRpc(string playerIdParam, string votedAnswer)
+    {
+        if (isHost) return;
+
+        OnVoteSubmitted?.Invoke(playerIdParam, votedAnswer);
+
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.SubmitEliminationVote(playerIdParam, votedAnswer);
+        }
     }
 
     public void SubmitVotingVote(string votedAnswer)
     {
-        var message = new NetworkMessage
-        {
-            type = "voting_vote",
-            roomCode = roomCode,
-            playerId = playerId,
-            votedAnswer = votedAnswer
-        };
+        if (!IsSpawned) return;
 
-        SendMessage(message);
+        SubmitVotingVoteServerRpc(playerId, votedAnswer);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void SubmitVotingVoteServerRpc(string playerIdParam, string votedAnswer)
+    {
+        OnVoteSubmitted?.Invoke(playerIdParam, votedAnswer);
+
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.SubmitVotingVote(playerIdParam, votedAnswer);
+        }
+
+        SubmitVotingVoteClientRpc(playerIdParam, votedAnswer);
+    }
+
+    [ClientRpc]
+    private void SubmitVotingVoteClientRpc(string playerIdParam, string votedAnswer)
+    {
+        if (isHost) return;
+
+        OnVoteSubmitted?.Invoke(playerIdParam, votedAnswer);
+
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.SubmitVotingVote(playerIdParam, votedAnswer);
+        }
     }
 
     public void SubmitBonusVote(string votedPlayerID)
     {
-        var message = new NetworkMessage
-        {
-            type = "bonus_vote",
-            roomCode = roomCode,
-            playerId = playerId,
-            votedPlayerID = votedPlayerID
-        };
+        if (!IsSpawned) return;
 
-        SendMessage(message);
+        SubmitBonusVoteServerRpc(playerId, votedPlayerID);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void SubmitBonusVoteServerRpc(string playerIdParam, string votedPlayerID)
+    {
+        OnVoteSubmitted?.Invoke(playerIdParam, votedPlayerID);
+
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.SubmitBonusVote(playerIdParam, votedPlayerID);
+        }
+
+        SubmitBonusVoteClientRpc(playerIdParam, votedPlayerID);
+    }
+
+    [ClientRpc]
+    private void SubmitBonusVoteClientRpc(string playerIdParam, string votedPlayerID)
+    {
+        if (isHost) return;
+
+        OnVoteSubmitted?.Invoke(playerIdParam, votedPlayerID);
+
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.SubmitBonusVote(playerIdParam, votedPlayerID);
+        }
     }
 
     // === SCORE UPDATES ===
 
     public void UpdateScore(string playerIdToUpdate, int newScore)
     {
-        if (!isHost) return;
+        if (!isHost || !IsSpawned) return;
 
-        var message = new NetworkMessage
+        UpdateScoreClientRpc(playerIdToUpdate, newScore);
+    }
+
+    [ClientRpc]
+    private void UpdateScoreClientRpc(string playerIdToUpdate, int newScore)
+    {
+        OnScoreUpdated?.Invoke(playerIdToUpdate, newScore);
+
+        if (GameManager.Instance != null && GameManager.Instance.players.ContainsKey(playerIdToUpdate))
         {
-            type = "score_update",
-            roomCode = roomCode,
-            playerId = playerIdToUpdate,
-            score = newScore
-        };
-
-        SendMessage(message);
+            GameManager.Instance.players[playerIdToUpdate].scorePercentage = newScore;
+        }
     }
 
     // === SCENE TRANSITIONS ===
 
     public void ChangeScene(string sceneName)
     {
-        if (!isHost) return;
+        if (!isHost || !IsSpawned) return;
 
-        var message = new NetworkMessage
-        {
-            type = "scene_change",
-            roomCode = roomCode,
-            sceneName = sceneName
-        };
-
-        SendMessage(message);
+        ChangeSceneClientRpc(sceneName);
     }
 
-    // === MESSAGE HANDLING ===
-
-    void HandleMessage(string messageJson)
+    [ClientRpc]
+    private void ChangeSceneClientRpc(string sceneName)
     {
-        try
+        OnSceneChanged?.Invoke(sceneName);
+
+        if (!isHost) // Clients follow host's scene changes
         {
-            NetworkMessage message = JsonUtility.FromJson<NetworkMessage>(messageJson);
-
-            Debug.Log($"[NetworkManager] Received: {message.type}");
-
-            switch (message.type)
-            {
-                case "room_created":
-                    OnRoomCreated?.Invoke(message.roomCode);
-                    break;
-
-                case "room_joined":
-                    OnRoomJoined?.Invoke(message.roomCode);
-                    break;
-
-                case "player_joined":
-                    OnPlayerJoined?.Invoke(message.playerId);
-                    break;
-
-                case "player_left":
-                    OnPlayerLeft?.Invoke(message.playerId);
-                    break;
-
-                case "player_added":
-                    OnPlayerAdded?.Invoke(message.playerId, message.playerName, message.iconName);
-                    // Add to GameManager
-                    if (GameManager.Instance != null)
-                    {
-                        GameManager.Instance.AddPlayer(message.playerId, message.playerName, message.iconName);
-                    }
-                    break;
-
-                case "game_state":
-                    OnGameStateChanged?.Invoke(message.gameState);
-                    // Update GameManager
-                    if (GameManager.Instance != null && !string.IsNullOrEmpty(message.gameState))
-                    {
-                        GameManager.GameState state = (GameManager.GameState)Enum.Parse(typeof(GameManager.GameState), message.gameState);
-                        GameManager.Instance.currentGameState = state;
-                    }
-                    break;
-
-                case "answer_submitted":
-                    OnAnswerSubmitted?.Invoke(message.playerId, message.answer);
-                    // Process in GameManager
-                    if (GameManager.Instance != null)
-                    {
-                        GameManager.Instance.SubmitPlayerAnswer(message.playerId, message.answer);
-                    }
-                    break;
-
-                case "elimination_vote":
-                    OnVoteSubmitted?.Invoke(message.playerId, message.votedAnswer);
-                    if (GameManager.Instance != null)
-                    {
-                        GameManager.Instance.SubmitEliminationVote(message.playerId, message.votedAnswer);
-                    }
-                    break;
-
-                case "voting_vote":
-                    OnVoteSubmitted?.Invoke(message.playerId, message.votedAnswer);
-                    if (GameManager.Instance != null)
-                    {
-                        GameManager.Instance.SubmitVotingVote(message.playerId, message.votedAnswer);
-                    }
-                    break;
-
-                case "bonus_vote":
-                    OnVoteSubmitted?.Invoke(message.playerId, message.votedPlayerID);
-                    if (GameManager.Instance != null)
-                    {
-                        GameManager.Instance.SubmitBonusVote(message.playerId, message.votedPlayerID);
-                    }
-                    break;
-
-                case "score_update":
-                    OnScoreUpdated?.Invoke(message.playerId, message.score);
-                    if (GameManager.Instance != null && GameManager.Instance.players.ContainsKey(message.playerId))
-                    {
-                        GameManager.Instance.players[message.playerId].scorePercentage = message.score;
-                    }
-                    break;
-
-                case "scene_change":
-                    OnSceneChanged?.Invoke(message.sceneName);
-                    if (!isHost) // Clients follow host's scene changes
-                    {
-                        UnityEngine.SceneManagement.SceneManager.LoadScene(message.sceneName);
-                    }
-                    break;
-
-                case "timer_sync":
-                    OnTimerSync?.Invoke(message.timerValue, message.timerActive);
-                    if (GameManager.Instance != null && !isHost) // Only clients update from sync
-                    {
-                        GameManager.Instance.currentTimerValue = message.timerValue;
-                        GameManager.Instance.timerActive = message.timerActive;
-                    }
-                    break;
-
-                case "round_sync":
-                    if (GameManager.Instance != null && !isHost)
-                    {
-                        GameManager.Instance.currentRound = message.currentRound;
-                    }
-                    break;
-
-                case "error":
-                    Debug.LogError($"[NetworkManager] Server error: {message.error}");
-                    break;
-
-                default:
-                    Debug.LogWarning($"[NetworkManager] Unknown message type: {message.type}");
-                    break;
-            }
-        }
-        catch (Exception e)
-        {
-            Debug.LogError($"[NetworkManager] Error parsing message: {e.Message}\nMessage: {messageJson}");
-        }
-    }
-
-    async void SendMessage(NetworkMessage message)
-    {
-        if (websocket == null || websocket.State != WebSocketState.Open)
-        {
-            Debug.LogError("[NetworkManager] Cannot send message - not connected");
-            return;
-        }
-
-        try
-        {
-            string json = JsonUtility.ToJson(message);
-            await websocket.SendText(json);
-        }
-        catch (Exception e)
-        {
-            Debug.LogError($"[NetworkManager] Error sending message: {e.Message}");
+            UnityEngine.SceneManagement.SceneManager.LoadScene(sceneName);
         }
     }
 
@@ -517,43 +503,26 @@ public class RWMNetworkManager : MonoBehaviour
 
     // === CLEANUP ===
 
-    async void OnApplicationQuit()
+    void OnApplicationQuit()
     {
-        if (websocket != null && websocket.State == WebSocketState.Open)
+        if (networkManager != null && networkManager.IsListening)
         {
-            await websocket.Close();
+            networkManager.Shutdown();
         }
     }
 
     void OnDestroy()
     {
-        if (websocket != null && websocket.State == WebSocketState.Open)
+        if (networkManager != null)
         {
-            websocket.Close();
+            networkManager.OnClientConnectedCallback -= OnClientConnected;
+            networkManager.OnClientDisconnectCallback -= OnClientDisconnected;
+            networkManager.OnServerStarted -= OnServerStarted;
+
+            if (networkManager.IsListening)
+            {
+                networkManager.Shutdown();
+            }
         }
     }
-}
-
-/// <summary>
-/// Network message structure for WebSocket communication
-/// Must match server-side message format
-/// </summary>
-[Serializable]
-public class NetworkMessage
-{
-    public string type;
-    public string roomCode;
-    public string playerId;
-    public string playerName;
-    public string iconName;
-    public string gameState;
-    public string answer;
-    public string votedAnswer;
-    public string votedPlayerID;
-    public int score;
-    public string sceneName;
-    public float timerValue;
-    public bool timerActive;
-    public int currentRound;
-    public string error;
 }

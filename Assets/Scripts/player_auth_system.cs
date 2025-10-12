@@ -78,13 +78,13 @@ public class PlayerAuthSystem : MonoBehaviour
         PlayerPrefs.SetString("PlayerName", playerName);
         PlayerPrefs.SetString("PlayerIcon", playerIcon);
         PlayerPrefs.Save();
-        
+
         Debug.Log($"Player registered: {playerName} ({localPlayerID})");
 
         // Add to local storage
         playerDataMap[localPlayerID] = playerName;
 
-        // If connected to network, send to server via WebSocket
+        // If connected to network, send to server via Netcode
         if (RWMNetworkManager.Instance != null && RWMNetworkManager.Instance.isConnected)
         {
             RWMNetworkManager.Instance.AddPlayer(playerName, playerIcon);
