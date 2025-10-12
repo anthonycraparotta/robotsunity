@@ -3422,27 +3422,28 @@ MonoBehaviour:
   headlineText: {fileID: 0}
   dataHeaders: {fileID: 0}
   desktopBackground: {fileID: 123143795}
-  mobileDisplay: {fileID: 0}
-  joinScreen: {fileID: 0}
-  joinGameButton: {fileID: 0}
-  joinForm: {fileID: 0}
-  nameInput: {fileID: 0}
+  mobileDisplay: {fileID: 551915839}
+  joinScreen: {fileID: 732091543}
+  joinGameButton: {fileID: 427058252}
+  joinForm: {fileID: 1676098392}
+  nameInput: {fileID: 1626481317}
   roomCodeInput: {fileID: 0}
-  joinButton: {fileID: 0}
-  scrollingPlayerIconContainer: {fileID: 0}
-  selectedIcon: {fileID: 0}
-  playerIconSelectionContainer: {fileID: 0}
-  namebar: {fileID: 0}
+  joinButton: {fileID: 49709814}
+  scrollingPlayerIconContainer: {fileID: 1195317833}
+  selectedIcon: {fileID: 619171338}
+  playerIconSelectionContainer: {fileID: 1195317833}
+  namebar: {fileID: 1626481318}
   playerNameDisplay: {fileID: 0}
-  joinScreenBackground: {fileID: 0}
-  joinFormBackground: {fileID: 0}
-  joinWait: {fileID: 0}
-  joinWaitBackground: {fileID: 0}
-  waitingHeadlineText: {fileID: 0}
-  waitPlayerIcon: {fileID: 0}
-  waitData: {fileID: 0}
-  waitDataHeaders: {fileID: 0}
-  errorMessageText: {fileID: 0}
+  joinScreenBackground: {fileID: 1212679232}
+  joinFormBackground: {fileID: 1430855138}
+  joinWait: {fileID: 154545667}
+  joinWaitBackground: {fileID: 809436767}
+  waitingHeadlineText: {fileID: 1984223560}
+  waitPlayerIcon: {fileID: 1118043948}
+  waitData: {fileID: 1454807620}
+  waitDataHeaders: {fileID: 799777326}
+  errorMessageText: {fileID: 1394190965}
+  submitMessageText: {fileID: 660098488}
   errorDisplayDuration: 3
 --- !u!1 &2080366140
 GameObject:
