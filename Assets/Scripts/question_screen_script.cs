@@ -107,7 +107,7 @@ public class QuestionScreen : MonoBehaviour
         }
 
         // Check timer warning for audio
-        if (AudioManager.Instance != null)
+        if (AudioManager.Instance != null && GameManager.Instance != null)
         {
             AudioManager.Instance.CheckTimerWarning(GameManager.Instance.GetTimeRemaining());
         }
@@ -259,6 +259,12 @@ public class QuestionScreen : MonoBehaviour
     
     void ShowRoundVisuals()
     {
+        if (GameManager.Instance == null)
+        {
+            Debug.LogWarning("ShowRoundVisuals called before GameManager was ready");
+            return;
+        }
+
         int currentRound = GameManager.Instance.GetCurrentRound();
         
         // Hide all round backgrounds
@@ -334,15 +340,18 @@ public class QuestionScreen : MonoBehaviour
     
     void UpdateTimerDisplay()
     {
-        if (timerCountdown != null)
+        if (timerCountdown != null && GameManager.Instance != null)
         {
             timerCountdown.text = GameManager.Instance.GetTimerDisplay();
         }
     }
-    
+
     void UpdatePlayerStatusIndicators()
     {
-        if (playerIconContainer == null) return;
+        if (playerIconContainer == null || GameManager.Instance == null)
+        {
+            return;
+        }
 
         List<PlayerData> players = GameManager.Instance.GetAllPlayers();
 

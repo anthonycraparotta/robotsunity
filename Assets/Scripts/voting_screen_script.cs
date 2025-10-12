@@ -78,7 +78,7 @@ public class VotingScreen : MonoBehaviour
         UpdateTimerDisplay();
 
         // Check timer warning for audio
-        if (AudioManager.Instance != null)
+        if (AudioManager.Instance != null && GameManager.Instance != null)
         {
             AudioManager.Instance.CheckTimerWarning(GameManager.Instance.GetTimeRemaining());
         }
@@ -102,16 +102,23 @@ public class VotingScreen : MonoBehaviour
         List<string> answers;
         Transform container;
         
+        var gameManager = GameManager.Instance;
+        if (gameManager == null)
+        {
+            Debug.LogWarning("DisplayAnswers called before GameManager was ready");
+            return;
+        }
+
         if (isMobile)
         {
             // Mobile: Filter out player's own answer (if still remaining)
-            answers = GameManager.Instance.GetVotingAnswersForMobile(playerID);
+            answers = gameManager.GetVotingAnswersForMobile(playerID);
             container = voteListMobile;
         }
         else
         {
             // Desktop: Show all remaining answers
-            answers = GameManager.Instance.GetRemainingAnswers();
+            answers = gameManager.GetRemainingAnswers();
             container = answerListContainer;
         }
         
@@ -277,7 +284,7 @@ public class VotingScreen : MonoBehaviour
         {
             RWMNetworkManager.Instance.SubmitVotingVote(selectedAnswer);
         }
-        else
+        else if (GameManager.Instance != null)
         {
             // Fallback for local testing without network
             GameManager.Instance.SubmitVotingVote(playerID, selectedAnswer);
@@ -304,7 +311,7 @@ public class VotingScreen : MonoBehaviour
     
     void UpdateTimerDisplay()
     {
-        if (timerCountdown != null)
+        if (timerCountdown != null && GameManager.Instance != null)
         {
             timerCountdown.text = GameManager.Instance.GetTimerDisplay();
         }
