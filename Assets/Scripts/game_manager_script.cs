@@ -37,6 +37,7 @@ public class GameManager : NetworkBehaviour
     private readonly Dictionary<string, string> eliminationVotes = new Dictionary<string, string>();
     private readonly Dictionary<string, string> votingVotes = new Dictionary<string, string>();
     private readonly Dictionary<string, string> bonusVotes = new Dictionary<string, string>();
+    private NetworkList<NetworkBonusQuestionResult> bonusQuestionResults;
 
     private ReadOnlyDictionary<string, string> readOnlyCurrentRoundAnswers;
     private ReadOnlyDictionary<string, string> readOnlyEliminationVotes;
@@ -116,6 +117,7 @@ public class GameManager : NetworkBehaviour
         readOnlyEliminationVotes = new ReadOnlyDictionary<string, string>(eliminationVotes);
         readOnlyVotingVotes = new ReadOnlyDictionary<string, string>(votingVotes);
         readOnlyBonusVotes = new ReadOnlyDictionary<string, string>(bonusVotes);
+        bonusQuestionResults = new NetworkList<NetworkBonusQuestionResult>();
 
         // Singleton setup
         if (Instance == null)
@@ -288,6 +290,8 @@ public class GameManager : NetworkBehaviour
             networkPlayers[i] = player;
         }
 
+        ClearBonusQuestionResults();
+
         Debug.Log("[GameManager] Game state reset for new game");
     }
 
@@ -307,6 +311,8 @@ public class GameManager : NetworkBehaviour
             player.scorePercentage = 0;
             networkPlayers[i] = player;
         }
+
+        ClearBonusQuestionResults();
 
         LoadScene("IntroVideoScreen");
         currentGameState.Value = GameState.IntroVideo;
@@ -383,6 +389,7 @@ public class GameManager : NetworkBehaviour
 
             case GameState.BonusIntro:
                 Debug.Log("[GameManager] Advancing from BonusIntro to BonusQuestion");
+                ClearBonusQuestionResults();
                 LoadScene("BonusQuestionScreen");
                 currentGameState.Value = GameState.BonusQuestion;
                 currentBonusQuestion.Value = 0;
@@ -534,6 +541,16 @@ public class GameManager : NetworkBehaviour
         }
 
         ClearBonusVotesLocal();
+    }
+
+    private void ClearBonusQuestionResults()
+    {
+        if (!IsServer || bonusQuestionResults == null)
+        {
+            return;
+        }
+
+        bonusQuestionResults.Clear();
     }
 
     private void RemovePlayerFromCaches(string playerID)
@@ -974,10 +991,16 @@ public class GameManager : NetworkBehaviour
 
         foreach (var vote in bonusVotes.Values)
         {
+            if (string.IsNullOrEmpty(vote))
+            {
+                continue;
+            }
+
             if (!voteCounts.ContainsKey(vote))
             {
                 voteCounts.Add(vote, 0);
             }
+
             voteCounts[vote]++;
         }
 
@@ -996,12 +1019,65 @@ public class GameManager : NetworkBehaviour
 
         Debug.Log($"[GameManager] Awarding {bonusPoints} points to players with {maxVotes} votes");
 
+        // Cache player lookup for display data
+        Dictionary<string, PlayerData> playersById = new Dictionary<string, PlayerData>();
+        List<PlayerData> allPlayers = GetAllPlayers();
+        for (int i = 0; i < allPlayers.Count; i++)
+        {
+            PlayerData player = allPlayers[i];
+            if (!string.IsNullOrEmpty(player.playerID))
+            {
+                playersById[player.playerID] = player;
+            }
+        }
+
+        List<string> winnerNames = new List<string>();
+        string primaryWinnerIcon = string.Empty;
+
         foreach (var kvp in voteCounts)
         {
-            if (kvp.Value == maxVotes)
+            if (maxVotes > 0 && kvp.Value == maxVotes)
             {
                 AwardPoints(kvp.Key, bonusPoints);
+
+                if (playersById.TryGetValue(kvp.Key, out PlayerData winnerData))
+                {
+                    winnerNames.Add(winnerData.playerName);
+
+                    if (string.IsNullOrEmpty(primaryWinnerIcon) && !string.IsNullOrEmpty(winnerData.iconName))
+                    {
+                        primaryWinnerIcon = winnerData.iconName;
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning($"[GameManager] Unable to resolve player data for bonus winner {kvp.Key}");
+                }
             }
+        }
+
+        string questionText = string.Empty;
+        if (bonusQuestions != null && bonusQuestions.miniQuestions != null && currentBonusQuestion.Value < bonusQuestions.miniQuestions.Count)
+        {
+            questionText = bonusQuestions.miniQuestions[currentBonusQuestion.Value];
+        }
+
+        bool hasWinner = winnerNames.Count > 0 && maxVotes > 0;
+        string displayWinnerText = hasWinner ? string.Join(", ", winnerNames) : "No votes cast";
+
+        NetworkBonusQuestionResult resultData = new NetworkBonusQuestionResult
+        {
+            questionText = string.IsNullOrEmpty(questionText) ? "Bonus question" : questionText,
+            winnerNames = displayWinnerText,
+            winnerIcon = hasWinner ? primaryWinnerIcon : string.Empty,
+            pointsAwarded = hasWinner ? bonusPoints : 0,
+            winningVoteCount = hasWinner ? maxVotes : 0,
+            hasWinner = hasWinner
+        };
+
+        if (bonusQuestionResults != null)
+        {
+            bonusQuestionResults.Add(resultData);
         }
     }
 
@@ -1246,6 +1322,23 @@ public class GameManager : NetworkBehaviour
     {
         List<PlayerData> allPlayers = GetAllPlayers();
         return allPlayers.OrderByDescending(p => p.scorePercentage).ToList();
+    }
+
+    public List<BonusQuestionResultInfo> GetBonusQuestionResults()
+    {
+        List<BonusQuestionResultInfo> results = new List<BonusQuestionResultInfo>();
+
+        if (bonusQuestionResults == null)
+        {
+            return results;
+        }
+
+        for (int i = 0; i < bonusQuestionResults.Count; i++)
+        {
+            results.Add(bonusQuestionResults[i].ToInfo());
+        }
+
+        return results;
     }
 
     // Read-only accessors for server-maintained dictionaries so UI can query submission state without modifying data
@@ -1706,6 +1799,49 @@ public class Question
 }
 
 [System.Serializable]
+public struct NetworkBonusQuestionResult : INetworkSerializable
+{
+    public FixedString512Bytes questionText;
+    public FixedString256Bytes winnerNames;
+    public FixedString64Bytes winnerIcon;
+    public int pointsAwarded;
+    public int winningVoteCount;
+    public bool hasWinner;
+
+    public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+    {
+        serializer.SerializeValue(ref questionText);
+        serializer.SerializeValue(ref winnerNames);
+        serializer.SerializeValue(ref winnerIcon);
+        serializer.SerializeValue(ref pointsAwarded);
+        serializer.SerializeValue(ref winningVoteCount);
+        serializer.SerializeValue(ref hasWinner);
+    }
+
+    public BonusQuestionResultInfo ToInfo()
+    {
+        return new BonusQuestionResultInfo
+        {
+            questionText = questionText.ToString(),
+            winnerNames = winnerNames.ToString(),
+            winnerIcon = winnerIcon.ToString(),
+            pointsAwarded = pointsAwarded,
+            winningVoteCount = winningVoteCount,
+            hasWinner = hasWinner
+        };
+    }
+}
+
+public class BonusQuestionResultInfo
+{
+    public string questionText;
+    public string winnerNames;
+    public string winnerIcon;
+    public int pointsAwarded;
+    public int winningVoteCount;
+    public bool hasWinner;
+}
+
 public class BonusQuestion
 {
     public List<string> miniQuestions = new List<string>();
