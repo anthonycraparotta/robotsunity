@@ -147,7 +147,30 @@ public class RWMNetworkManager : NetworkBehaviour
             OnConnectionError?.Invoke();
         }
 
-        OnPlayerLeft?.Invoke(clientId.ToString());
+        string disconnectedPlayerId = clientId.ToString();
+
+        if (NetworkManager.Singleton.IsServer)
+        {
+            var gameManager = GameManager.Instance ?? FindObjectOfType<GameManager>();
+
+            if (gameManager != null && gameManager.TryGetPlayerIdByClientId(clientId, out string resolvedPlayerId))
+            {
+                disconnectedPlayerId = resolvedPlayerId;
+
+                gameManager.RemovePlayer(resolvedPlayerId);
+
+                if (IsSpawned)
+                {
+                    RemovePlayerClientRpc(resolvedPlayerId);
+                }
+            }
+            else
+            {
+                Debug.LogWarning($"[NetworkManager] Unable to match disconnected client {clientId} to a player entry.");
+            }
+        }
+
+        OnPlayerLeft?.Invoke(disconnectedPlayerId);
     }
 
     // === HOST METHODS ===
@@ -288,6 +311,11 @@ public class RWMNetworkManager : NetworkBehaviour
     [ClientRpc]
     private void RemovePlayerClientRpc(string playerIdToRemove)
     {
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer && NetworkManager.Singleton.IsClient && NetworkManager.Singleton.LocalClientId == NetworkManager.ServerClientId)
+        {
+            return;
+        }
+
         if (GameManager.Instance != null)
         {
             GameManager.Instance.RemovePlayer(playerIdToRemove);
