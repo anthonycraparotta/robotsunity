@@ -436,6 +436,7 @@ MonoBehaviour:
   mobileBackground: {fileID: 0}
   minimumLoadTime: 2
   clickToAdvance: 1
+  autoAdvanceOnMobile: 1
 --- !u!1 &756523224
 GameObject:
   m_ObjectHideFlags: 0
@@ -957,6 +958,7 @@ GameObject:
   - component: {fileID: 2108762730}
   - component: {fileID: 2108762729}
   - component: {fileID: 2108762728}
+  - component: {fileID: 2108762735}
   - component: {fileID: 2108762734}
   m_Layer: 0
   m_Name: Managers
@@ -1119,7 +1121,7 @@ MonoBehaviour:
   playerQuestions: []
   pictureQuestions: []
   currentGameState: 0
---- !u!114 &2108762734
+--- !u!114 &2108762735
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1128,8 +1130,24 @@ MonoBehaviour:
   m_GameObject: {fileID: 2108762726}
   m_Enabled: 1
   m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bc1a65fc3a9553c4fbb182dd4e425fcd, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  roomCode:
+  isHost: 0
+  port: 7777
+  isConnected: 0
+  playerId:
+--- !u!114 &2108762734
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2108762726}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 593a2fe42fa9d37498c96f9a383b6521, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkManager
   NetworkManagerExpanded: 0
   NetworkConfig:
@@ -1142,25 +1160,8 @@ MonoBehaviour:
     TickRate: 30
     ClientConnectionBufferTimeout: 10
     ConnectionApproval: 0
-    ConnectionData: 
-    EnableTimeResync: 0
-    TimeResyncInterval: 30
-    EnsureNetworkVariableLengthSafety: 0
-    EnableSceneManagement: 1
-    ForceSamePrefabs: 1
-    RecycleNetworkIds: 1
-    NetworkIdRecycleDelay: 120
-    RpcHashSize: 0
-    LoadSceneTimeOut: 120
-    SpawnTimeout: 10
-    EnableNetworkLogs: 1
-    NetworkTopology: 0
-    UseCMBService: 0
-    AutoSpawnPlayerPrefabClientSide: 1
-    NetworkProfilingMetrics: 1
-    OldPrefabList: []
-  RunInBackground: 1
-  LogLevel: 1
+    ConnectionData:
+    EnableTimeResync: 0 
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

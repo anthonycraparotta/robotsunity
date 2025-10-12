@@ -1,5 +1,6 @@
 using UnityEngine;
 using Unity.Netcode;
+using Unity.Netcode.Transports.UTP;
 
 /// <summary>
 /// Ensures that all core singleton-style systems are present in the scene graph
@@ -83,6 +84,24 @@ public static class CoreSystemsBootstrapper
             {
                 networkObject.Spawn();
                 Debug.Log("[CoreSystemsBootstrapper] Spawned fallback GameManager NetworkObject");
+            }
+        }
+
+        if (typeof(T) == typeof(RWMNetworkManager))
+        {
+            if (managerObj.GetComponent<NetworkManager>() == null)
+            {
+                managerObj.AddComponent<NetworkManager>();
+            }
+
+            if (managerObj.GetComponent<NetworkObject>() == null)
+            {
+                managerObj.AddComponent<NetworkObject>();
+            }
+
+            if (managerObj.GetComponent<UnityTransport>() == null)
+            {
+                managerObj.AddComponent<UnityTransport>();
             }
         }
 
