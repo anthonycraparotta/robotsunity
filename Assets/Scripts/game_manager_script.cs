@@ -10,6 +10,7 @@ using Unity.Collections;
 /// Unity Netcode-based GameManager using NetworkVariables and NetworkLists
 /// Follows Unity Netcode best practices for state synchronization
 /// </summary>
+[RequireComponent(typeof(NetworkObject))]
 public class GameManager : NetworkBehaviour
 {
     // Singleton pattern - only one GameManager exists
@@ -92,6 +93,8 @@ public class GameManager : NetworkBehaviour
         Credits
     }
 
+    private NetworkObject _networkObject;
+
     void Awake()
     {
         // Initialize NetworkLists before NetworkObject spawns
@@ -105,11 +108,63 @@ public class GameManager : NetworkBehaviour
             Instance = this;
             DontDestroyOnLoad(gameObject);
             Debug.Log("[GameManager] Instance created");
+
+            _networkObject = GetComponent<NetworkObject>();
+
+            TrySpawnNetworkObject();
+
+            if (NetworkManager.Singleton != null)
+            {
+                NetworkManager.Singleton.OnServerStarted += HandleServerStarted;
+            }
         }
         else
         {
             Debug.Log("[GameManager] Duplicate found and destroyed");
             Destroy(gameObject);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (NetworkManager.Singleton != null)
+        {
+            NetworkManager.Singleton.OnServerStarted -= HandleServerStarted;
+        }
+    }
+
+    private void HandleServerStarted()
+    {
+        TrySpawnNetworkObject();
+    }
+
+    private void TrySpawnNetworkObject()
+    {
+        if (_networkObject == null)
+        {
+            _networkObject = GetComponent<NetworkObject>();
+        }
+
+        if (_networkObject == null)
+        {
+            _networkObject = gameObject.AddComponent<NetworkObject>();
+            Debug.LogWarning("[GameManager] NetworkObject component was missing and has been added at runtime.");
+        }
+
+        if (NetworkManager.Singleton == null)
+        {
+            return;
+        }
+
+        if (!NetworkManager.Singleton.IsServer)
+        {
+            return;
+        }
+
+        if (!_networkObject.IsSpawned)
+        {
+            _networkObject.Spawn();
+            Debug.Log("[GameManager] NetworkObject spawned by host");
         }
     }
 
