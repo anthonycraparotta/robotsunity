@@ -43,10 +43,8 @@ public class PictureQuestionScreen : MonoBehaviour
 
         // Show appropriate display
         ShowAppropriateDisplay();
-        
+
         // Display picture question
-        DisplayPictureQuestion();
-        
         // Setup submit button
         if (answerSubmitButton != null)
         {
@@ -63,6 +61,23 @@ public class PictureQuestionScreen : MonoBehaviour
         if (tipText != null)
         {
             tipText.text = "DOUBLE POINTS! Describe what you see";
+        }
+    }
+
+    void OnEnable()
+    {
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.QuestionUpdated += HandleQuestionUpdated;
+            HandleQuestionUpdated(GameManager.Instance.GetCurrentQuestion());
+        }
+    }
+
+    void OnDisable()
+    {
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.QuestionUpdated -= HandleQuestionUpdated;
         }
     }
     
@@ -91,19 +106,24 @@ public class PictureQuestionScreen : MonoBehaviour
         }
     }
     
-    void DisplayPictureQuestion()
+    void HandleQuestionUpdated(Question updatedQuestion)
     {
-        Question currentQuestion = GameManager.Instance.GetCurrentQuestion();
-        
-        if (currentQuestion != null)
+        DisplayPictureQuestion(updatedQuestion);
+    }
+
+    void DisplayPictureQuestion(Question currentQuestion)
+    {
+        if (currentQuestion == null)
         {
-            // Load picture from URL or Resources
-            if (!string.IsNullOrEmpty(currentQuestion.imageURL))
-            {
-                LoadPicture(currentQuestion.imageURL);
-            }
+            Debug.LogWarning("PictureQuestionScreen - question payload not yet available");
+            return;
         }
-        
+
+        if (!string.IsNullOrEmpty(currentQuestion.imageURL))
+        {
+            LoadPicture(currentQuestion.imageURL);
+        }
+
         Debug.Log("Picture Question - Round " + GameManager.Instance.GetCurrentRound());
     }
     

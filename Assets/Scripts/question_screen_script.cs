@@ -56,9 +56,6 @@ public class QuestionScreen : MonoBehaviour
         // Show appropriate display
         ShowAppropriateDisplay();
 
-        // Display question
-        DisplayQuestion();
-
         // Show round-specific visuals
         ShowRoundVisuals();
         
@@ -78,6 +75,23 @@ public class QuestionScreen : MonoBehaviour
         if (AudioManager.Instance != null)
         {
             AudioManager.Instance.PlayQuestionMusic();
+        }
+    }
+
+    void OnEnable()
+    {
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.QuestionUpdated += HandleQuestionUpdated;
+            HandleQuestionUpdated(GameManager.Instance.GetCurrentQuestion());
+        }
+    }
+
+    void OnDisable()
+    {
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.QuestionUpdated -= HandleQuestionUpdated;
         }
     }
 
@@ -163,62 +177,55 @@ public class QuestionScreen : MonoBehaviour
         }
     }
     
-    void DisplayQuestion()
+    void HandleQuestionUpdated(Question updatedQuestion)
     {
-        Question currentQuestion = GameManager.Instance.GetCurrentQuestion();
+        DisplayQuestion(updatedQuestion);
+    }
 
-        Debug.Log($"DisplayQuestion - currentQuestion is null: {currentQuestion == null}");
-        Debug.Log($"DisplayQuestion - questionText is null: {questionText == null}");
-
-        if (currentQuestion != null)
+    void DisplayQuestion(Question currentQuestion)
+    {
+        if (currentQuestion == null)
         {
-            Debug.Log($"DisplayQuestion - questionText content: '{currentQuestion.questionText}'");
+            Debug.LogWarning("DisplayQuestion - question payload not yet available");
+            return;
+        }
 
-            string displayText = currentQuestion.questionText;
+        Debug.Log($"DisplayQuestion - questionText is null: {questionText == null}");
+        Debug.Log($"DisplayQuestion - questionText content: '{currentQuestion.questionText}'");
 
-            // Replace [player.name] placeholder with random player name for Player Questions
-            if (GameManager.Instance.IsPlayerQuestion() && displayText.Contains("[player.name]"))
+        bool isPlayerQuestion = currentQuestion.questionType == GameManager.QuestionType.Player.ToString();
+        string displayText = currentQuestion.questionText;
+
+        // Replace [player.name] placeholder with random player name for Player Questions
+        if (isPlayerQuestion && displayText.Contains("[player.name]"))
+        {
+            List<PlayerData> allPlayers = GameManager.Instance.GetAllPlayers();
+            if (allPlayers.Count > 0)
             {
-                List<PlayerData> allPlayers = GameManager.Instance.GetAllPlayers();
-                if (allPlayers.Count > 0)
-                {
-                    // Pick a random player
-                    PlayerData randomPlayer = allPlayers[Random.Range(0, allPlayers.Count)];
-                    displayText = displayText.Replace("[player.name]", randomPlayer.playerName);
-                    Debug.Log($"Replaced [player.name] with: {randomPlayer.playerName}");
-                }
-            }
-
-            // Set desktop question text
-            if (questionText != null)
-            {
-                questionText.text = displayText;
-                Debug.Log($"DisplayQuestion - Set questionText to: '{questionText.text}'");
-            }
-
-            // Set mobile question text
-            if (mobileQuestionText != null)
-            {
-                mobileQuestionText.text = displayText;
-                Debug.Log($"DisplayQuestion - Set mobileQuestionText to: '{mobileQuestionText.text}'");
+                PlayerData randomPlayer = allPlayers[Random.Range(0, allPlayers.Count)];
+                displayText = displayText.Replace("[player.name]", randomPlayer.playerName);
+                Debug.Log($"Replaced [player.name] with: {randomPlayer.playerName}");
             }
         }
-        else
+
+        // Set desktop question text
+        if (questionText != null)
         {
-            Debug.LogError("DisplayQuestion - currentQuestion is NULL!");
+            questionText.text = displayText;
+            Debug.Log($"DisplayQuestion - Set questionText to: '{questionText.text}'");
+        }
+
+        // Set mobile question text
+        if (mobileQuestionText != null)
+        {
+            mobileQuestionText.text = displayText;
+            Debug.Log($"DisplayQuestion - Set mobileQuestionText to: '{mobileQuestionText.text}'");
         }
 
         // Set tip text based on question type
         if (tipText != null)
         {
-            if (GameManager.Instance.IsPlayerQuestion())
-            {
-                tipText.text = "Share your opinion!";
-            }
-            else
-            {
-                tipText.text = "Type your answer below";
-            }
+            tipText.text = isPlayerQuestion ? "Share your opinion!" : "Type your answer below";
         }
 
         // Animate question card sliding down (Desktop only)
