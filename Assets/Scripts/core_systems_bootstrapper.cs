@@ -1,6 +1,4 @@
 using UnityEngine;
-using Unity.Netcode;
-using Unity.Netcode.Transports.UTP;
 
 /// <summary>
 /// Ensures that all core singleton-style systems are present in the scene graph
@@ -65,28 +63,6 @@ public static class CoreSystemsBootstrapper
             return;
         }
 
-        if (ENABLE_DEBUG_LOGS)
-            Debug.Log($"[CoreSystemsBootstrapper] Creating {managerName}...");
-
-        var managerObj = new GameObject(managerName);
-        var managerComponent = managerObj.AddComponent<T>();
-
-        if (managerComponent is GameManager)
-        {
-            var networkObject = managerObj.GetComponent<NetworkObject>();
-
-            if (networkObject == null)
-            {
-                networkObject = managerObj.AddComponent<NetworkObject>();
-            }
-
-            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer && !networkObject.IsSpawned)
-            {
-                networkObject.Spawn();
-                Debug.Log("[CoreSystemsBootstrapper] Spawned fallback GameManager NetworkObject");
-            }
-        }
-
         if (typeof(T) == typeof(RWMNetworkManager))
         {
             // FATAL ERROR: NetworkManager must be preconfigured in the scene, not created at runtime
@@ -95,14 +71,28 @@ public static class CoreSystemsBootstrapper
                 "A preconfigured NetworkManager with all required settings must exist in the scene. " +
                 "Please add the NetworkManager prefab to your scene before running.");
 
-            // Destroy the incomplete GameObject we just created
-            Object.Destroy(managerObj);
-
-            // Throw exception to halt execution
             throw new System.InvalidOperationException(
                 "RWMNetworkManager must be preconfigured in the scene with NetworkManager, " +
                 "NetworkObject, and UnityTransport components. Runtime creation is not supported.");
         }
+
+        if (typeof(T) == typeof(GameManager))
+        {
+            Debug.LogError("[CoreSystemsBootstrapper] FATAL: GameManager not found in scene. " +
+                "GameManager is a networked singleton and must be present in the bootstrap scene so " +
+                "the host can spawn the synchronized instance for all clients. Please add the " +
+                "GameManager prefab to your scene before running.");
+
+            throw new System.InvalidOperationException(
+                "GameManager must be preconfigured in the scene. Runtime creation would prevent " +
+                "Netcode from spawning a synchronized GameManager on clients.");
+        }
+
+        if (ENABLE_DEBUG_LOGS)
+            Debug.Log($"[CoreSystemsBootstrapper] Creating {managerName}...");
+
+        var managerObj = new GameObject(managerName);
+        managerObj.AddComponent<T>();
 
         if (ENABLE_DEBUG_LOGS)
             Debug.Log($"[CoreSystemsBootstrapper] ✓ {managerName} created");
