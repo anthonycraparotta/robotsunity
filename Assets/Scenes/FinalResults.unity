@@ -578,7 +578,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &351768313
 RectTransform:
   m_ObjectHideFlags: 0
@@ -678,9 +678,21 @@ MonoBehaviour:
   mobileWebButton: {fileID: 1047445177}
   mobileHero: {fileID: 0}
   mobileBackground: {fileID: 880424914}
-  winnerShareTemplate: {fileID: 21300000, guid: e77b99c7374f4464390866d16992866b, type: 3}
-  participantShareTemplate: {fileID: 21300000, guid: 57eef8aaa2d48344e8f3890726f132b5, type: 3}
-  havoksFont: {fileID: 11400000, guid: d7273bb0b313fec4b9631de86a4128b1, type: 2}
+  winnerShareTemplate: {fileID: 0}
+  participantShareTemplate: {fileID: 0}
+  havoksFont: {fileID: 0}
+  shareImageResolution: {x: 1080, y: 1920}
+  shareNameFontSize: 120
+  shareScoreFontSize: 90
+  shareNameColor: {r: 1, g: 1, b: 1, a: 1}
+  shareScoreColor: {r: 1, g: 1, b: 1, a: 1}
+  shareNameAnchor: {x: 0.5, y: 0.2}
+  shareScoreAnchor: {x: 0.5, y: 0.08}
+  shareNameOffset: {x: 0, y: 0}
+  shareScoreOffset: {x: 0, y: 0}
+  shareTextBounds: {x: 960, y: 240}
+  winnerShareMessage: '{0} just won Robots Wearing Moustaches with {1}% human!'
+  participantShareMessage: '{0} scored {1}% human in Robots Wearing Moustaches!'
   finalWinningPrefab: {fileID: 1202433574901996825, guid: cad9525f53d56664fb7ae8e385c2b20e, type: 3}
   finalLosingPrefab: {fileID: 391934648614509894, guid: 5b37a2578829b6746be0d9d7dc705bbb, type: 3}
   playerNameComponentName: PlayerName
@@ -1355,7 +1367,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 286.55, y: -197.7}
+  m_AnchoredPosition: {x: 286.55, y: -199.3}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &977775757
@@ -1462,14 +1474,14 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 351768313}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -362.65005}
-  m_SizeDelta: {x: 526.5, y: 134.3}
+  m_AnchoredPosition: {x: 0, y: -332.4}
+  m_SizeDelta: {x: 672.7, y: 661.8}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1047445177
 MonoBehaviour:
@@ -1657,6 +1669,7 @@ GameObject:
   - component: {fileID: 1385124441}
   - component: {fileID: 1385124440}
   - component: {fileID: 1385124439}
+  - component: {fileID: 1385124443}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -1736,7 +1749,7 @@ RectTransform:
   m_GameObject: {fileID: 1385124438}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 523610639}
@@ -1749,6 +1762,22 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!114 &1385124443
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1385124438}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c379797390f85541a9881d1156c8bb4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ResponsiveCanvasScaler
+  desktopReferenceResolution: {x: 1920, y: 1080}
+  mobileReferenceResolution: {x: 1080, y: 1920}
+  desktopMatchWidthOrHeight: 0.5
+  mobileMatchWidthOrHeight: 0.5
 --- !u!1 &1408616666
 GameObject:
   m_ObjectHideFlags: 0
@@ -1917,8 +1946,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -234.02553, y: 112.97516}
-  m_SizeDelta: {x: 749, y: 167}
+  m_AnchoredPosition: {x: -21.5, y: 535.6}
+  m_SizeDelta: {x: 350, y: 350}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1446970386
 GameObject:
@@ -2426,8 +2455,8 @@ RectTransform:
   m_GameObject: {fileID: 1640023548}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 1.5, y: 1.5, z: 1.5}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 1408616667}
   - {fileID: 744808065}
@@ -2436,7 +2465,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -68.30005}
+  m_AnchoredPosition: {x: 0, y: -43.8}
   m_SizeDelta: {x: 432.5, y: 726.9}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1640551713
@@ -2950,8 +2979,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 52.524414, y: 4.5751343}
-  m_SizeDelta: {x: 749, y: 167}
+  m_AnchoredPosition: {x: 298.6, y: 411}
+  m_SizeDelta: {x: 350, y: 350}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &2116683796
 GameObject:
@@ -2982,14 +3011,14 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 351768313}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -163.70004}
-  m_SizeDelta: {x: 526.5, y: 134.3}
+  m_AnchoredPosition: {x: 0, y: -605.3}
+  m_SizeDelta: {x: 672.7, y: 661.8}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2116683798
 MonoBehaviour:

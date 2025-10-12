@@ -549,8 +549,10 @@ public class RWMNetworkManager : NetworkBehaviour
         }
     }
 
-    void OnDestroy()
+    public override void OnDestroy()
     {
+        base.OnDestroy();
+
         if (networkManager != null)
         {
             networkManager.OnClientConnectedCallback -= OnClientConnected;

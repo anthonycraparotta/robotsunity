@@ -6,7 +6,6 @@ using System.Linq;
 using Unity.Netcode;
 using Unity.Collections;
 using UnityEngine.SceneManagement;
-using Unity.Netcode.SceneManagement;
 
 /// <summary>
 /// Unity Netcode-based GameManager using NetworkVariables and NetworkLists
@@ -146,8 +145,10 @@ public class GameManager : NetworkBehaviour
         }
     }
 
-    private void OnDestroy()
+    public override void OnDestroy()
     {
+        base.OnDestroy();
+
         if (NetworkManager.Singleton != null)
         {
             NetworkManager.Singleton.OnServerStarted -= HandleServerStarted;
@@ -1729,7 +1730,7 @@ public class GameManager : NetworkBehaviour
 /// Network-serializable player data for NetworkList
 /// Uses INetworkSerializable for efficient synchronization
 /// </summary>
-public struct NetworkedPlayerData : INetworkSerializable
+public struct NetworkedPlayerData : INetworkSerializable, System.IEquatable<NetworkedPlayerData>
 {
     public FixedString64Bytes playerID;
     public FixedString64Bytes playerName;
@@ -1748,6 +1749,17 @@ public struct NetworkedPlayerData : INetworkSerializable
         serializer.SerializeValue(ref isHost);
         serializer.SerializeValue(ref deviceType);
         serializer.SerializeValue(ref clientId);
+    }
+
+    public bool Equals(NetworkedPlayerData other)
+    {
+        return playerID.Equals(other.playerID) &&
+               playerName.Equals(other.playerName) &&
+               iconName.Equals(other.iconName) &&
+               scorePercentage == other.scorePercentage &&
+               isHost == other.isHost &&
+               deviceType.Equals(other.deviceType) &&
+               clientId == other.clientId;
     }
 
     public PlayerData ToPlayerData()
@@ -1867,10 +1879,10 @@ public class Question
 }
 
 [System.Serializable]
-public struct NetworkBonusQuestionResult : INetworkSerializable
+public struct NetworkBonusQuestionResult : INetworkSerializable, System.IEquatable<NetworkBonusQuestionResult>
 {
     public FixedString512Bytes questionText;
-    public FixedString256Bytes winnerNames;
+    public FixedString128Bytes winnerNames;
     public FixedString64Bytes winnerIcon;
     public int pointsAwarded;
     public int winningVoteCount;
@@ -1884,6 +1896,16 @@ public struct NetworkBonusQuestionResult : INetworkSerializable
         serializer.SerializeValue(ref pointsAwarded);
         serializer.SerializeValue(ref winningVoteCount);
         serializer.SerializeValue(ref hasWinner);
+    }
+
+    public bool Equals(NetworkBonusQuestionResult other)
+    {
+        return questionText.Equals(other.questionText) &&
+               winnerNames.Equals(other.winnerNames) &&
+               winnerIcon.Equals(other.winnerIcon) &&
+               pointsAwarded == other.pointsAwarded &&
+               winningVoteCount == other.winningVoteCount &&
+               hasWinner == other.hasWinner;
     }
 
     public BonusQuestionResultInfo ToInfo()
