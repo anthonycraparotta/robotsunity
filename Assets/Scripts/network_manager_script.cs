@@ -44,6 +44,7 @@ public class RWMNetworkManager : NetworkBehaviour
     private NetworkManager networkManager;
     private NetworkObject networkObject;
     private UnityTransport unityTransport;
+    private bool componentsValidated;
 
     void Awake()
     {
@@ -52,6 +53,8 @@ public class RWMNetworkManager : NetworkBehaviour
             Instance = this;
             DontDestroyOnLoad(gameObject);
             Debug.Log("[NetworkManager] Instance created");
+
+            EnsureNetworkingComponents();
         }
         else
         {
@@ -61,12 +64,7 @@ public class RWMNetworkManager : NetworkBehaviour
 
     void Start()
     {
-        // Cache required networking components that must already exist on this GameObject
-        networkManager = GetComponent<NetworkManager>();
-        networkObject = GetComponent<NetworkObject>();
-        unityTransport = GetComponent<UnityTransport>();
-
-        if (networkManager == null || networkObject == null || unityTransport == null)
+        if (!EnsureNetworkingComponents())
         {
             Debug.LogError("[NetworkManager] Missing required networking components.");
             enabled = false;
@@ -499,5 +497,38 @@ public class RWMNetworkManager : NetworkBehaviour
                 networkManager.Shutdown();
             }
         }
+    }
+
+    private bool EnsureNetworkingComponents()
+    {
+        networkManager = GetComponent<NetworkManager>();
+        networkObject = GetComponent<NetworkObject>();
+        unityTransport = GetComponent<UnityTransport>();
+
+        if (componentsValidated)
+        {
+            return networkManager != null && networkObject != null && unityTransport != null;
+        }
+
+        if (networkManager == null)
+        {
+            Debug.LogError("[NetworkManager] NetworkManager component is missing. Please ensure the Managers object in LoadingScreen includes a configured NetworkManager component.");
+            return false;
+        }
+
+        if (networkObject == null)
+        {
+            networkObject = gameObject.AddComponent<NetworkObject>();
+            Debug.LogWarning("[NetworkManager] NetworkObject component was missing and has been added at runtime. Update the Managers object in LoadingScreen to include it to avoid runtime creation.");
+        }
+
+        if (unityTransport == null)
+        {
+            unityTransport = gameObject.AddComponent<UnityTransport>();
+            Debug.LogWarning("[NetworkManager] UnityTransport component was missing and has been added at runtime with default settings. Configure the transport on the Managers object in LoadingScreen so remote clients can connect.");
+        }
+
+        componentsValidated = true;
+        return true;
     }
 }
