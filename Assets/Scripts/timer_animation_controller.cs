@@ -27,17 +27,24 @@ public class TimerAnimationController : MonoBehaviour
     }
     
     private bool isWarning = false;
-    
+    private float initialTimerValue;
+    private float previousTimeRemaining;
+    private bool hasLoggedMissingGameManager;
+
     void Start()
     {
         LoadTimerSprites();
-        
+
         if (timerAnimator == null)
         {
             timerAnimator = GetComponent<Animator>();
         }
+
+        // Use a sensible default so visuals look correct before the first timer sync
+        initialTimerValue = (timerType == TimerType.Question) ? 60f : 30f;
+        previousTimeRemaining = initialTimerValue;
     }
-    
+
     void LoadTimerSprites()
     {
         string basePath = (timerType == TimerType.Question) ? questionTimerPath : votingTimerPath;
@@ -56,31 +63,63 @@ public class TimerAnimationController : MonoBehaviour
             timerBlob.sprite = blobSprite;
         }
     }
-    
+
     void Update()
     {
-        float timeRemaining = GameManager.Instance.GetTimeRemaining();
-        
+        GameManager gameManager = GameManager.Instance;
+
+        if (gameManager == null)
+        {
+            if (!hasLoggedMissingGameManager)
+            {
+                Debug.LogWarning("[TimerAnimationController] GameManager instance not found. Timer visuals will be skipped until it becomes available.");
+                hasLoggedMissingGameManager = true;
+            }
+            return;
+        }
+
+        hasLoggedMissingGameManager = false;
+
+        float timeRemaining = gameManager.GetTimeRemaining();
+
+        // Detect when a new timer starts so we can normalize using the actual duration.
+        if (timeRemaining > previousTimeRemaining + 0.1f)
+        {
+            initialTimerValue = timeRemaining;
+        }
+
+        previousTimeRemaining = timeRemaining;
+
         UpdateTimerVisuals(timeRemaining);
         UpdateWarningState(timeRemaining);
     }
-    
+
     void UpdateTimerVisuals(float timeRemaining)
     {
         // Rotate or scale timer based on remaining time
         if (timerBlob != null)
         {
             // Rotate the blob
-            float rotationSpeed = Mathf.Lerp(50f, 200f, 1f - (timeRemaining / 60f));
+            float normalizedTime = GetNormalizedTime(timeRemaining);
+            float rotationSpeed = Mathf.Lerp(50f, 200f, 1f - normalizedTime);
             timerBlob.transform.Rotate(0, 0, rotationSpeed * Time.deltaTime);
         }
-        
+
         // Update fill amount based on time (if using filled circle)
         if (timerCircle != null && timerCircle.type == Image.Type.Filled)
         {
-            float maxTime = (timerType == TimerType.Question) ? 60f : 30f;
-            timerCircle.fillAmount = timeRemaining / maxTime;
+            timerCircle.fillAmount = GetNormalizedTime(timeRemaining);
         }
+    }
+
+    float GetNormalizedTime(float timeRemaining)
+    {
+        if (initialTimerValue <= Mathf.Epsilon)
+        {
+            return 0f;
+        }
+
+        return Mathf.Clamp01(timeRemaining / initialTimerValue);
     }
     
     void UpdateWarningState(float timeRemaining)
