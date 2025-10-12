@@ -64,56 +64,71 @@ public class RoundArtScreen : MonoBehaviour
         Debug.Log("roundBackgrounds array length: " + roundBackgrounds.Length);
 
         // Hide all desktop backgrounds
-        for (int i = 0; i < roundBackgrounds.Length; i++)
+        if (roundBackgrounds != null)
         {
-            if (roundBackgrounds[i] != null)
+            for (int i = 0; i < roundBackgrounds.Length; i++)
             {
-                roundBackgrounds[i].gameObject.SetActive(false);
-            }
-        }
-
-        // Hide all mobile backgrounds
-        for (int i = 0; i < mobileRoundBackgrounds.Length; i++)
-        {
-            if (mobileRoundBackgrounds[i] != null)
-            {
-                mobileRoundBackgrounds[i].gameObject.SetActive(false);
-            }
-        }
-
-        // Show the current round's background (array is 0-indexed, rounds are 1-indexed)
-        if (currentRound > 0 && currentRound <= roundBackgrounds.Length)
-        {
-            if (isMobile)
-            {
-                // Show mobile background
-                if (mobileRoundBackgrounds[currentRound - 1] != null)
+                if (roundBackgrounds[i] != null)
                 {
-                    Debug.Log("Activating mobileRoundBackgrounds[" + (currentRound - 1) + "]");
-                    mobileRoundBackgrounds[currentRound - 1].gameObject.SetActive(true);
-                }
-                else
-                {
-                    Debug.LogError("mobileRoundBackgrounds[" + (currentRound - 1) + "] is NULL!");
-                }
-            }
-            else
-            {
-                // Show desktop background
-                if (roundBackgrounds[currentRound - 1] != null)
-                {
-                    Debug.Log("Activating roundBackgrounds[" + (currentRound - 1) + "]");
-                    roundBackgrounds[currentRound - 1].gameObject.SetActive(true);
-                }
-                else
-                {
-                    Debug.LogError("roundBackgrounds[" + (currentRound - 1) + "] is NULL!");
+                    roundBackgrounds[i].gameObject.SetActive(false);
                 }
             }
         }
         else
         {
+            Debug.LogWarning("roundBackgrounds array is not configured on RoundArtScreen");
+        }
+
+        // Hide all mobile backgrounds
+        if (mobileRoundBackgrounds != null)
+        {
+            for (int i = 0; i < mobileRoundBackgrounds.Length; i++)
+            {
+                if (mobileRoundBackgrounds[i] != null)
+                {
+                    mobileRoundBackgrounds[i].gameObject.SetActive(false);
+                }
+            }
+        }
+        else
+        {
+            Debug.LogWarning("mobileRoundBackgrounds array is not configured on RoundArtScreen");
+        }
+
+        if (currentRound <= 0)
+        {
             Debug.LogWarning("currentRound is out of range: " + currentRound);
+            return;
+        }
+
+        int roundIndex = currentRound - 1;
+        Image[] activeRoundBackgrounds = isMobile ? mobileRoundBackgrounds : roundBackgrounds;
+
+        if (activeRoundBackgrounds == null || roundIndex >= activeRoundBackgrounds.Length)
+        {
+            Debug.LogWarning("No " + (isMobile ? "mobile" : "desktop") + " background configured for round " + currentRound +
+                             ". Available backgrounds: " + (activeRoundBackgrounds == null ? 0 : activeRoundBackgrounds.Length));
+            return;
+        }
+
+        Image targetBackground = activeRoundBackgrounds[roundIndex];
+
+        if (targetBackground != null)
+        {
+            if (isMobile)
+            {
+                Debug.Log("Activating mobileRoundBackgrounds[" + roundIndex + "]");
+            }
+            else
+            {
+                Debug.Log("Activating roundBackgrounds[" + roundIndex + "]");
+            }
+
+            targetBackground.gameObject.SetActive(true);
+        }
+        else
+        {
+            Debug.LogError((isMobile ? "mobileRoundBackgrounds" : "roundBackgrounds") + "[" + roundIndex + "] is NULL!");
         }
 
         Debug.Log("Showing Round " + currentRound + " art");
