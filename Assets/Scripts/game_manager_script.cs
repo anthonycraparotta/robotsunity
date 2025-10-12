@@ -386,7 +386,11 @@ public class GameManager : NetworkBehaviour
                 if (currentBonusQuestion.Value < totalBonusQuestions)
                 {
                     Debug.Log($"[GameManager] Continuing to bonus question {currentBonusQuestion.Value}");
-                    bonusVotes.Clear();
+                    ClearBonusVotesLocal();
+                    if (IsSpawned)
+                    {
+                        ClearBonusVotesClientRpc();
+                    }
                     StartTimer(votingTimer);
                 }
                 else
@@ -471,13 +475,59 @@ public class GameManager : NetworkBehaviour
                 break;
         }
 
-        // Clear previous round data
-        currentRoundAnswers.Clear();
-        eliminationVotes.Clear();
-        votingVotes.Clear();
+        // Clear previous round data and notify clients so cached submissions don't leak between rounds
+        ClearSubmissionCachesLocal();
+        if (IsSpawned)
+        {
+            ClearSubmissionCachesClientRpc();
+        }
+
         allAnswers.Clear();
         remainingAnswers.Clear();
         eliminatedAnswer.Value = "";
+    }
+
+    private void ClearSubmissionCachesLocal()
+    {
+        currentRoundAnswers.Clear();
+        eliminationVotes.Clear();
+        votingVotes.Clear();
+        bonusVotes.Clear();
+    }
+
+    [ClientRpc]
+    private void ClearSubmissionCachesClientRpc()
+    {
+        if (IsServer)
+        {
+            return;
+        }
+
+        ClearSubmissionCachesLocal();
+    }
+
+    private void ClearBonusVotesLocal()
+    {
+        bonusVotes.Clear();
+    }
+
+    [ClientRpc]
+    private void ClearBonusVotesClientRpc()
+    {
+        if (IsServer)
+        {
+            return;
+        }
+
+        ClearBonusVotesLocal();
+    }
+
+    private void RemovePlayerFromCaches(string playerID)
+    {
+        currentRoundAnswers.Remove(playerID);
+        eliminationVotes.Remove(playerID);
+        votingVotes.Remove(playerID);
+        bonusVotes.Remove(playerID);
     }
 
     void SyncQuestionData(Question question)
@@ -636,12 +686,9 @@ public class GameManager : NetworkBehaviour
 
     public void SubmitPlayerAnswer(string playerID, string answer)
     {
-        if (!IsServer) return;
+        currentRoundAnswers[playerID] = answer;
 
-        if (!currentRoundAnswers.ContainsKey(playerID))
-        {
-            currentRoundAnswers.Add(playerID, answer);
-        }
+        if (!IsServer) return;
 
         // Check if all players have submitted
         if (currentRoundAnswers.Count >= networkPlayers.Count)
@@ -655,16 +702,9 @@ public class GameManager : NetworkBehaviour
 
     public void SubmitEliminationVote(string playerID, string votedAnswer)
     {
-        if (!IsServer) return;
+        eliminationVotes[playerID] = votedAnswer;
 
-        if (!eliminationVotes.ContainsKey(playerID))
-        {
-            eliminationVotes.Add(playerID, votedAnswer);
-        }
-        else
-        {
-            eliminationVotes[playerID] = votedAnswer;
-        }
+        if (!IsServer) return;
 
         // Check if all players have voted
         if (eliminationVotes.Count >= networkPlayers.Count)
@@ -747,16 +787,9 @@ public class GameManager : NetworkBehaviour
 
     public void SubmitVotingVote(string playerID, string votedAnswer)
     {
-        if (!IsServer) return;
+        votingVotes[playerID] = votedAnswer;
 
-        if (!votingVotes.ContainsKey(playerID))
-        {
-            votingVotes.Add(playerID, votedAnswer);
-        }
-        else
-        {
-            votingVotes[playerID] = votedAnswer;
-        }
+        if (!IsServer) return;
 
         // Check if all players have voted
         if (votingVotes.Count >= networkPlayers.Count)
@@ -832,19 +865,11 @@ public class GameManager : NetworkBehaviour
 
     public void SubmitBonusVote(string playerID, string votedPlayerID)
     {
+        bonusVotes[playerID] = votedPlayerID;
+
         if (!IsServer) return;
 
         Debug.Log($"[GameManager] SubmitBonusVote: player {playerID} voted for {votedPlayerID} (question {currentBonusQuestion.Value})");
-
-        if (!bonusVotes.ContainsKey(playerID))
-        {
-            bonusVotes.Add(playerID, votedPlayerID);
-        }
-        else
-        {
-            bonusVotes[playerID] = votedPlayerID;
-        }
-
         Debug.Log($"[GameManager] Bonus votes now: {bonusVotes.Count}/{networkPlayers.Count}");
 
         // Check if all players have voted
@@ -1078,6 +1103,8 @@ public class GameManager : NetworkBehaviour
 
     public void RemovePlayer(string playerID)
     {
+        RemovePlayerFromCaches(playerID);
+
         if (!IsServer) return;
 
         for (int i = 0; i < networkPlayers.Count; i++)
@@ -1086,12 +1113,6 @@ public class GameManager : NetworkBehaviour
             {
                 networkPlayers.RemoveAt(i);
                 Debug.Log($"[GameManager] Removed player: {playerID}");
-
-                // Clean up votes and answers
-                currentRoundAnswers.Remove(playerID);
-                eliminationVotes.Remove(playerID);
-                votingVotes.Remove(playerID);
-                bonusVotes.Remove(playerID);
 
                 break;
             }
@@ -1103,15 +1124,16 @@ public class GameManager : NetworkBehaviour
     /// </summary>
     public void ClearAllPlayers()
     {
+        ClearSubmissionCachesLocal();
+
         if (!IsServer) return;
 
         networkPlayers.Clear();
 
-        // Clean up all vote/answer dictionaries
-        currentRoundAnswers.Clear();
-        eliminationVotes.Clear();
-        votingVotes.Clear();
-        bonusVotes.Clear();
+        if (IsSpawned)
+        {
+            ClearSubmissionCachesClientRpc();
+        }
 
         Debug.Log("[GameManager] Cleared all players");
     }
