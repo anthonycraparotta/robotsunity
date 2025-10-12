@@ -119,6 +119,8 @@ public class PictureQuestionScreen : MonoBehaviour
             return;
         }
 
+        ResetAnswerInput();
+
         if (!string.IsNullOrEmpty(currentQuestion.imageURL))
         {
             LoadPicture(currentQuestion.imageURL);
@@ -126,28 +128,50 @@ public class PictureQuestionScreen : MonoBehaviour
 
         Debug.Log("Picture Question - Round " + GameManager.Instance.GetCurrentRound());
     }
-    
+
     void LoadPicture(string imageURL)
     {
-        // Load image from Resources or download from URL
-        // For now, placeholder for loading logic
-        
-        // Example: Load from Resources
-        // Sprite pictureSprite = Resources.Load<Sprite>("QuestionImages/" + imageURL);
-        
-        // Set desktop picture
+        if (PictureQuestionLoader.Instance == null)
+        {
+            Debug.LogWarning("PictureQuestionScreen - PictureQuestionLoader not ready");
+            return;
+        }
+
+        Sprite pictureSprite = PictureQuestionLoader.Instance.GetPictureByImageURL(imageURL);
+
+        if (pictureSprite == null)
+        {
+            Debug.LogWarning("PictureQuestionScreen - Could not find sprite for " + imageURL);
+            return;
+        }
+
         if (picture != null)
         {
-            // picture.sprite = pictureSprite;
+            picture.sprite = pictureSprite;
+            picture.preserveAspect = true;
         }
-        
-        // Set mobile picture
+
         if (mobilePicture != null)
         {
-            // mobilePicture.sprite = pictureSprite;
+            mobilePicture.sprite = pictureSprite;
+            mobilePicture.preserveAspect = true;
         }
-        
-        Debug.Log("Loading picture: " + imageURL);
+
+        Debug.Log("Loaded picture question sprite: " + imageURL);
+    }
+
+    void ResetAnswerInput()
+    {
+        if (answerInput != null)
+        {
+            answerInput.text = string.Empty;
+            answerInput.interactable = true;
+        }
+
+        if (answerSubmitButton != null)
+        {
+            answerSubmitButton.interactable = true;
+        }
     }
     
     void UpdateTimerDisplay()
