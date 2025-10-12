@@ -77,6 +77,9 @@ public class GameManager : NetworkBehaviour
     private int playerQuestionIndex = 0;
     private int pictureQuestionIndex = 0;
 
+    [Header("Question Randomization")]
+    public NetworkVariable<int> questionShuffleSeed = new NetworkVariable<int>(0);
+
     // === ENUMS ===
     public enum GameMode
     {
