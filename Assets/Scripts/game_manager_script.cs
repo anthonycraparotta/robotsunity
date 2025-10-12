@@ -34,7 +34,7 @@ public class GameManager : NetworkBehaviour
     private Dictionary<string, string> currentRoundAnswers = new Dictionary<string, string>();
     private Dictionary<string, string> eliminationVotes = new Dictionary<string, string>();
     private Dictionary<string, string> votingVotes = new Dictionary<string, string>();
-    private Dictionary<string, string> bonusVotes = new Dictionary<string, string>();
+    private readonly Dictionary<string, string> bonusVotes = new Dictionary<string, string>();
 
     // === ROUND DATA ===
     [Header("Current Round Data")]
@@ -1017,6 +1017,8 @@ public class GameManager : NetworkBehaviour
         }
         return result;
     }
+
+    public IReadOnlyDictionary<string, string> BonusVotes => bonusVotes;
 
     public List<PlayerData> GetPlayersByRank()
     {
