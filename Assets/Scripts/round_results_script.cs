@@ -83,6 +83,7 @@ public class RoundResultsScreen : MonoBehaviour
     private string playerID = "";
     private int currentPanel = 0;
     private float panelTimer = 0f;
+    private bool panelSequenceComplete = false;
     private const float PANEL_DISPLAY_DURATION = 5f;
 
     void Start()
@@ -130,7 +131,7 @@ public class RoundResultsScreen : MonoBehaviour
     void Update()
     {
         // Handle panel sequence timing for desktop
-        if (!isMobile && currentPanel > 0 && currentPanel <= 3)
+        if (!isMobile && !panelSequenceComplete && currentPanel > 0 && currentPanel <= 3)
         {
             panelTimer += Time.deltaTime;
 
@@ -151,6 +152,7 @@ public class RoundResultsScreen : MonoBehaviour
         // Start with panel 1
         currentPanel = 1;
         panelTimer = 0f;
+        panelSequenceComplete = false;
         ShowCurrentPanel();
     }
 
@@ -178,6 +180,11 @@ public class RoundResultsScreen : MonoBehaviour
 
     void AdvanceToNextPanel()
     {
+        if (panelSequenceComplete)
+        {
+            return;
+        }
+
         currentPanel++;
         panelTimer = 0f;
 
@@ -187,9 +194,41 @@ public class RoundResultsScreen : MonoBehaviour
         }
         else
         {
-            // All panels shown, advance to next screen
-            GameManager.Instance.AdvanceToNextScreen();
+            HandlePanelSequenceComplete();
         }
+    }
+
+    void HandlePanelSequenceComplete()
+    {
+        panelSequenceComplete = true;
+
+        if (ShouldAutoAdvanceAfterPanels())
+        {
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.AdvanceToNextScreen();
+            }
+        }
+        else
+        {
+            // Stay on the final panel so the host can use the Final Results button
+            currentPanel = 3;
+            ShowCurrentPanel();
+        }
+    }
+
+    bool ShouldAutoAdvanceAfterPanels()
+    {
+        if (GameManager.Instance == null)
+        {
+            return true;
+        }
+
+        int currentRoundNumber = GameManager.Instance.GetCurrentRound();
+        int totalRounds = (GameManager.Instance.gameMode.Value == GameManager.GameMode.EightQuestions) ? 8 : 12;
+
+        // Only block auto-advance when we have reached the final round so the host can trigger Final Results manually.
+        return currentRoundNumber < totalRounds;
     }
     
     void ShowAppropriateDisplay()
