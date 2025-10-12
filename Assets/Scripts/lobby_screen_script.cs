@@ -327,7 +327,10 @@ public class LobbyScreen : MonoBehaviour
     {
         MobileHaptics.SelectionChanged();
 
-        GameManager.Instance.gameMode = mode;
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.gameMode.Value = mode;
+        }
         Debug.Log("Game mode selected: " + mode);
         
         // Update UI to show selected mode
@@ -783,8 +786,12 @@ public class LobbyScreen : MonoBehaviour
             string displayRoomCode = !string.IsNullOrEmpty(roomCode) ? roomCode :
                 (RWMNetworkManager.Instance != null ? RWMNetworkManager.Instance.GetRoomCode() : "");
 
+            GameManager.GameMode activeMode = GameManager.Instance != null
+                ? GameManager.Instance.gameMode.Value
+                : GameManager.GameMode.EightQuestions;
+
             waitData.text = nonHostPlayerCount + " Players\n" +
-                           (GameManager.Instance.gameMode == GameManager.GameMode.EightQuestions ? "8" : "12") + " Questions\n" +
+                           (activeMode == GameManager.GameMode.EightQuestions ? "8" : "12") + " Questions\n" +
                            displayRoomCode;
         }
 
