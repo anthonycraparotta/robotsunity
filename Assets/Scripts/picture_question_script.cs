@@ -30,7 +30,23 @@ public class PictureQuestionScreen : MonoBehaviour
     private bool isMobile = false;
     private string playerID = "";
     private List<GameObject> spawnedPlayerIcons = new List<GameObject>();
-    
+
+    void OnEnable()
+    {
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.RegisterQuestionListener(OnQuestionDataUpdated);
+        }
+    }
+
+    void OnDisable()
+    {
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.UnregisterQuestionListener(OnQuestionDataUpdated);
+        }
+    }
+
     void Start()
     {
         isMobile = DeviceDetector.Instance != null && DeviceDetector.Instance.IsMobile();
@@ -93,8 +109,24 @@ public class PictureQuestionScreen : MonoBehaviour
     
     void DisplayPictureQuestion()
     {
-        Question currentQuestion = GameManager.Instance.GetCurrentQuestion();
-        
+        Question currentQuestion = GameManager.Instance != null ? GameManager.Instance.GetCurrentQuestion() : null;
+
+        ApplyPictureQuestion(currentQuestion);
+    }
+
+    void OnQuestionDataUpdated(Question updatedQuestion)
+    {
+        ApplyPictureQuestion(updatedQuestion);
+    }
+
+    void ApplyPictureQuestion(Question currentQuestion)
+    {
+        if (GameManager.Instance == null)
+        {
+            Debug.LogError("Picture Question - GameManager instance is NULL!");
+            return;
+        }
+
         if (currentQuestion != null)
         {
             // Load picture from URL or Resources
@@ -103,7 +135,7 @@ public class PictureQuestionScreen : MonoBehaviour
                 LoadPicture(currentQuestion.imageURL);
             }
         }
-        
+
         Debug.Log("Picture Question - Round " + GameManager.Instance.GetCurrentRound());
     }
     

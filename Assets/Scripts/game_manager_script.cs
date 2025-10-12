@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -42,15 +43,12 @@ public class GameManager : NetworkBehaviour
     private ReadOnlyDictionary<string, string> readOnlyVotingVotes;
     private ReadOnlyDictionary<string, string> readOnlyBonusVotes;
 
+    private event Action<Question> questionUpdated;
+
     // === ROUND DATA ===
     [Header("Current Round Data")]
-    public Question currentQuestion; // Server-only reference
-    public NetworkVariable<FixedString512Bytes> currentQuestionText = new NetworkVariable<FixedString512Bytes>();
-    public NetworkVariable<FixedString128Bytes> currentQuestionType = new NetworkVariable<FixedString128Bytes>();
-    public NetworkVariable<FixedString512Bytes> currentRobotAnecdote = new NetworkVariable<FixedString512Bytes>();
-    public NetworkVariable<FixedString512Bytes> currentImageURL = new NetworkVariable<FixedString512Bytes>();
-    public NetworkVariable<FixedString128Bytes> robotAnswer = new NetworkVariable<FixedString128Bytes>();
-    public NetworkVariable<FixedString128Bytes> correctAnswer = new NetworkVariable<FixedString128Bytes>();
+    private Question currentQuestion; // Server-only reference
+    public NetworkVariable<QuestionPayload> currentQuestionPayload = new NetworkVariable<QuestionPayload>(QuestionPayload.Empty);
     public NetworkList<FixedString128Bytes> allAnswers; // For Elimination
     public NetworkList<FixedString128Bytes> remainingAnswers; // For Voting
     public NetworkVariable<FixedString128Bytes> eliminatedAnswer = new NetworkVariable<FixedString128Bytes>();
@@ -191,17 +189,26 @@ public class GameManager : NetworkBehaviour
         Debug.Log($"[GameManager] NetworkSpawn - IsServer: {IsServer}, IsClient: {IsClient}");
 
         // Subscribe to NetworkVariable changes for client-side reactions
+        currentQuestionPayload.OnValueChanged += HandleQuestionPayloadChanged;
+
         if (IsClient && !IsServer)
         {
             currentGameState.OnValueChanged += OnGameStateChanged;
             currentRound.OnValueChanged += OnRoundChanged;
             timerActive.OnValueChanged += OnTimerActiveChanged;
         }
+
+        if (currentQuestionPayload.Value.hasData)
+        {
+            HandleQuestionPayloadChanged(QuestionPayload.Empty, currentQuestionPayload.Value);
+        }
     }
 
     public override void OnNetworkDespawn()
     {
         base.OnNetworkDespawn();
+
+        currentQuestionPayload.OnValueChanged -= HandleQuestionPayloadChanged;
 
         if (IsClient && !IsServer)
         {
@@ -250,6 +257,11 @@ public class GameManager : NetworkBehaviour
     private void OnTimerActiveChanged(bool oldValue, bool newValue)
     {
         Debug.Log($"[GameManager] Timer active: {oldValue} → {newValue}");
+    }
+
+    private void HandleQuestionPayloadChanged(QuestionPayload previous, QuestionPayload current)
+    {
+        questionUpdated?.Invoke(current.ToQuestion());
     }
 
     // === GAME FLOW METHODS ===
@@ -532,14 +544,11 @@ public class GameManager : NetworkBehaviour
 
     void SyncQuestionData(Question question)
     {
-        if (!IsServer || question == null) return;
+        if (!IsServer) return;
 
-        currentQuestionText.Value = question.questionText ?? "";
-        currentQuestionType.Value = question.questionType ?? "";
-        currentRobotAnecdote.Value = question.robotAnecdote ?? "";
-        currentImageURL.Value = question.imageURL ?? "";
-        correctAnswer.Value = question.correctAnswer ?? "";
-        robotAnswer.Value = question.robotAnswer ?? "";
+        currentQuestionPayload.Value = question != null
+            ? QuestionPayload.FromQuestion(question)
+            : QuestionPayload.Empty;
     }
 
     void CheckForSpecialScreens()
@@ -623,12 +632,18 @@ public class GameManager : NetworkBehaviour
         }
 
         // Add robot answer
-        allAnswers.Add(robotAnswer.Value);
+        if (currentQuestionPayload.Value.hasData && !currentQuestionPayload.Value.robotAnswer.IsEmpty)
+        {
+            allAnswers.Add(currentQuestionPayload.Value.robotAnswer);
+        }
 
         // For Player Questions, also add the "correct" answer as a 2nd decoy
         if (IsPlayerQuestion())
         {
-            allAnswers.Add(correctAnswer.Value);
+            if (currentQuestionPayload.Value.hasData && !currentQuestionPayload.Value.correctAnswer.IsEmpty)
+            {
+                allAnswers.Add(currentQuestionPayload.Value.correctAnswer);
+            }
         }
 
         // Shuffle the answers using Fisher-Yates
@@ -670,15 +685,23 @@ public class GameManager : NetworkBehaviour
         }
 
         // Add robot answer
-        if (!string.IsNullOrEmpty(robotAnswer.Value.ToString()))
+        if (currentQuestionPayload.Value.hasData)
         {
-            existingAnswers.Add(robotAnswer.Value.ToString());
-        }
+            var robotAnswerString = currentQuestionPayload.Value.robotAnswer.ToString();
+            if (!string.IsNullOrEmpty(robotAnswerString))
+            {
+                existingAnswers.Add(robotAnswerString);
+            }
 
-        // Add correct answer (not for player questions)
-        if (!IsPlayerQuestion() && !string.IsNullOrEmpty(correctAnswer.Value.ToString()))
-        {
-            existingAnswers.Add(correctAnswer.Value.ToString());
+            // Add correct answer (not for player questions)
+            if (!IsPlayerQuestion())
+            {
+                var correctAnswerString = currentQuestionPayload.Value.correctAnswer.ToString();
+                if (!string.IsNullOrEmpty(correctAnswerString))
+                {
+                    existingAnswers.Add(correctAnswerString);
+                }
+            }
         }
 
         return existingAnswers;
@@ -752,10 +775,13 @@ public class GameManager : NetworkBehaviour
 
         eliminatedAnswer.Value = mostVoted;
 
-        // Award points for correct elimination
-        bool isRobotEliminated = (eliminatedAnswer.Value.ToString() == robotAnswer.Value.ToString());
-        bool isCorrectEliminated = (eliminatedAnswer.Value.ToString() == correctAnswer.Value.ToString() && !IsPlayerQuestion());
-        bool isDecoyEliminated = (eliminatedAnswer.Value.ToString() == correctAnswer.Value.ToString() && IsPlayerQuestion()) || isRobotEliminated;
+        string eliminatedAnswerString = eliminatedAnswer.Value.ToString();
+        string robotAnswerString = currentQuestionPayload.Value.robotAnswer.ToString();
+        string correctAnswerString = currentQuestionPayload.Value.correctAnswer.ToString();
+
+        bool isRobotEliminated = (!string.IsNullOrEmpty(robotAnswerString) && eliminatedAnswerString == robotAnswerString);
+        bool isCorrectEliminated = (!string.IsNullOrEmpty(correctAnswerString) && eliminatedAnswerString == correctAnswerString && !IsPlayerQuestion());
+        bool isDecoyEliminated = (!string.IsNullOrEmpty(correctAnswerString) && eliminatedAnswerString == correctAnswerString && IsPlayerQuestion()) || isRobotEliminated;
 
         int eliminationPoints = GetEliminationPoints();
 
@@ -828,7 +854,7 @@ public class GameManager : NetworkBehaviour
             {
                 // Player questions have no "correct" answer
                 // Penalty for voting robot or decoy
-                if (vote == robotAnswer.Value.ToString() || vote == correctAnswer.Value.ToString())
+                if (vote == robotAnswerString || vote == correctAnswerString)
                 {
                     AwardPoints(playerID, robotVotePenalty);
                 }
@@ -836,11 +862,11 @@ public class GameManager : NetworkBehaviour
             else
             {
                 // Standard/Picture questions
-                if (vote == correctAnswer.Value.ToString())
+                if (vote == correctAnswerString)
                 {
                     AwardPoints(playerID, correctVotePoints);
                 }
-                else if (vote == robotAnswer.Value.ToString())
+                else if (vote == robotAnswerString)
                 {
                     AwardPoints(playerID, robotVotePenalty);
                 }
@@ -1360,18 +1386,34 @@ public class GameManager : NetworkBehaviour
 
     // === PUBLIC GETTERS ===
 
+    public void RegisterQuestionListener(Action<Question> callback)
+    {
+        if (callback == null)
+        {
+            return;
+        }
+
+        questionUpdated += callback;
+
+        if (currentQuestionPayload.Value.hasData)
+        {
+            callback.Invoke(currentQuestionPayload.Value.ToQuestion());
+        }
+    }
+
+    public void UnregisterQuestionListener(Action<Question> callback)
+    {
+        if (callback == null)
+        {
+            return;
+        }
+
+        questionUpdated -= callback;
+    }
+
     public Question GetCurrentQuestion()
     {
-        // Build Question from synced NetworkVariables so clients can access
-        return new Question
-        {
-            questionText = currentQuestionText.Value.ToString(),
-            questionType = currentQuestionType.Value.ToString(),
-            robotAnecdote = currentRobotAnecdote.Value.ToString(),
-            imageURL = currentImageURL.Value.ToString(),
-            correctAnswer = correctAnswer.Value.ToString(),
-            robotAnswer = robotAnswer.Value.ToString()
-        };
+        return currentQuestionPayload.Value.ToQuestion();
     }
 
     public int GetCurrentRound()
@@ -1381,12 +1423,12 @@ public class GameManager : NetworkBehaviour
 
     public string GetCorrectAnswer()
     {
-        return correctAnswer.Value.ToString();
+        return currentQuestionPayload.Value.correctAnswer.ToString();
     }
 
     public string GetRobotAnswer()
     {
-        return robotAnswer.Value.ToString();
+        return currentQuestionPayload.Value.robotAnswer.ToString();
     }
 
     public List<string> GetAllAnswers()
@@ -1504,6 +1546,86 @@ public struct NetworkedPlayerData : INetworkSerializable
 }
 
 // === LEGACY DATA STRUCTURES (for compatibility) ===
+
+public struct QuestionPayload : INetworkSerializable, IEquatable<QuestionPayload>
+{
+    public FixedString512Bytes questionText;
+    public FixedString128Bytes questionType;
+    public FixedString512Bytes robotAnecdote;
+    public FixedString512Bytes imageURL;
+    public FixedString128Bytes robotAnswer;
+    public FixedString128Bytes correctAnswer;
+    public bool hasData;
+
+    public static QuestionPayload Empty => new QuestionPayload
+    {
+        questionText = new FixedString512Bytes(),
+        questionType = new FixedString128Bytes(),
+        robotAnecdote = new FixedString512Bytes(),
+        imageURL = new FixedString512Bytes(),
+        robotAnswer = new FixedString128Bytes(),
+        correctAnswer = new FixedString128Bytes(),
+        hasData = false
+    };
+
+    public static QuestionPayload FromQuestion(Question question)
+    {
+        QuestionPayload payload = Empty;
+
+        if (question != null)
+        {
+            payload.questionText = question.questionText ?? string.Empty;
+            payload.questionType = question.questionType ?? string.Empty;
+            payload.robotAnecdote = question.robotAnecdote ?? string.Empty;
+            payload.imageURL = question.imageURL ?? string.Empty;
+            payload.robotAnswer = question.robotAnswer ?? string.Empty;
+            payload.correctAnswer = question.correctAnswer ?? string.Empty;
+            payload.hasData = true;
+        }
+
+        return payload;
+    }
+
+    public Question ToQuestion()
+    {
+        if (!hasData)
+        {
+            return null;
+        }
+
+        return new Question
+        {
+            questionText = questionText.ToString(),
+            questionType = questionType.ToString(),
+            robotAnecdote = robotAnecdote.ToString(),
+            imageURL = imageURL.ToString(),
+            robotAnswer = robotAnswer.ToString(),
+            correctAnswer = correctAnswer.ToString()
+        };
+    }
+
+    public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+    {
+        serializer.SerializeValue(ref questionText);
+        serializer.SerializeValue(ref questionType);
+        serializer.SerializeValue(ref robotAnecdote);
+        serializer.SerializeValue(ref imageURL);
+        serializer.SerializeValue(ref robotAnswer);
+        serializer.SerializeValue(ref correctAnswer);
+        serializer.SerializeValue(ref hasData);
+    }
+
+    public bool Equals(QuestionPayload other)
+    {
+        return questionText.Equals(other.questionText)
+            && questionType.Equals(other.questionType)
+            && robotAnecdote.Equals(other.robotAnecdote)
+            && imageURL.Equals(other.imageURL)
+            && robotAnswer.Equals(other.robotAnswer)
+            && correctAnswer.Equals(other.correctAnswer)
+            && hasData == other.hasData;
+    }
+}
 
 [System.Serializable]
 public class PlayerData

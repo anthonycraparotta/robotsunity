@@ -42,7 +42,23 @@ public class QuestionScreen : MonoBehaviour
     private string playerID = "";
     private List<GameObject> spawnedPlayerIcons = new List<GameObject>();
     private Coroutine errorCoroutine;
-    
+
+    void OnEnable()
+    {
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.RegisterQuestionListener(OnQuestionDataUpdated);
+        }
+    }
+
+    void OnDisable()
+    {
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.UnregisterQuestionListener(OnQuestionDataUpdated);
+        }
+    }
+
     void Start()
     {
         isMobile = DeviceDetector.Instance != null && DeviceDetector.Instance.IsMobile();
@@ -165,7 +181,23 @@ public class QuestionScreen : MonoBehaviour
     
     void DisplayQuestion()
     {
-        Question currentQuestion = GameManager.Instance.GetCurrentQuestion();
+        Question currentQuestion = GameManager.Instance != null ? GameManager.Instance.GetCurrentQuestion() : null;
+
+        ApplyQuestionToUI(currentQuestion);
+    }
+
+    void OnQuestionDataUpdated(Question updatedQuestion)
+    {
+        ApplyQuestionToUI(updatedQuestion);
+    }
+
+    void ApplyQuestionToUI(Question currentQuestion)
+    {
+        if (GameManager.Instance == null)
+        {
+            Debug.LogError("DisplayQuestion - GameManager instance is NULL!");
+            return;
+        }
 
         Debug.Log($"DisplayQuestion - currentQuestion is null: {currentQuestion == null}");
         Debug.Log($"DisplayQuestion - questionText is null: {questionText == null}");
