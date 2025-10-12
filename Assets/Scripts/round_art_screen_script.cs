@@ -15,28 +15,42 @@ public class RoundArtScreen : MonoBehaviour
 
     [Header("Mobile Round Backgrounds (MobileRound1Intro - MobileRound12Intro)")]
     public Image[] mobileRoundBackgrounds = new Image[12];
-    
+
     [Header("Settings")]
     public float autoAdvanceDelay = 3f; // Auto-advance after 3 seconds
-    
+
+    private bool isHost;
+    private bool continueButtonListenerAdded;
+
     void Start()
     {
+        isHost = GameManager.Instance != null && GameManager.Instance.IsServer;
+
         // Show appropriate display
         ShowAppropriateDisplay();
-        
+
         // Display the correct round background
         ShowRoundBackground();
-        
+
         // Setup continue button
         if (continueButton != null)
         {
-            continueButton.onClick.AddListener(OnContinueClicked);
+            continueButton.gameObject.SetActive(isHost);
+
+            if (isHost)
+            {
+                continueButton.onClick.AddListener(OnContinueClicked);
+                continueButtonListenerAdded = true;
+            }
         }
-        
+
         // Auto-advance after delay
-        StartCoroutine(AutoAdvanceAfterDelay());
+        if (isHost)
+        {
+            StartCoroutine(AutoAdvanceAfterDelay());
+        }
     }
-    
+
     void ShowAppropriateDisplay()
     {
         bool isMobile = DeviceDetector.Instance != null && DeviceDetector.Instance.IsMobile();
@@ -51,9 +65,15 @@ public class RoundArtScreen : MonoBehaviour
             mobileDisplay.SetActive(isMobile);
         }
     }
-    
+
     void ShowRoundBackground()
     {
+        if (GameManager.Instance == null)
+        {
+            Debug.LogWarning("[RoundArtScreen] GameManager not available to determine round art.");
+            return;
+        }
+
         Debug.Log("ShowRoundBackground - Direct access to GameManager.Instance.currentRound: " + GameManager.Instance.currentRound.Value);
 
         int currentRound = GameManager.Instance.GetCurrentRound();
@@ -122,6 +142,11 @@ public class RoundArtScreen : MonoBehaviour
     IEnumerator AutoAdvanceAfterDelay()
     {
         yield return new WaitForSeconds(autoAdvanceDelay);
+        if (!isHost)
+        {
+            yield break;
+        }
+
         AdvanceToQuestion();
     }
     
@@ -130,10 +155,13 @@ public class RoundArtScreen : MonoBehaviour
         MobileHaptics.MediumImpact();
 
         // Stop auto-advance coroutine
-        StopAllCoroutines();
+        if (isHost)
+        {
+            StopAllCoroutines();
+        }
         AdvanceToQuestion();
     }
-    
+
     void AdvanceToQuestion()
     {
         if (GameManager.Instance != null && GameManager.Instance.IsServer)
@@ -145,10 +173,10 @@ public class RoundArtScreen : MonoBehaviour
             Debug.LogWarning("[RoundArtScreen] Only the host can advance to the next screen.");
         }
     }
-    
+
     void OnDestroy()
     {
-        if (continueButton != null)
+        if (continueButton != null && continueButtonListenerAdded)
         {
             continueButton.onClick.RemoveListener(OnContinueClicked);
         }
