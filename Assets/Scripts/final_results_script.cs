@@ -400,26 +400,20 @@ public class FinalResultsScreen : MonoBehaviour
     {
         MobileHaptics.HeavyImpact();
 
-        // Reset game and go back to lobby
-        GameManager.Instance.currentRound = 0;
-        GameManager.Instance.isHalftimePlayed = false;
-        GameManager.Instance.isBonusRoundPlayed = false;
-
-        // Reset all scores
-        foreach (var player in GameManager.Instance.players.Values)
+        if (GameManager.Instance == null)
         {
-            player.scorePercentage = 0;
+            Debug.LogWarning("[FinalResults] GameManager not found when attempting to start a new game.");
+            return;
         }
 
-        // Go back to lobby
-        if (SceneTransitionManager.Instance != null)
+        if (!GameManager.Instance.IsServer)
         {
-            SceneTransitionManager.Instance.LoadScene("LobbyScreen");
+            Debug.LogWarning("[FinalResults] Only the host can start a new game from the Final Results screen.");
+            return;
         }
-        else
-        {
-            UnityEngine.SceneManagement.SceneManager.LoadScene("LobbyScreen");
-        }
+
+        GameManager.Instance.ResetMatchState();
+        GameManager.Instance.HostLoadLobby();
     }
 
     public void OnShareClicked()

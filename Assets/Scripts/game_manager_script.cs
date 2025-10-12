@@ -200,6 +200,62 @@ public class GameManager : NetworkBehaviour
         LoadQuestions();
     }
 
+    /// <summary>
+    /// Resets round counters and optional player scores. Only valid on the host.
+    /// </summary>
+    /// <param name="resetScores">When true, zeroes out the score for every registered player.</param>
+    public void ResetMatchState(bool resetScores = true)
+    {
+        if (!IsServer)
+        {
+            Debug.LogWarning("[GameManager] ResetMatchState called on a client - ignoring.");
+            return;
+        }
+
+        currentRound.Value = 0;
+        isHalftimePlayed.Value = false;
+        isBonusRoundPlayed.Value = false;
+
+        if (resetScores)
+        {
+            for (int i = 0; i < networkPlayers.Count; i++)
+            {
+                var playerData = networkPlayers[i];
+                playerData.scorePercentage = 0;
+                networkPlayers[i] = playerData;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Clears all registered players from the lobby. Only valid on the host.
+    /// </summary>
+    public void ClearAllPlayers()
+    {
+        if (!IsServer)
+        {
+            Debug.LogWarning("[GameManager] ClearAllPlayers called on a client - ignoring.");
+            return;
+        }
+
+        networkPlayers.Clear();
+    }
+
+    /// <summary>
+    /// Sends the host (and connected clients) back to the lobby scene.
+    /// </summary>
+    public void HostLoadLobby()
+    {
+        if (!IsServer)
+        {
+            Debug.LogWarning("[GameManager] HostLoadLobby called on a client - ignoring.");
+            return;
+        }
+
+        LoadScene("LobbyScreen");
+        currentGameState.Value = GameState.Lobby;
+    }
+
     void Update()
     {
         // Only server updates timer
