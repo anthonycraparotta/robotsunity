@@ -53,6 +53,7 @@ public class LobbyScreen : MonoBehaviour
     private string roomCode = "";
     private bool isMobile = false;
     private List<GameObject> spawnedPlayerIcons = new List<GameObject>();
+    private readonly Dictionary<string, PlayerDisplayState> displayedPlayerStates = new Dictionary<string, PlayerDisplayState>();
     private Coroutine errorCoroutine;
     private bool awaitingNetworkConnection = false;
     private bool hasConnectedToHost = false;
@@ -712,47 +713,71 @@ public class LobbyScreen : MonoBehaviour
     
     // === PLAYER LIST UPDATES ===
 
+    private struct PlayerDisplayState
+    {
+        public string Name;
+        public string IconName;
+    }
+
     void UpdatePlayerList()
     {
         if (playerIconContainer == null) return;
         if (GameManager.Instance == null) return;
 
         List<PlayerData> players = GameManager.Instance.GetAllPlayers();
+        List<PlayerData> nonHostPlayers = new List<PlayerData>();
 
-        // Detect new players by comparing counts
-        int previousCount = spawnedPlayerIcons.Count;
-        int newCount = 0;
-
-        // Count non-host players
         foreach (PlayerData player in players)
         {
             if (!player.isHost)
             {
-                newCount++;
+                nonHostPlayers.Add(player);
             }
         }
 
-        // Only update if player count changed
-        if (previousCount == newCount) return;
+        bool requiresRefresh = false;
+
+        if (nonHostPlayers.Count != displayedPlayerStates.Count)
+        {
+            requiresRefresh = true;
+        }
+        else
+        {
+            foreach (PlayerData player in nonHostPlayers)
+            {
+                if (!displayedPlayerStates.TryGetValue(player.playerID, out PlayerDisplayState state) ||
+                    state.Name != player.playerName ||
+                    state.IconName != player.iconName)
+                {
+                    requiresRefresh = true;
+                    break;
+                }
+            }
+        }
+
+        if (!requiresRefresh)
+        {
+            return;
+        }
+
+        HashSet<string> previousPlayerIds = new HashSet<string>(displayedPlayerStates.Keys);
 
         // Clear existing icons
         foreach (GameObject icon in spawnedPlayerIcons)
         {
-            Destroy(icon);
+            if (icon != null)
+            {
+                Destroy(icon);
+            }
         }
         spawnedPlayerIcons.Clear();
+        displayedPlayerStates.Clear();
 
         int nonHostPlayerCount = 0;
 
         // Spawn new icons for each player (excluding host)
-        foreach (PlayerData player in players)
+        foreach (PlayerData player in nonHostPlayers)
         {
-            // Skip host player
-            if (player.isHost)
-            {
-                continue;
-            }
-
             nonHostPlayerCount++;
 
             if (playerIconLobbyPrefab != null)
@@ -782,9 +807,14 @@ public class LobbyScreen : MonoBehaviour
                 }
 
                 spawnedPlayerIcons.Add(iconObj);
+                displayedPlayerStates[player.playerID] = new PlayerDisplayState
+                {
+                    Name = player.playerName,
+                    IconName = player.iconName
+                };
 
-                // Animate bounce scale-up for new player (only for newly added player)
-                if (nonHostPlayerCount > previousCount)
+                // Animate bounce scale-up for newly added players
+                if (!previousPlayerIds.Contains(player.playerID))
                 {
                     StartCoroutine(BounceScaleUp(iconObj.transform));
                 }
