@@ -1,5 +1,7 @@
 using UnityEngine;
+using System;
 using System.Collections.Generic;
+using Unity.Netcode;
 
 public class QuestionLoader : MonoBehaviour
 {
@@ -13,6 +15,9 @@ public class QuestionLoader : MonoBehaviour
     [Header("Bonus Question Settings")]
     [SerializeField]
     private int bonusQuestionsPerRound = 4;
+
+    private bool hasLoadedQuestions = false;
+    private bool subscribedToShuffleSeed = false;
 
     void Awake()
     {
@@ -29,13 +34,76 @@ public class QuestionLoader : MonoBehaviour
             return;
         }
 
-        LoadAllQuestions();
+        TryLoadQuestionsWithSeed();
     }
-    
-    void LoadAllQuestions()
+
+    void TryLoadQuestionsWithSeed()
     {
-        // Seed the random number generator with current time to ensure varied shuffles across sessions
-        ShuffleUtility.SeedRandomWithTime();
+        if (hasLoadedQuestions)
+        {
+            return;
+        }
+
+        bool networkAvailable = NetworkManager.Singleton != null;
+        bool isServer = networkAvailable && NetworkManager.Singleton.IsServer;
+        bool isClientOnly = networkAvailable && NetworkManager.Singleton.IsClient && !NetworkManager.Singleton.IsServer;
+
+        if (isClientOnly)
+        {
+            int seedFromServer = gameManager.questionShuffleSeed.Value;
+
+            if (seedFromServer == 0)
+            {
+                Debug.Log("[QuestionLoader] Waiting for server shuffle seed before loading questions.");
+                if (!subscribedToShuffleSeed)
+                {
+                    gameManager.questionShuffleSeed.OnValueChanged += OnShuffleSeedChanged;
+                    subscribedToShuffleSeed = true;
+                }
+                return;
+            }
+
+            LoadAllQuestionsWithSeed(seedFromServer);
+            return;
+        }
+
+        int seed = GenerateSeedForLocalSession(isServer);
+        LoadAllQuestionsWithSeed(seed);
+    }
+
+    int GenerateSeedForLocalSession(bool isServer)
+    {
+        int seed = Environment.TickCount;
+
+        if (isServer && gameManager != null)
+        {
+            seed = UnityEngine.Random.Range(int.MinValue, int.MaxValue);
+            if (seed == 0)
+            {
+                seed = 1;
+            }
+
+            gameManager.questionShuffleSeed.Value = seed;
+        }
+        else if (seed == 0)
+        {
+            seed = 1;
+        }
+
+        return seed;
+    }
+
+    void LoadAllQuestionsWithSeed(int seed)
+    {
+        if (hasLoadedQuestions)
+        {
+            return;
+        }
+
+        hasLoadedQuestions = true;
+
+        ShuffleUtility.SeedRandom(seed);
+        Debug.Log($"[QuestionLoader] Loading questions using shuffle seed {seed}");
 
         // Load standard questions
         LoadStandardQuestions();
@@ -50,8 +118,33 @@ public class QuestionLoader : MonoBehaviour
         LoadBonusQuestions();
 
         Debug.Log("All questions loaded and shuffled successfully");
+
+        if (subscribedToShuffleSeed)
+        {
+            gameManager.questionShuffleSeed.OnValueChanged -= OnShuffleSeedChanged;
+            subscribedToShuffleSeed = false;
+        }
     }
-    
+
+    void OnShuffleSeedChanged(int previousValue, int newValue)
+    {
+        if (hasLoadedQuestions || newValue == 0)
+        {
+            return;
+        }
+
+        LoadAllQuestionsWithSeed(newValue);
+    }
+
+    void OnDestroy()
+    {
+        if (subscribedToShuffleSeed && gameManager != null)
+        {
+            gameManager.questionShuffleSeed.OnValueChanged -= OnShuffleSeedChanged;
+            subscribedToShuffleSeed = false;
+        }
+    }
+
     void LoadStandardQuestions()
     {
         TextAsset jsonFile = Resources.Load<TextAsset>(standardQuestionsPath);
