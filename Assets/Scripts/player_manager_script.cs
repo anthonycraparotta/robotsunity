@@ -165,9 +165,25 @@ public class PlayerManager : MonoBehaviour
         return System.Guid.NewGuid().ToString();
     }
     
+    private const string DeviceIdPlayerPrefsKey = "PlayerManager_DeviceID";
+
     public string GetDevicePlayerID()
     {
         // Use device unique identifier for consistent player ID across sessions
-        return "player_" + SystemInfo.deviceUniqueIdentifier;
+        string deviceId = SystemInfo.deviceUniqueIdentifier;
+
+        // Some platforms (like WebGL) return an empty or unsupported identifier.
+        if (string.IsNullOrEmpty(deviceId) || deviceId == SystemInfo.unsupportedIdentifier)
+        {
+            if (!PlayerPrefs.HasKey(DeviceIdPlayerPrefsKey))
+            {
+                PlayerPrefs.SetString(DeviceIdPlayerPrefsKey, GeneratePlayerID());
+                PlayerPrefs.Save();
+            }
+
+            deviceId = PlayerPrefs.GetString(DeviceIdPlayerPrefsKey);
+        }
+
+        return "player_" + deviceId;
     }
 }
