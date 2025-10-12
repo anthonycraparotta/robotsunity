@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 public class AudioManager : MonoBehaviour
 {
-    public static AudioManager Instance;
+    public static AudioManager Instance { get; private set; }
     
     [Header("Audio Sources")]
     public AudioSource musicSource;
@@ -42,21 +42,20 @@ public class AudioManager : MonoBehaviour
     
     void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-            
-            // Create audio sources if they don't exist
-            CreateAudioSources();
-            
-            // Load all audio clips
-            LoadAllAudio();
-        }
-        else
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
+            return;
         }
+
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+
+        // Create audio sources if they don't exist
+        CreateAudioSources();
+
+        // Load all audio clips
+        LoadAllAudio();
     }
     
     void CreateAudioSources()
@@ -464,6 +463,11 @@ public class AudioManager : MonoBehaviour
     
     void OnDestroy()
     {
+        if (Instance == this)
+        {
+            Instance = null;
+        }
+
         StopAllCoroutines();
     }
 }
