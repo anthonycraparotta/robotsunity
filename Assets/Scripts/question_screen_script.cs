@@ -215,6 +215,34 @@ public class QuestionScreen : MonoBehaviour
             Debug.Log($"DisplayQuestion - Set mobileQuestionText to: '{mobileQuestionText.text}'");
         }
 
+        // Reset mobile input state for the new question
+        if (answerInput != null)
+        {
+            answerInput.text = string.Empty;
+            answerInput.interactable = true;
+        }
+
+        if (answerSubmitButton != null)
+        {
+            answerSubmitButton.interactable = true;
+        }
+
+        if (submissionConfirmationText != null)
+        {
+            submissionConfirmationText.gameObject.SetActive(false);
+        }
+
+        if (errorMessageText != null)
+        {
+            if (errorCoroutine != null)
+            {
+                StopCoroutine(errorCoroutine);
+                errorCoroutine = null;
+            }
+
+            errorMessageText.gameObject.SetActive(false);
+        }
+
         // Set tip text based on question type
         if (tipText != null)
         {
