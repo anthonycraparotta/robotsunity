@@ -42,6 +42,7 @@ public class EliminationScreen : MonoBehaviour
 
     void OnDisable()
     {
+        ResetSelectionState();
         UnsubscribeFromAnswerUpdates();
 
         if (subscriptionCoroutine != null)
@@ -124,7 +125,9 @@ public class EliminationScreen : MonoBehaviour
     {
         List<string> answers;
         Transform container;
-        
+
+        ResetSelectionState();
+
         var gameManager = GameManager.Instance;
         if (gameManager == null)
         {
@@ -162,6 +165,16 @@ public class EliminationScreen : MonoBehaviour
         foreach (string answer in answers)
         {
             CreateAnswerButton(answer, container);
+        }
+    }
+
+    void ResetSelectionState()
+    {
+        selectedAnswer = string.Empty;
+
+        if (elimSubmitButton != null)
+        {
+            elimSubmitButton.interactable = false;
         }
     }
 
