@@ -723,7 +723,7 @@ public class RoundResultsScreen : MonoBehaviour
     void UpdateNavigationButtons()
     {
         int currentRound = GameManager.Instance.GetCurrentRound();
-        int totalRounds = (GameManager.Instance.gameMode == GameManager.GameMode.EightQuestions) ? 8 : 12;
+        int totalRounds = (GameManager.Instance.gameMode.Value == GameManager.GameMode.EightQuestions) ? 8 : 12;
         
         bool isLastRound = currentRound >= totalRounds;
         

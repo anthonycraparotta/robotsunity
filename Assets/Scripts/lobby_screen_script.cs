@@ -374,7 +374,7 @@ public class LobbyScreen : MonoBehaviour
             return;
         }
 
-        Debug.Log("Start button clicked - currentGameState: " + GameManager.Instance.currentGameState + ", currentRound: " + GameManager.Instance.currentRound);
+        Debug.Log("Start button clicked - currentGameState: " + GameManager.Instance.currentGameState.Value + ", currentRound: " + GameManager.Instance.currentRound.Value);
 
         // Advance to Round Art (which will load Round 1)
         if (GameManager.Instance != null && GameManager.Instance.IsServer)
@@ -798,7 +798,7 @@ public class LobbyScreen : MonoBehaviour
                 (RWMNetworkManager.Instance != null ? RWMNetworkManager.Instance.GetRoomCode() : "");
 
             waitData.text = nonHostPlayerCount + " Players\n" +
-                           (GameManager.Instance.gameMode == GameManager.GameMode.EightQuestions ? "8" : "12") + " Questions\n" +
+                           (GameManager.Instance.gameMode.Value == GameManager.GameMode.EightQuestions ? "8" : "12") + " Questions\n" +
                            displayRoomCode;
         }
 
