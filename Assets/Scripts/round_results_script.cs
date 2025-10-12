@@ -458,14 +458,45 @@ public class RoundResultsScreen : MonoBehaviour
         var votingResults = GameManager.Instance.GetVotingResults();
         List<PlayerData> allPlayers = GameManager.Instance.GetAllPlayers();
 
-        // Create an entry for each player's response
+        // Build sortable data so the panel always displays highest fooled counts first
+        List<PlayerData> playersWithAnswers = new List<PlayerData>();
+        Dictionary<string, string> answersByPlayer = new Dictionary<string, string>();
+        Dictionary<string, int> fooledCountByPlayer = new Dictionary<string, int>();
+
         foreach (PlayerData player in allPlayers)
         {
-            // Get this player's answer
-            string playerAnswer = playerAnswers.ContainsKey(player.playerID) ? playerAnswers[player.playerID] : "";
-
-            if (string.IsNullOrEmpty(playerAnswer))
+            if (!playerAnswers.TryGetValue(player.playerID, out string playerAnswer) || string.IsNullOrEmpty(playerAnswer))
+            {
                 continue;
+            }
+
+            playersWithAnswers.Add(player);
+            answersByPlayer[player.playerID] = playerAnswer;
+            fooledCountByPlayer[player.playerID] = votingResults.ContainsKey(playerAnswer) ? votingResults[playerAnswer] : 0;
+        }
+
+        playersWithAnswers.Sort((a, b) =>
+        {
+            int fooledComparison = fooledCountByPlayer[b.playerID].CompareTo(fooledCountByPlayer[a.playerID]);
+            if (fooledComparison != 0)
+            {
+                return fooledComparison;
+            }
+
+            int scoreComparison = b.scorePercentage.CompareTo(a.scorePercentage);
+            if (scoreComparison != 0)
+            {
+                return scoreComparison;
+            }
+
+            return string.Compare(a.playerName, b.playerName, System.StringComparison.OrdinalIgnoreCase);
+        });
+
+        // Create an entry for each player's response, now in sorted order
+        foreach (PlayerData player in playersWithAnswers)
+        {
+            string playerAnswer = answersByPlayer[player.playerID];
+            int fooledCount = fooledCountByPlayer[player.playerID];
 
             GameObject responseObj = Instantiate(resultsPlayerResponsePrefab, panel2ResultsContainer);
 
@@ -530,7 +561,6 @@ public class RoundResultsScreen : MonoBehaviour
             if (scoreNumberText != null)
             {
                 // Calculate score from votes received on this answer
-                int fooledCount = votingResults.ContainsKey(playerAnswer) ? votingResults[playerAnswer] : 0;
                 int pointsPerVote = GameManager.Instance.GetVoteReceivedPoints();
                 int totalScore = fooledCount * pointsPerVote;
 
@@ -547,7 +577,6 @@ public class RoundResultsScreen : MonoBehaviour
             if (fooledCountTransform != null) fooledCountTransform.gameObject.SetActive(true);
             if (fooledCountText != null)
             {
-                int fooledCount = votingResults.ContainsKey(playerAnswer) ? votingResults[playerAnswer] : 0;
                 fooledCountText.text = fooledCount.ToString();
                 fooledCountText.enabled = true;
                 Debug.Log($"Panel2: Set NumberOfFooled to '{fooledCount}' (enabled={fooledCountText.enabled}, gameObject.activeSelf={fooledCountText.gameObject.activeSelf})");
