@@ -176,9 +176,22 @@ public class SceneTransitionManager : MonoBehaviour
     
     public void ShowLoadingScreen()
     {
-        if (loadingScreenPrefab != null && activeLoadingScreen == null)
+        if (activeLoadingScreen != null)
+        {
+            return;
+        }
+
+        if (loadingScreenPrefab != null)
         {
             activeLoadingScreen = Instantiate(loadingScreenPrefab);
+        }
+        else
+        {
+            activeLoadingScreen = CreateFallbackLoadingScreen();
+        }
+
+        if (activeLoadingScreen != null)
+        {
             DontDestroyOnLoad(activeLoadingScreen);
         }
     }
@@ -190,6 +203,52 @@ public class SceneTransitionManager : MonoBehaviour
             Destroy(activeLoadingScreen);
             activeLoadingScreen = null;
         }
+    }
+
+    private GameObject CreateFallbackLoadingScreen()
+    {
+        GameObject canvasObj = new GameObject("GeneratedLoadingScreen");
+        canvasObj.transform.SetParent(transform, false);
+
+        Canvas canvas = canvasObj.AddComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.sortingOrder = 10000;
+
+        CanvasScaler scaler = canvasObj.AddComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1920f, 1080f);
+
+        canvasObj.AddComponent<GraphicRaycaster>();
+
+        GameObject backgroundObj = new GameObject("Background");
+        backgroundObj.transform.SetParent(canvasObj.transform, false);
+
+        Image background = backgroundObj.AddComponent<Image>();
+        background.color = new Color(0f, 0f, 0f, 0.85f);
+
+        RectTransform backgroundRect = background.GetComponent<RectTransform>();
+        backgroundRect.anchorMin = Vector2.zero;
+        backgroundRect.anchorMax = Vector2.one;
+        backgroundRect.offsetMin = Vector2.zero;
+        backgroundRect.offsetMax = Vector2.zero;
+
+        GameObject textObj = new GameObject("Message");
+        textObj.transform.SetParent(backgroundObj.transform, false);
+
+        Text messageText = textObj.AddComponent<Text>();
+        messageText.text = "Loading...";
+        messageText.alignment = TextAnchor.MiddleCenter;
+        messageText.fontSize = 48;
+        messageText.color = Color.white;
+        messageText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+
+        RectTransform textRect = messageText.GetComponent<RectTransform>();
+        textRect.anchorMin = new Vector2(0.5f, 0.5f);
+        textRect.anchorMax = new Vector2(0.5f, 0.5f);
+        textRect.anchoredPosition = Vector2.zero;
+        textRect.sizeDelta = new Vector2(600f, 200f);
+
+        return canvasObj;
     }
     
     // === UTILITY ===
