@@ -678,6 +678,9 @@ MonoBehaviour:
   mobileWebButton: {fileID: 1047445177}
   mobileHero: {fileID: 0}
   mobileBackground: {fileID: 880424914}
+  winnerShareTemplate: {fileID: 21300000, guid: e77b99c7374f4464390866d16992866b, type: 3}
+  participantShareTemplate: {fileID: 21300000, guid: 57eef8aaa2d48344e8f3890726f132b5, type: 3}
+  havoksFont: {fileID: 11400000, guid: d7273bb0b313fec4b9631de86a4128b1, type: 2}
   finalWinningPrefab: {fileID: 1202433574901996825, guid: cad9525f53d56664fb7ae8e385c2b20e, type: 3}
   finalLosingPrefab: {fileID: 391934648614509894, guid: 5b37a2578829b6746be0d9d7dc705bbb, type: 3}
   playerNameComponentName: PlayerName
