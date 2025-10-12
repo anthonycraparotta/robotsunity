@@ -337,7 +337,7 @@ public class RoundResultsScreen : MonoBehaviour
         }
 
         // Get voting results
-        var votingVotes = GameManager.Instance.votingVotes;
+        Dictionary<string, string> votingVotes = GameManager.Instance.GetVotingVotesByPlayer();
         List<PlayerData> allPlayers = GameManager.Instance.GetAllPlayers();
 
         int trueCount = 0, robotCount = 0, otherCount = 0;
@@ -716,7 +716,7 @@ public class RoundResultsScreen : MonoBehaviour
     void UpdateNavigationButtons()
     {
         int currentRound = GameManager.Instance.GetCurrentRound();
-        int totalRounds = (GameManager.Instance.gameMode == GameManager.GameMode.EightQuestions) ? 8 : 12;
+        int totalRounds = (GameManager.Instance.gameMode.Value == GameManager.GameMode.EightQuestions) ? 8 : 12;
         
         bool isLastRound = currentRound >= totalRounds;
         
@@ -752,7 +752,7 @@ public class RoundResultsScreen : MonoBehaviour
             UnityEngine.SceneManagement.SceneManager.LoadScene("FinalResults");
         }
 
-        GameManager.Instance.currentGameState = GameManager.GameState.FinalResults;
+        GameManager.Instance.currentGameState.Value = GameManager.GameState.FinalResults;
     }
     
     string GetLocalPlayerID()

@@ -1276,6 +1276,11 @@ public class GameManager : NetworkBehaviour
         return results;
     }
 
+    public Dictionary<string, string> GetVotingVotesByPlayer()
+    {
+        return new Dictionary<string, string>(votingVotes);
+    }
+
     public Dictionary<string, int> GetEliminationResults()
     {
         Dictionary<string, int> results = new Dictionary<string, int>();
