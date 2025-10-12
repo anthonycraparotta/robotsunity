@@ -27,6 +27,7 @@ public class BonusResultsScreen : MonoBehaviour
     [Header("Prefab Component Names")]
     [SerializeField] private string rankComponentName = "Rank";
     [SerializeField] private string playerNameComponentName = "PlayerName";
+    [SerializeField] private string questionTextComponentName = "QuestionText";
     [SerializeField] private string scoreComponentName = "Score";
     [SerializeField] private string playerIconComponentName = "PlayerIcon";
 
@@ -84,11 +85,6 @@ public class BonusResultsScreen : MonoBehaviour
     {
         Debug.Log("DisplayBonusResults called");
 
-        // Show updated scores after bonus round
-        List<PlayerData> rankedPlayers = GameManager.Instance.GetPlayersByRank();
-
-        Debug.Log($"Got {rankedPlayers.Count} ranked players");
-
         Transform container = isMobile ? mobileResultsContainer : resultsContainer;
 
         Debug.Log($"Container is null: {container == null}, isMobile: {isMobile}");
@@ -105,19 +101,46 @@ public class BonusResultsScreen : MonoBehaviour
             Destroy(child.gameObject);
         }
 
-        // Display each player's result
-        int rank = 1;
-        foreach (PlayerData player in rankedPlayers)
+        List<BonusQuestionResultInfo> bonusResults = null;
+
+        if (GameManager.Instance != null)
         {
-            Debug.Log($"Creating result row for {player.playerName} (rank {rank}, score {player.scorePercentage}%)");
-            CreateResultRow(player, rank, container);
-            rank++;
+            bonusResults = GameManager.Instance.GetBonusQuestionResults();
+        }
+
+        if (bonusResults != null && bonusResults.Count > 0)
+        {
+            Debug.Log($"Rendering {bonusResults.Count} mini bonus question results");
+
+            for (int i = 0; i < bonusResults.Count; i++)
+            {
+                CreateBonusResultRow(bonusResults[i], i + 1, container);
+            }
+        }
+        else
+        {
+            Debug.LogWarning("No bonus question results recorded; falling back to player standings display.");
+            DisplayPlayerStandingsFallback(container);
         }
 
         Debug.Log("DisplayBonusResults complete");
     }
-    
-    void CreateResultRow(PlayerData player, int rank, Transform parent)
+
+    void DisplayPlayerStandingsFallback(Transform container)
+    {
+        List<PlayerData> rankedPlayers = GameManager.Instance != null ? GameManager.Instance.GetPlayersByRank() : new List<PlayerData>();
+
+        Debug.Log($"Fallback standings count: {rankedPlayers.Count}");
+
+        int rank = 1;
+        foreach (PlayerData player in rankedPlayers)
+        {
+            CreatePlayerStandingsRow(player, rank, container);
+            rank++;
+        }
+    }
+
+    void CreatePlayerStandingsRow(PlayerData player, int rank, Transform parent)
     {
         GameObject rowObj;
 
@@ -144,7 +167,8 @@ public class BonusResultsScreen : MonoBehaviour
         // Find and activate components using configurable names
         Transform rankTransform = FindDeepChild(rowObj.transform, rankComponentName);
         Transform nameTransform = FindDeepChild(rowObj.transform, playerNameComponentName);
-        Transform scoreTransform = FindDeepChild(rowObj.transform, scoreComponentName);
+        Transform questionTransform = FindDeepChild(rowObj.transform, questionTextComponentName);
+        Transform scoreTransform = ResolveScoreTransform(rowObj.transform);
         Transform iconTransform = FindDeepChild(rowObj.transform, playerIconComponentName);
 
         // Activate and set rank
@@ -163,6 +187,12 @@ public class BonusResultsScreen : MonoBehaviour
         {
             nameText.enabled = true;
             nameText.text = player.playerName;
+        }
+
+        // Hide question text for standings rows
+        if (questionTransform != null)
+        {
+            questionTransform.gameObject.SetActive(false);
         }
 
         // Activate and set score
@@ -186,6 +216,115 @@ public class BonusResultsScreen : MonoBehaviour
                 iconImage.sprite = iconSprite;
             }
         }
+    }
+
+    void CreateBonusResultRow(BonusQuestionResultInfo result, int questionNumber, Transform parent)
+    {
+        GameObject rowObj;
+
+        GameObject prefabToUse = isMobile ? mobileResultRowPrefab : resultRowPrefab;
+
+        if (prefabToUse != null)
+        {
+            rowObj = Instantiate(prefabToUse, parent);
+            rowObj.SetActive(true);
+            Debug.Log($"Instantiated bonus result row for question {questionNumber}");
+        }
+        else
+        {
+            Debug.LogWarning("Prefab is NULL, creating bonus result row programmatically");
+            rowObj = new GameObject("BonusResultRow");
+            rowObj.transform.SetParent(parent);
+            rowObj.AddComponent<RectTransform>();
+        }
+
+        Transform rankTransform = FindDeepChild(rowObj.transform, rankComponentName);
+        Transform nameTransform = FindDeepChild(rowObj.transform, playerNameComponentName);
+        Transform questionTransform = FindDeepChild(rowObj.transform, questionTextComponentName);
+        Transform scoreTransform = ResolveScoreTransform(rowObj.transform);
+        Transform iconTransform = FindDeepChild(rowObj.transform, playerIconComponentName);
+
+        if (rankTransform != null) rankTransform.gameObject.SetActive(true);
+        TextMeshProUGUI rankText = rankTransform?.GetComponent<TextMeshProUGUI>();
+        if (rankText != null)
+        {
+            rankText.enabled = true;
+            rankText.text = questionNumber.ToString();
+        }
+
+        if (nameTransform != null) nameTransform.gameObject.SetActive(true);
+        TextMeshProUGUI nameText = nameTransform?.GetComponent<TextMeshProUGUI>();
+        if (nameText != null)
+        {
+            nameText.enabled = true;
+            nameText.text = result.hasWinner ? result.winnerNames : "No votes cast";
+        }
+
+        if (questionTransform != null) questionTransform.gameObject.SetActive(true);
+        TextMeshProUGUI questionText = questionTransform?.GetComponent<TextMeshProUGUI>();
+        if (questionText != null)
+        {
+            questionText.enabled = true;
+            questionText.text = result.questionText;
+        }
+
+        if (scoreTransform != null) scoreTransform.gameObject.SetActive(true);
+        TextMeshProUGUI scoreText = scoreTransform?.GetComponent<TextMeshProUGUI>();
+        if (scoreText != null)
+        {
+            scoreText.enabled = true;
+            int pointsAwarded = result.hasWinner ? result.pointsAwarded : 0;
+            string scoreLabel = pointsAwarded > 0 ? $"+{pointsAwarded} pts" : "+0 pts";
+            if (result.hasWinner && result.winningVoteCount > 0)
+            {
+                scoreLabel += $"\n({result.winningVoteCount} votes)";
+            }
+            scoreText.text = scoreLabel;
+        }
+
+        if (iconTransform != null)
+        {
+            Image iconImage = iconTransform.GetComponent<Image>();
+            bool shouldShowIcon = result.hasWinner && !string.IsNullOrEmpty(result.winnerIcon) && PlayerManager.Instance != null;
+
+            if (iconImage != null)
+            {
+                if (shouldShowIcon)
+                {
+                    Sprite iconSprite = PlayerManager.Instance.GetPlayerIcon(result.winnerIcon);
+                    if (iconSprite != null)
+                    {
+                        iconTransform.gameObject.SetActive(true);
+                        iconImage.enabled = true;
+                        iconImage.sprite = iconSprite;
+                    }
+                    else
+                    {
+                        iconTransform.gameObject.SetActive(false);
+                    }
+                }
+                else
+                {
+                    iconTransform.gameObject.SetActive(false);
+                }
+            }
+            else
+            {
+                iconTransform.gameObject.SetActive(false);
+            }
+        }
+    }
+
+    Transform ResolveScoreTransform(Transform parent)
+    {
+        Transform scoreTransform = FindDeepChild(parent, scoreComponentName);
+
+        if (scoreTransform == null && scoreComponentName != "ScoreDiff")
+        {
+            scoreTransform = FindDeepChild(parent, "ScoreDiff");
+        }
+
+        return scoreTransform;
     }
     
     public void OnContinueClicked()
