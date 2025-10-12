@@ -230,10 +230,10 @@ public class FinalResultsScreen : MonoBehaviour
     {
         // Get winner (highest score)
         PlayerData winner = rankedPlayers[0];
-        
+
         // Get loser (lowest score)
         PlayerData loser = rankedPlayers[rankedPlayers.Count - 1];
-        
+
         // Display winner section
         if (winnerSection != null)
         {
@@ -241,22 +241,19 @@ public class FinalResultsScreen : MonoBehaviour
             {
                 winnerHeadline.text = "MOST HUMAN";
             }
-            
+
             if (winnerName != null)
             {
                 winnerName.text = winner.playerName;
             }
-            
+
             if (winnerScore != null)
             {
                 winnerScore.text = winner.scorePercentage + "%";
             }
-            
-            if (scoreDiffWin != null)
-            {
-                scoreDiffWin.text = "+" + winner.scorePercentage + "%";
-            }
-            
+
+            UpdateWinnerScoreDifference(rankedPlayers, winner, loser);
+
             // Display winner icon
             if (winnerIconContainer != null)
             {
@@ -277,10 +274,7 @@ public class FinalResultsScreen : MonoBehaviour
                 loserName.text = loser.playerName;
             }
 
-            if (scoreDiffLose != null)
-            {
-                scoreDiffLose.text = loser.scorePercentage + "%";
-            }
+            UpdateLoserScoreDifference(rankedPlayers, winner, loser);
 
             // Display loser icon
             if (loserIconContainer != null)
@@ -288,9 +282,76 @@ public class FinalResultsScreen : MonoBehaviour
                 DisplayPlayerIcon(loser, loserIconContainer, false);
             }
         }
-        
+
         // Display all players in ranked order
         DisplayFullLeaderboard(rankedPlayers);
+    }
+
+    void UpdateWinnerScoreDifference(List<PlayerData> rankedPlayers, PlayerData winner, PlayerData loser)
+    {
+        if (scoreDiffWin == null)
+        {
+            return;
+        }
+
+        bool sharesComponentWithWinnerScore = winnerScore != null && ReferenceEquals(scoreDiffWin, winnerScore);
+        int? scoreGap = CalculateScoreGap(rankedPlayers, winner, loser);
+
+        if (sharesComponentWithWinnerScore)
+        {
+            // The scene assigns the same Text component for the winner score and difference.
+            // Keep the plain score that was already written to avoid overwriting it with a diff label.
+            return;
+        }
+
+        if (!scoreGap.HasValue)
+        {
+            scoreDiffWin.text = winner.scorePercentage + "%";
+            return;
+        }
+
+        scoreDiffWin.text = FormatScoreDifference(scoreGap.Value, true);
+    }
+
+    void UpdateLoserScoreDifference(List<PlayerData> rankedPlayers, PlayerData winner, PlayerData loser)
+    {
+        if (scoreDiffLose == null)
+        {
+            return;
+        }
+
+        int? scoreGap = CalculateScoreGap(rankedPlayers, winner, loser);
+
+        if (!scoreGap.HasValue)
+        {
+            scoreDiffLose.text = loser.scorePercentage + "%";
+            return;
+        }
+
+        scoreDiffLose.text = FormatScoreDifference(scoreGap.Value, false);
+    }
+
+    int? CalculateScoreGap(List<PlayerData> rankedPlayers, PlayerData winner, PlayerData loser)
+    {
+        if (rankedPlayers == null || rankedPlayers.Count <= 1 || winner == null || loser == null)
+        {
+            return null;
+        }
+
+        return winner.scorePercentage - loser.scorePercentage;
+    }
+
+    string FormatScoreDifference(int rawDifference, bool forWinner)
+    {
+        if (rawDifference == 0)
+        {
+            return "0%";
+        }
+
+        int signedValue = forWinner ? rawDifference : -rawDifference;
+        int magnitude = Mathf.Abs(rawDifference);
+        string prefix = signedValue > 0 ? "+" : "-";
+        return $"{prefix}{magnitude}%";
     }
     
     void DisplayMobileFinalResults(List<PlayerData> rankedPlayers)
