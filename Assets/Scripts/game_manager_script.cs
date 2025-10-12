@@ -38,7 +38,11 @@ public class GameManager : NetworkBehaviour
 
     // === ROUND DATA ===
     [Header("Current Round Data")]
-    public Question currentQuestion;
+    public Question currentQuestion; // Server-only reference
+    public NetworkVariable<FixedString512Bytes> currentQuestionText = new NetworkVariable<FixedString512Bytes>();
+    public NetworkVariable<FixedString128Bytes> currentQuestionType = new NetworkVariable<FixedString128Bytes>();
+    public NetworkVariable<FixedString512Bytes> currentRobotAnecdote = new NetworkVariable<FixedString512Bytes>();
+    public NetworkVariable<FixedString512Bytes> currentImageURL = new NetworkVariable<FixedString512Bytes>();
     public NetworkVariable<FixedString128Bytes> robotAnswer = new NetworkVariable<FixedString128Bytes>();
     public NetworkVariable<FixedString128Bytes> correctAnswer = new NetworkVariable<FixedString128Bytes>();
     public NetworkList<FixedString128Bytes> allAnswers; // For Elimination
@@ -409,8 +413,7 @@ public class GameManager : NetworkBehaviour
         {
             case QuestionType.Standard:
                 currentQuestion = GetStandardQuestion();
-                correctAnswer.Value = currentQuestion.correctAnswer;
-                robotAnswer.Value = currentQuestion.robotAnswer;
+                SyncQuestionData(currentQuestion);
                 LoadScene("QuestionScreen");
                 currentGameState.Value = GameState.Question;
                 StartTimer(questionTimer);
@@ -419,16 +422,14 @@ public class GameManager : NetworkBehaviour
             case QuestionType.Player:
                 Debug.Log("[GameManager] LoadQuestionScreen - Loading Player Question");
                 currentQuestion = GetPlayerQuestion();
-                correctAnswer.Value = currentQuestion.correctAnswer;
-                robotAnswer.Value = currentQuestion.robotAnswer;
+                SyncQuestionData(currentQuestion);
                 LoadScene("PlayerQuestionVideoScreen");
                 currentGameState.Value = GameState.Question;
                 break;
 
             case QuestionType.Picture:
                 currentQuestion = GetPictureQuestion();
-                correctAnswer.Value = currentQuestion.correctAnswer;
-                robotAnswer.Value = currentQuestion.robotAnswer;
+                SyncQuestionData(currentQuestion);
                 LoadScene("PictureQuestionScreen");
                 currentGameState.Value = GameState.Question;
                 StartTimer(questionTimer);
@@ -442,6 +443,18 @@ public class GameManager : NetworkBehaviour
         allAnswers.Clear();
         remainingAnswers.Clear();
         eliminatedAnswer.Value = "";
+    }
+
+    void SyncQuestionData(Question question)
+    {
+        if (!IsServer || question == null) return;
+
+        currentQuestionText.Value = question.questionText ?? "";
+        currentQuestionType.Value = question.questionType ?? "";
+        currentRobotAnecdote.Value = question.robotAnecdote ?? "";
+        currentImageURL.Value = question.imageURL ?? "";
+        correctAnswer.Value = question.correctAnswer ?? "";
+        robotAnswer.Value = question.robotAnswer ?? "";
     }
 
     void CheckForSpecialScreens()
@@ -1167,33 +1180,18 @@ public class GameManager : NetworkBehaviour
 
     void LoadScene(string sceneName)
     {
-        // HOST AUTHORITY: Only host can initiate scene changes
-        // Mobile clients will receive ChangeScene RPC via Unity Netcode and load scenes that way
-        bool isHostCheck = RWMNetworkManager.Instance != null && RWMNetworkManager.Instance.isHost;
-        bool isMobile = DeviceDetector.Instance != null && DeviceDetector.Instance.IsMobile();
+        // Only server can initiate scene changes in Netcode
+        if (!IsServer) return;
 
-        // If mobile client, ignore - wait for host's RPC
-        if (isMobile && !isHostCheck)
+        // Use Netcode's NetworkSceneManager for proper synchronization
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.SceneManager != null)
         {
-            Debug.LogWarning($"[GameManager] Mobile client attempted to load scene '{sceneName}' - ignoring. Waiting for host command.");
-            return;
-        }
-
-        // Host loads scene locally
-        if (SceneTransitionManager.Instance != null)
-        {
-            SceneTransitionManager.Instance.LoadScene(sceneName);
+            NetworkManager.Singleton.SceneManager.LoadScene(sceneName, LoadSceneMode.Single);
+            Debug.Log($"[GameManager] Server loading scene via NetworkSceneManager: {sceneName}");
         }
         else
         {
-            SceneManager.LoadScene(sceneName);
-        }
-
-        // Host broadcasts to all clients
-        if (isHostCheck && RWMNetworkManager.Instance != null)
-        {
-            RWMNetworkManager.Instance.ChangeScene(sceneName);
-            Debug.Log($"[GameManager] Host broadcasting scene change to clients: {sceneName}");
+            Debug.LogError("[GameManager] NetworkManager.SceneManager is not available!");
         }
     }
 
@@ -1201,7 +1199,16 @@ public class GameManager : NetworkBehaviour
 
     public Question GetCurrentQuestion()
     {
-        return currentQuestion;
+        // Build Question from synced NetworkVariables so clients can access
+        return new Question
+        {
+            questionText = currentQuestionText.Value.ToString(),
+            questionType = currentQuestionType.Value.ToString(),
+            robotAnecdote = currentRobotAnecdote.Value.ToString(),
+            imageURL = currentImageURL.Value.ToString(),
+            correctAnswer = correctAnswer.Value.ToString(),
+            robotAnswer = robotAnswer.Value.ToString()
+        };
     }
 
     public int GetCurrentRound()

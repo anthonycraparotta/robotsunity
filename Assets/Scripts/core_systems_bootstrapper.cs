@@ -89,20 +89,19 @@ public static class CoreSystemsBootstrapper
 
         if (typeof(T) == typeof(RWMNetworkManager))
         {
-            if (managerObj.GetComponent<NetworkManager>() == null)
-            {
-                managerObj.AddComponent<NetworkManager>();
-            }
+            // FATAL ERROR: NetworkManager must be preconfigured in the scene, not created at runtime
+            // Runtime-created NetworkManager lacks NetworkConfig, prefabs, connection approval, etc.
+            Debug.LogError("[CoreSystemsBootstrapper] FATAL: RWMNetworkManager not found in scene. " +
+                "A preconfigured NetworkManager with all required settings must exist in the scene. " +
+                "Please add the NetworkManager prefab to your scene before running.");
 
-            if (managerObj.GetComponent<NetworkObject>() == null)
-            {
-                managerObj.AddComponent<NetworkObject>();
-            }
+            // Destroy the incomplete GameObject we just created
+            Object.Destroy(managerObj);
 
-            if (managerObj.GetComponent<UnityTransport>() == null)
-            {
-                managerObj.AddComponent<UnityTransport>();
-            }
+            // Throw exception to halt execution
+            throw new System.InvalidOperationException(
+                "RWMNetworkManager must be preconfigured in the scene with NetworkManager, " +
+                "NetworkObject, and UnityTransport components. Runtime creation is not supported.");
         }
 
         if (ENABLE_DEBUG_LOGS)

@@ -156,7 +156,8 @@ public class RWMNetworkManager : NetworkBehaviour
         GenerateRoomCode();
 
         // Start as Host (Server + Client)
-        unityTransport.SetConnectionData("127.0.0.1", port);
+        // Bind to 0.0.0.0 to allow remote connections, not just loopback
+        unityTransport.SetConnectionData("0.0.0.0", port, "0.0.0.0");
 
         bool success = networkManager.StartHost();
 
@@ -496,24 +497,8 @@ public class RWMNetworkManager : NetworkBehaviour
     }
 
     // === SCENE TRANSITIONS ===
-
-    public void ChangeScene(string sceneName)
-    {
-        if (!isHost || !IsSpawned) return;
-
-        ChangeSceneClientRpc(sceneName);
-    }
-
-    [ClientRpc]
-    private void ChangeSceneClientRpc(string sceneName)
-    {
-        OnSceneChanged?.Invoke(sceneName);
-
-        if (!isHost) // Clients follow host's scene changes
-        {
-            UnityEngine.SceneManagement.SceneManager.LoadScene(sceneName);
-        }
-    }
+    // Note: Scene transitions now handled by NetworkManager.SceneManager
+    // OnSceneChanged event still available for custom logic
 
     // === ROOM CODE ACCESS ===
 
