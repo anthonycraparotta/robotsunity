@@ -957,6 +957,7 @@ GameObject:
   - component: {fileID: 2108762730}
   - component: {fileID: 2108762729}
   - component: {fileID: 2108762728}
+  - component: {fileID: 2108762735}
   - component: {fileID: 2108762734}
   m_Layer: 0
   m_Name: Managers
@@ -1089,7 +1090,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 297b91daa75ac644daf3d3719de7bc75, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
   gameMode: 0
   currentRound: 0
@@ -1119,6 +1120,23 @@ MonoBehaviour:
   playerQuestions: []
   pictureQuestions: []
   currentGameState: 0
+--- !u!114 &2108762735
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2108762726}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bc1a65fc3a9553c4fbb182dd4e425fcd, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  roomCode:
+  isHost: 0
+  port: 7777
+  isConnected: 0
+  playerId:
 --- !u!114 &2108762734
 MonoBehaviour:
   m_ObjectHideFlags: 0

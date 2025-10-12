@@ -1,6 +1,5 @@
 using UnityEngine;
 using System;
-using System.Collections.Generic;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 
@@ -8,6 +7,7 @@ using Unity.Netcode.Transports.UTP;
 /// Unity Netcode-based NetworkManager for RWM multiplayer
 /// Desktop acts as Host (Server + Client), mobile devices connect as Clients
 /// </summary>
+[RequireComponent(typeof(NetworkManager), typeof(NetworkObject), typeof(UnityTransport))]
 public class RWMNetworkManager : NetworkBehaviour
 {
     public static RWMNetworkManager Instance;
@@ -36,6 +36,8 @@ public class RWMNetworkManager : NetworkBehaviour
     public event Action OnConnectionError;
 
     private NetworkManager networkManager;
+    private NetworkObject networkObject;
+    private UnityTransport unityTransport;
 
     void Awake()
     {
@@ -53,20 +55,19 @@ public class RWMNetworkManager : NetworkBehaviour
 
     void Start()
     {
-        // Get or add Unity's NetworkManager component
+        // Cache required networking components that must already exist on this GameObject
         networkManager = GetComponent<NetworkManager>();
-        if (networkManager == null)
+        networkObject = GetComponent<NetworkObject>();
+        unityTransport = GetComponent<UnityTransport>();
+
+        if (networkManager == null || networkObject == null || unityTransport == null)
         {
-            networkManager = gameObject.AddComponent<NetworkManager>();
+            Debug.LogError("[NetworkManager] Missing required networking components.");
+            enabled = false;
+            return;
         }
 
-        // Setup Unity Transport
-        var transport = GetComponent<UnityTransport>();
-        if (transport == null)
-        {
-            transport = gameObject.AddComponent<UnityTransport>();
-            networkManager.NetworkConfig.NetworkTransport = transport;
-        }
+        networkManager.NetworkConfig.NetworkTransport = unityTransport;
 
         // Load or generate player ID
         if (PlayerPrefs.HasKey("PlayerID"))
@@ -94,6 +95,10 @@ public class RWMNetworkManager : NetworkBehaviour
         Debug.Log("[NetworkManager] Server started successfully");
         isConnected = true;
         isHost = true;
+        if (!networkObject.IsSpawned)
+        {
+            networkObject.Spawn();
+        }
         OnRoomCreated?.Invoke(roomCode);
     }
 
@@ -133,8 +138,7 @@ public class RWMNetworkManager : NetworkBehaviour
         GenerateRoomCode();
 
         // Start as Host (Server + Client)
-        var transport = networkManager.GetComponent<UnityTransport>();
-        transport.SetConnectionData("127.0.0.1", port);
+        unityTransport.SetConnectionData("127.0.0.1", port);
 
         bool success = networkManager.StartHost();
 
@@ -170,8 +174,7 @@ public class RWMNetworkManager : NetworkBehaviour
         roomCode = code.ToUpper();
 
         // Set connection data to host's IP
-        var transport = networkManager.GetComponent<UnityTransport>();
-        transport.SetConnectionData(hostIP, port);
+        unityTransport.SetConnectionData(hostIP, port);
 
         // Start as Client
         bool success = networkManager.StartClient();
