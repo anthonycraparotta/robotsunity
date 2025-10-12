@@ -114,8 +114,8 @@ public class DebugManager : MonoBehaviour
         scrollPosition = GUILayout.BeginScrollView(scrollPosition);
         
         GUILayout.Label("=== GAME STATE ===");
-        GUILayout.Label("Current Round: " + GameManager.Instance.currentRound);
-        GUILayout.Label("Game Mode: " + GameManager.Instance.gameMode);
+        GUILayout.Label("Current Round: " + GameManager.Instance.currentRound.Value);
+        GUILayout.Label("Game Mode: " + GameManager.Instance.gameMode.Value);
         GUILayout.Label("Players: " + GameManager.Instance.GetAllPlayers().Count);
         GUILayout.Label("Timer: " + GameManager.Instance.GetTimerDisplay());
         
@@ -597,8 +597,8 @@ public class DebugManager : MonoBehaviour
     public void LogGameState()
     {
         Debug.Log("=== GAME STATE ===");
-        Debug.Log("Round: " + GameManager.Instance.currentRound);
-        Debug.Log("Mode: " + GameManager.Instance.gameMode);
+        Debug.Log("Round: " + GameManager.Instance.currentRound.Value);
+        Debug.Log("Mode: " + GameManager.Instance.gameMode.Value);
         Debug.Log("Players: " + GameManager.Instance.GetAllPlayers().Count);
         Debug.Log("Timer: " + GameManager.Instance.GetTimeRemaining() + "s");
         Debug.Log("Current Scene: " + SceneManager.GetActiveScene().name);

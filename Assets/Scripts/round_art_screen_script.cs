@@ -54,7 +54,7 @@ public class RoundArtScreen : MonoBehaviour
     
     void ShowRoundBackground()
     {
-        Debug.Log("ShowRoundBackground - Direct access to GameManager.Instance.currentRound: " + GameManager.Instance.currentRound);
+        Debug.Log("ShowRoundBackground - Direct access to GameManager.Instance.currentRound: " + GameManager.Instance.currentRound.Value);
 
         int currentRound = GameManager.Instance.GetCurrentRound();
         bool isMobile = DeviceDetector.Instance != null && DeviceDetector.Instance.IsMobile();
