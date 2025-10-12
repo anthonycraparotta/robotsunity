@@ -733,6 +733,17 @@ public class GameManager : NetworkBehaviour
 
         remainingAnswers.Clear();
 
+        bool hasEliminationSelection = eliminationVotes.Count > 0 && !string.IsNullOrEmpty(eliminatedAnswer.Value.ToString());
+
+        if (!hasEliminationSelection)
+        {
+            for (int i = 0; i < allAnswers.Count; i++)
+            {
+                remainingAnswers.Add(allAnswers[i]);
+            }
+            return;
+        }
+
         // Add all answers except the eliminated one
         for (int i = 0; i < allAnswers.Count; i++)
         {
@@ -813,9 +824,16 @@ public class GameManager : NetworkBehaviour
     {
         if (!IsServer) return;
 
-        // Skip if no votes or already processed
-        if (eliminationVotes.Count == 0 || !string.IsNullOrEmpty(eliminatedAnswer.Value.ToString()))
+        // Skip if already processed
+        if (!string.IsNullOrEmpty(eliminatedAnswer.Value.ToString()))
         {
+            return;
+        }
+
+        // No votes – nothing gets eliminated
+        if (eliminationVotes.Count == 0)
+        {
+            eliminatedAnswer.Value = string.Empty;
             return;
         }
 
@@ -918,6 +936,11 @@ public class GameManager : NetworkBehaviour
                 votesReceived.Add(vote, 0);
             }
             votesReceived[vote]++;
+        }
+
+        if (votingVotes.Count == 0)
+        {
+            return;
         }
 
         // Award points for voting correctly/incorrectly
