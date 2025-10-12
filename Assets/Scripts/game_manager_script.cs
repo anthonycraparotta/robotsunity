@@ -107,6 +107,7 @@ public class GameManager : NetworkBehaviour
     }
 
     private NetworkObject _networkObject;
+    private bool eliminationTransitionDispatched = false;
 
     void Awake()
     {
@@ -284,6 +285,7 @@ public class GameManager : NetworkBehaviour
         isBonusRoundPlayed.Value = false;
         currentGameState.Value = GameState.Lobby;
         currentQuestionPayload.Value = NetworkQuestionPayload.Empty;
+        eliminationTransitionDispatched = false;
 
         // Reset all player scores
         for (int i = 0; i < networkPlayers.Count; i++)
@@ -361,6 +363,11 @@ public class GameManager : NetworkBehaviour
                 break;
 
             case GameState.Question:
+                if (!TryStartEliminationTransition())
+                {
+                    return;
+                }
+
                 LoadScene("EliminationScreen");
                 currentGameState.Value = GameState.Elimination;
                 PrepareEliminationPhase();
@@ -442,6 +449,24 @@ public class GameManager : NetworkBehaviour
         }
     }
 
+    private bool TryStartEliminationTransition()
+    {
+        if (eliminationTransitionDispatched)
+        {
+            Debug.LogWarning("[GameManager] Ignoring duplicate elimination transition request.");
+            return false;
+        }
+
+        eliminationTransitionDispatched = true;
+
+        if (RWMNetworkManager.Instance != null)
+        {
+            RWMNetworkManager.Instance.BroadcastTransitionToElimination();
+        }
+
+        return true;
+    }
+
     void StartNextRound()
     {
         if (!IsServer) return;
@@ -467,6 +492,8 @@ public class GameManager : NetworkBehaviour
     void LoadQuestionScreen()
     {
         if (!IsServer) return;
+
+        eliminationTransitionDispatched = false;
 
         // Determine which question type for this round
         QuestionType questionType = GetQuestionTypeForRound(currentRound.Value);

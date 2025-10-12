@@ -42,6 +42,9 @@ public class QuestionScreen : MonoBehaviour
     private string playerID = "";
     private List<GameObject> spawnedPlayerIcons = new List<GameObject>();
     private Coroutine errorCoroutine;
+    private bool hasRequestedEliminationTransition = false;
+    private bool isTransitioningToElimination = false;
+    private bool hasSubscribedToNetworkEvents = false;
     
     void Start()
     {
@@ -85,6 +88,12 @@ public class QuestionScreen : MonoBehaviour
             GameManager.Instance.QuestionUpdated += HandleQuestionUpdated;
             HandleQuestionUpdated(GameManager.Instance.GetCurrentQuestion());
         }
+
+        SubscribeToNetworkEvents();
+
+        // Reset transition guards each time the screen is shown
+        hasRequestedEliminationTransition = false;
+        isTransitioningToElimination = false;
     }
 
     void OnDisable()
@@ -93,10 +102,17 @@ public class QuestionScreen : MonoBehaviour
         {
             GameManager.Instance.QuestionUpdated -= HandleQuestionUpdated;
         }
+
+        UnsubscribeFromNetworkEvents();
     }
 
     void Update()
     {
+        if (!hasSubscribedToNetworkEvents)
+        {
+            SubscribeToNetworkEvents();
+        }
+
         // Update timer display
         UpdateTimerDisplay();
 
@@ -110,6 +126,40 @@ public class QuestionScreen : MonoBehaviour
         if (AudioManager.Instance != null && GameManager.Instance != null)
         {
             AudioManager.Instance.CheckTimerWarning(GameManager.Instance.GetTimeRemaining());
+        }
+    }
+
+    public void RequestTransitionToElimination()
+    {
+        if (hasRequestedEliminationTransition)
+        {
+            Debug.LogWarning("[QuestionScreen] Ignoring duplicate transition-to-elimination request.");
+            return;
+        }
+
+        if (IsNetworkActive())
+        {
+            if (!IsHostClient())
+            {
+                Debug.LogWarning("[QuestionScreen] Only the host may request the elimination transition when connected.");
+                return;
+            }
+
+            hasRequestedEliminationTransition = true;
+
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.AdvanceToNextScreen();
+            }
+        }
+        else
+        {
+            BeginEliminationTransition();
+
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.AdvanceToNextScreen();
+            }
         }
     }
 
@@ -644,5 +694,80 @@ public class QuestionScreen : MonoBehaviour
         {
             answerSubmitButton.onClick.RemoveListener(OnSubmitAnswer);
         }
+
+        UnsubscribeFromNetworkEvents();
+    }
+
+    void SubscribeToNetworkEvents()
+    {
+        if (hasSubscribedToNetworkEvents)
+        {
+            return;
+        }
+
+        if (RWMNetworkManager.Instance == null)
+        {
+            return;
+        }
+
+        RWMNetworkManager.Instance.OnTransitionToElimination += HandleTransitionToEliminationSignal;
+        hasSubscribedToNetworkEvents = true;
+    }
+
+    void UnsubscribeFromNetworkEvents()
+    {
+        if (!hasSubscribedToNetworkEvents)
+        {
+            return;
+        }
+
+        if (RWMNetworkManager.Instance != null)
+        {
+            RWMNetworkManager.Instance.OnTransitionToElimination -= HandleTransitionToEliminationSignal;
+        }
+
+        hasSubscribedToNetworkEvents = false;
+    }
+
+    void HandleTransitionToEliminationSignal()
+    {
+        BeginEliminationTransition();
+    }
+
+    void BeginEliminationTransition()
+    {
+        if (isTransitioningToElimination)
+        {
+            return;
+        }
+
+        isTransitioningToElimination = true;
+        hasRequestedEliminationTransition = true;
+
+        if (answerInput != null)
+        {
+            answerInput.interactable = false;
+        }
+
+        if (answerSubmitButton != null)
+        {
+            answerSubmitButton.interactable = false;
+        }
+
+        if (submissionConfirmationText != null)
+        {
+            submissionConfirmationText.gameObject.SetActive(true);
+            submissionConfirmationText.text = "Please wait...";
+        }
+    }
+
+    bool IsNetworkActive()
+    {
+        return RWMNetworkManager.Instance != null && RWMNetworkManager.Instance.isConnected;
+    }
+
+    bool IsHostClient()
+    {
+        return IsNetworkActive() && RWMNetworkManager.Instance.isHost;
     }
 }
