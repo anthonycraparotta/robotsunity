@@ -69,7 +69,14 @@ public class LandingScreen : MonoBehaviour
             return;
         }
 
-        GameManager.Instance.AdvanceToNextScreen();
+        if (GameManager.Instance != null && GameManager.Instance.IsServer)
+        {
+            GameManager.Instance.AdvanceToNextScreen();
+        }
+        else
+        {
+            Debug.LogWarning("[LandingScreen] Only the host can advance to the next screen.");
+        }
     }
 
     public void OnJoinGameClicked()
@@ -85,7 +92,14 @@ public class LandingScreen : MonoBehaviour
             return;
         }
 
-        GameManager.Instance.AdvanceToNextScreen();
+        if (GameManager.Instance != null && GameManager.Instance.IsServer)
+        {
+            GameManager.Instance.AdvanceToNextScreen();
+        }
+        else
+        {
+            Debug.LogWarning("[LandingScreen] Only the host can advance to the next screen.");
+        }
     }
     
     void OnVideoPrepared(VideoPlayer source)

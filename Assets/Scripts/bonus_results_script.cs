@@ -193,7 +193,14 @@ public class BonusResultsScreen : MonoBehaviour
         MobileHaptics.MediumImpact();
 
         // Continue to next round (Round 5 for 8Q, Round 7 for 12Q)
-        GameManager.Instance.AdvanceToNextScreen();
+        if (GameManager.Instance != null && GameManager.Instance.IsServer)
+        {
+            GameManager.Instance.AdvanceToNextScreen();
+        }
+        else
+        {
+            Debug.LogWarning("[BonusResults] Only the host can advance to the next screen.");
+        }
     }
     
     string GetLocalPlayerID()

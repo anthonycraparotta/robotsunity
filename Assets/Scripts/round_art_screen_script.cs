@@ -136,7 +136,14 @@ public class RoundArtScreen : MonoBehaviour
     
     void AdvanceToQuestion()
     {
-        GameManager.Instance.AdvanceToNextScreen();
+        if (GameManager.Instance != null && GameManager.Instance.IsServer)
+        {
+            GameManager.Instance.AdvanceToNextScreen();
+        }
+        else
+        {
+            Debug.LogWarning("[RoundArtScreen] Only the host can advance to the next screen.");
+        }
     }
     
     void OnDestroy()

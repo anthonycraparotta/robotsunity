@@ -377,7 +377,14 @@ public class LobbyScreen : MonoBehaviour
         Debug.Log("Start button clicked - currentGameState: " + GameManager.Instance.currentGameState + ", currentRound: " + GameManager.Instance.currentRound);
 
         // Advance to Round Art (which will load Round 1)
-        GameManager.Instance.AdvanceToNextScreen();
+        if (GameManager.Instance != null && GameManager.Instance.IsServer)
+        {
+            GameManager.Instance.AdvanceToNextScreen();
+        }
+        else
+        {
+            Debug.LogWarning("[LobbyScreen] Only the host can start the game.");
+        }
     }
 
     // === MOBILE JOIN FORM ===
