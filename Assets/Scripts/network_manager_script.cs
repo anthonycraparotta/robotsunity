@@ -40,12 +40,14 @@ public class RWMNetworkManager : NetworkBehaviour
     public event Action<string> OnPlayerJoined;
     public event Action<string> OnPlayerLeft;
     public event Action<string, string, string> OnPlayerAdded; // playerID, playerName, iconName
+#pragma warning disable CS0067 // Event is declared but never used - reserved for future functionality
     public event Action<string> OnGameStateChanged;
     public event Action<string, string> OnAnswerSubmitted; // playerID, answer
     public event Action<string, string> OnVoteSubmitted; // playerID, votedTarget
     public event Action<string, int> OnScoreUpdated; // playerID, newScore
     public event Action<string> OnSceneChanged; // sceneName
     public event Action<float, bool> OnTimerSync; // timerValue, isActive
+#pragma warning restore CS0067
     public event Action OnConnectionError;
     public event Action OnTransitionToElimination;
 
@@ -611,7 +613,7 @@ public class RWMNetworkManager : NetworkBehaviour
 
         if (networkManager == null)
         {
-            networkManager = FindObjectOfType<NetworkManager>();
+            networkManager = FindFirstObjectByType<NetworkManager>();
         }
 
         if (networkManager == null)
@@ -632,7 +634,7 @@ public class RWMNetworkManager : NetworkBehaviour
 
         if (unityTransport == null)
         {
-            unityTransport = FindObjectOfType<UnityTransport>();
+            unityTransport = FindFirstObjectByType<UnityTransport>();
         }
 
         if (unityTransport == null)
